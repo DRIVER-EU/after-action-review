@@ -1,0 +1,16 @@
+package eu.driver.aar.service.filter;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
+import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
+
+import eu.driver.aar.service.dto.record.Record;
+
+@Configuration
+public class RepositoryConfig extends RepositoryRestConfigurerAdapter {
+	
+	@Override
+	public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
+		config.exposeIdsFor(Record.class);
+	}
+}
