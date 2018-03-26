@@ -12,6 +12,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import org.apache.log4j.Logger;
+import org.springframework.boot.logging.LogLevel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,9 @@ import org.springframework.web.socket.WebSocketHandler;
 import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.WebSocketServer;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
-import eu.driver.aar.service.ws.object.WSLogNotification;
+import eu.driver.aar.service.ws.object.WSRecordNotification;
+import eu.driver.model.core.Level;
+import eu.driver.model.core.Log;
 
 @RestController
 public class WSNotificationController {
@@ -56,13 +59,17 @@ public class WSNotificationController {
             @ApiResponse(code = 500, message = "Failure", response = Boolean.class)})
 	@Produces({"application/json"})
 	public ResponseEntity<Boolean> sendRecordNotification( 	@PathVariable Long id,
-															@QueryParam("level") String level,
 															@QueryParam("clientId") String clientId,
 															@RequestBody String message) {
 		log.info("--> sendRecordNotification: " + id);
 		Boolean send = true;
+		Log logRecord = new Log();
+		logRecord.setDateTimeSent(new Date().getTime());
+		logRecord.setId("test_client");
+		logRecord.setLevel(Level.INFO);
+		logRecord.setLog("This is the test log entry!");		
 		
-		WSLogNotification notification = new WSLogNotification(id, level, clientId, new Date(), message);
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, new Date(), "Log", logRecord.toString(), null);
 		WSController.getInstance().sendMessage(mapper.objectToJSONString(notification));
 		
 		log.info("sendRecordNotification -->");

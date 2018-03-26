@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.avro.generic.IndexedRecord;
@@ -19,12 +20,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.driver.aar.service.dto.record.Record;
 import eu.driver.aar.service.repository.RecordRepository;
+import eu.driver.aar.service.ws.WSController;
+import eu.driver.aar.service.ws.mapper.StringJSONMapper;
+import eu.driver.aar.service.ws.object.WSRecordNotification;
+import eu.driver.adapter.constants.AdapterMode;
+import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.api.IAdaptorCallback;
 
 @RestController
 public class RecordRESTController implements IAdaptorCallback {
 	
 	private Logger log = Logger.getLogger(this.getClass());
+	private StringJSONMapper mapper = new StringJSONMapper();
 	
 	@Autowired
 	RecordRepository recordRepo;
@@ -35,12 +42,40 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	@Override
 	public void messageReceived(IndexedRecord receivedMessage) {
+		Record record = new Record();
+		record.setCreateDate(new Date());
+		record.setRecordType(receivedMessage.getSchema().getName());
+		
 		log.info("log message received!");
 		if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
-			eu.driver.model.core.Log logMsg = (eu.driver.model.core.Log) SpecificData.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage); 
-				
+			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TopicInvite")) {
+			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Alert")) {
+			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("SlRep")) {
+			eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("FeatureCollection")) {
+			eu.driver.model.geojson.FeatureCollection msg = (eu.driver.model.geojson.FeatureCollection) SpecificData.get().deepCopy(eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TSO_2_0")) {
+			eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		} else {
+			// unknown data
+			record = null;
+			log.error("Unknown message received!");
 		}
-
+		
+		if(record != null) {
+			record = recordRepo.saveAndFlush(record);
+			WSRecordNotification notification = new WSRecordNotification(record.getId(), record.getClientId(), record.getCreateDate(), record.getRecordType(), record.getRecordJson(), record.getRecordData());
+			WSController.getInstance().sendMessage(mapper.objectToJSONString(notification));	
+		}
 	}
 	
 	@ApiOperation(value = "getAllRecords", nickname = "getAllRecords")
