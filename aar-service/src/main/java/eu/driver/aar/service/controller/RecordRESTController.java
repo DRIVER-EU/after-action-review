@@ -23,8 +23,6 @@ import eu.driver.aar.service.repository.RecordRepository;
 import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
-import eu.driver.adapter.constants.AdapterMode;
-import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.api.IAdaptorCallback;
 
 @RestController
@@ -41,12 +39,13 @@ public class RecordRESTController implements IAdaptorCallback {
 	}
 	
 	@Override
-	public void messageReceived(IndexedRecord receivedMessage) {
+	public void messageReceived(IndexedRecord key, IndexedRecord receivedMessage) {
 		Record record = new Record();
 		record.setCreateDate(new Date());
 		record.setRecordType(receivedMessage.getSchema().getName());
+		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
+		record.setClientId(msgKey.getSenderID().toString());
 		
-		log.info("log message received!");
 		if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
 			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
@@ -54,10 +53,10 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Alert")) {
-			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
+			eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("SlRep")) {
-			eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
+			eu.driver.model.mlp.SlRep msg = (eu.driver.model.mlp.SlRep) SpecificData.get().deepCopy(eu.driver.model.mlp.SlRep.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("FeatureCollection")) {
 			eu.driver.model.geojson.FeatureCollection msg = (eu.driver.model.geojson.FeatureCollection) SpecificData.get().deepCopy(eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
