@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
 import eu.driver.aar.service.controller.RecordRESTController;
+import eu.driver.aar.service.controller.TopicInviteController;
+import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.adapter.core.CISAdapter;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.service.ApiInfo;
@@ -38,12 +40,15 @@ public class AARServiceApplication {
 	@Autowired
 	RecordRESTController recordController;
 	
+	@Autowired
+	TopicInviteController topicInviteController;
+	
 	@PostConstruct
 	public void init() {
-		cisAdapter = CISAdapter.getInstance();
+		cisAdapter = CISAdapter.getInstance(false);
 		
 		cisAdapter.addLogCallback(recordController);
-		
+		cisAdapter.addCallback(topicInviteController, TopicConstants.TOPIC_INVITE_TOPIC);
 	}
 	
 	@Bean
@@ -70,5 +75,13 @@ public class AARServiceApplication {
 
 	public void setRecordController(RecordRESTController recordController) {
 		this.recordController = recordController;
+	}
+
+	public TopicInviteController getTopicInviteController() {
+		return topicInviteController;
+	}
+
+	public void setTopicInviteController(TopicInviteController topicInviteController) {
+		this.topicInviteController = topicInviteController;
 	}
 }

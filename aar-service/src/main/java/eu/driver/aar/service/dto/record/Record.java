@@ -36,10 +36,10 @@ public class Record {
 	@Column(name="recordType")
 	private String recordType;
 	
-	@Column(name="recordJson")
+	@Column(name="recordJson", length=4096)
 	private String recordJson;
 	
-	@Column(name="recordData")
+	@Column(name="recordData", length=4096)
 	private String recordData;
 	
 	public Record() {
