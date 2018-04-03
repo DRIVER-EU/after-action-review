@@ -27,6 +27,8 @@ public class TopicInviteController implements IAdaptorCallback {
 		if (inviteMsg.getId().toString().equalsIgnoreCase(CISAdapter.getInstance().getClientID()) && inviteMsg.getSubscribeAllowed()) {
 			CISAdapter.getInstance().addCallback(recordCallback, inviteMsg.getTopicName().toString());
 		}
+		
+		recordCallback.messageReceived(key, receivedMessage);
 	}
 
 	public RecordRESTController getRecordCallback() {

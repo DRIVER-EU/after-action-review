@@ -22,7 +22,7 @@ import javax.persistence.UniqueConstraint;
 public class Record {
 	
 	@Id
-	@SequenceGenerator(sequenceName = "admin_service.record_seq", name = "RecordIdSequence", allocationSize=1)
+	@SequenceGenerator(sequenceName = "aar_service.record_seq", name = "RecordIdSequence", allocationSize=1)
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "RecordIdSequence")
 	@Column(unique=true, nullable=false)
 	private Long id;

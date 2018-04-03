@@ -29,6 +29,7 @@ import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
 import eu.driver.model.core.Level;
 import eu.driver.model.core.Log;
+import eu.driver.model.core.TopicInvite;
 
 @RestController
 public class WSNotificationController {
@@ -45,8 +46,8 @@ public class WSNotificationController {
 
 	}
 	
-	@ApiOperation(value = "sendRecordNotification", nickname = "sendRecordNotification")
-	@RequestMapping(value = "/AARService/sendRecordNotification/{id}", method = RequestMethod.POST )
+	@ApiOperation(value = "sendLogRecordNotification", nickname = "sendLogRecordNotification")
+	@RequestMapping(value = "/AARService/sendLogRecordNotification/{id}", method = RequestMethod.POST )
 	@ApiImplicitParams({
         @ApiImplicitParam(name = "id", value = "the id of the log record", required = true, dataType = "long", paramType = "path"),
         @ApiImplicitParam(name = "level", value = "level of the log record", required = true, dataType = "string", paramType = "query"),
@@ -58,22 +59,61 @@ public class WSNotificationController {
             @ApiResponse(code = 400, message = "Bad Request", response = Boolean.class),
             @ApiResponse(code = 500, message = "Failure", response = Boolean.class)})
 	@Produces({"application/json"})
-	public ResponseEntity<Boolean> sendRecordNotification( 	@PathVariable Long id,
-															@QueryParam("clientId") String clientId,
-															@RequestBody String message) {
-		log.info("--> sendRecordNotification: " + id);
+	public ResponseEntity<Boolean> sendLogRecordNotification( 	@PathVariable Long id,
+																@QueryParam("clientId") String clientId,
+																@RequestBody String message) {
+		log.info("--> sendLogRecordNotification: " + id);
 		Boolean send = true;
 		Log logRecord = new Log();
 		logRecord.setDateTimeSent(new Date().getTime());
-		logRecord.setId("test_client");
+		logRecord.setId(clientId);
 		logRecord.setLevel(Level.INFO);
 		logRecord.setLog("This is the test log entry!");		
 		
 		WSRecordNotification notification = new WSRecordNotification(id, clientId, new Date(), "Log", logRecord.toString(), null);
-		WSController.getInstance().sendMessage(mapper.objectToJSONString(notification));
+		sendMessage(notification);
 		
-		log.info("sendRecordNotification -->");
+		log.info("sendLogRecordNotification -->");
 	    return new ResponseEntity<Boolean>(send, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "sendTopicinviteRecordNotification", nickname = "sendTopicinviteRecordNotification")
+	@RequestMapping(value = "/AARService/sendTopicinviteRecordNotification/{id}", method = RequestMethod.POST )
+	@ApiImplicitParams({
+		@ApiImplicitParam(name = "id", value = "the id of the log record", required = true, dataType = "long", paramType = "path"),
+        @ApiImplicitParam(name = "clientId", value = "the clientId to which the message belongs to", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "topicName", value = "the name of the topic", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "publishAllowed", value = "identifies if the client is allowed to connect as publisher", required = true, dataType = "boolean", paramType = "query"),
+        @ApiImplicitParam(name = "subscribeAllowed", value = "identifies if the client is allowed to connect as subscriber", required = true, dataType = "boolean", paramType = "query")
+      })
+	@ApiResponses(value = { 
+            @ApiResponse(code = 200, message = "Success", response = Boolean.class),
+            @ApiResponse(code = 400, message = "Bad Request", response = Boolean.class),
+            @ApiResponse(code = 500, message = "Failure", response = Boolean.class)})
+	@Produces({"application/json"})
+	public ResponseEntity<Boolean> sendTopicinviteRecordNotification( 	@PathVariable Long id,
+																@QueryParam("clientId") String clientId,
+																@QueryParam("topicName") String topicName,
+																@QueryParam("publishAllowed") Boolean publishAllowed,
+																@QueryParam("subscribeAllowed") Boolean subscribeAllowed) {
+		log.info("--> sendTopicinviteRecordNotification");
+		
+		Boolean send = true;
+		TopicInvite topicInvite = new TopicInvite();
+		topicInvite.setId(clientId);
+		topicInvite.setTopicName(topicName);
+		topicInvite.setPublishAllowed(publishAllowed);
+		topicInvite.setSubscribeAllowed(subscribeAllowed);
+		
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, new Date(), "TopicInvite", topicInvite.toString(), null);
+		sendMessage(notification);
+		
+		log.info("sendTopicinviteRecordNotification -->");
+	    return new ResponseEntity<Boolean>(send, HttpStatus.OK);
+	}
+	
+	private void sendMessage(Object object) {
+		WSController.getInstance().sendMessage(mapper.objectToJSONString(object));
 	}
 
 }
