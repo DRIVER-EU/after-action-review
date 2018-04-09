@@ -2,6 +2,8 @@ package eu.driver.aar.service;
 
 import static springfox.documentation.builders.PathSelectors.regex;
 
+import java.util.Date;
+
 import javax.annotation.PostConstruct;
 
 import org.apache.log4j.Logger;
@@ -15,6 +17,8 @@ import eu.driver.aar.service.controller.RecordRESTController;
 import eu.driver.aar.service.controller.TopicInviteController;
 import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.adapter.core.CISAdapter;
+import eu.driver.model.core.Level;
+import eu.driver.model.core.Log;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.service.ApiInfo;
 import springfox.documentation.spi.DocumentationType;
@@ -49,6 +53,9 @@ public class AARServiceApplication {
 		
 		cisAdapter.addLogCallback(recordController);
 		cisAdapter.addCallback(topicInviteController, TopicConstants.TOPIC_INVITE_TOPIC);
+		
+		Log logMsg = new Log(cisAdapter.getClientID(), (new Date()).getTime(), Level.INFO, "The AARService is up!" );
+		cisAdapter.addLogEntry(logMsg);
 	}
 	
 	@Bean
