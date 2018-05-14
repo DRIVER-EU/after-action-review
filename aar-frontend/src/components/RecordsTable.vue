@@ -1,0 +1,88 @@
+<template>
+      <v-flex xs9>
+      <v-card style="height: 93vh">
+        <v-data-table :items=filteredRecords hide-actions>
+          <template slot="headers" slot-scope="props">
+            <tr>
+              <th>
+                <div class="primary--text" style="padding: 16px;">RecordID</div>
+                <v-select
+                  :items="filterOptions.id"
+                  label="All"
+                  single-line
+                  v-model="currentlySelectedId"
+                ></v-select>
+              </th>
+              <th>
+                <div class="primary--text" style="padding: 16px;">ClientID</div>
+                <v-select
+                  :items="filterOptions.clientId"
+                  label="All"
+                  single-line
+                  v-model="currentlySelectedClientId"
+                ></v-select>
+              </th>
+              <th>
+                <div class="primary--text" style="padding: 16px;">Type</div>
+                <v-select
+                  :items="filterOptions.recordType"
+                  label="All"
+                  single-line
+                  v-model="currentlySelectedRecordType"
+                ></v-select>
+              </th>
+              <th style="padding-bottom: 68px">
+                <div class="primary--text" style="padding: 16px">Date/Time</div>
+              </th>
+            </tr>
+          </template>
+          <template slot="items" slot-scope="props">
+            <tr @click="recordSelected(props.item.id, props.item.recordType, props.item.recordJson)">
+              <td >{{props.item.id}}</td>
+              <td>{{props.item.clientId}}</td>
+              <td>{{props.item.recordType}}</td>
+              <td>{{props.item.createDate}}</td>
+            </tr>
+          </template>
+        </v-data-table>
+      </v-card>
+      </v-flex>
+</template>
+
+<script>
+  import {eventBus} from "../main";
+  export default {
+    name: "RecordsTable",
+    data() {
+      return {
+        currentlySelectedId: 'All',
+        currentlySelectedClientId: 'All',
+        currentlySelectedRecordType: 'All'
+      }
+    },
+    computed: {
+      records: function () {
+        return this.$store.getters.records
+      },
+      filterOptions: function() {
+
+        return this.$store.getters.filterOptions
+      },
+      filteredRecords: function() {
+        return this.records.filter((i) => {
+          let idMatch = this.currentlySelectedId === "All" || this.currentlySelectedId === i.id
+          let clientIdMatch = this.currentlySelectedClientId === "All" || this.currentlySelectedClientId === i.clientId
+          let recordTypeMatch = this.currentlySelectedRecordType === "All" || this.currentlySelectedRecordType === i.recordType
+          return idMatch && clientIdMatch && recordTypeMatch
+        })
+      }
+    },
+    methods: {
+      recordSelected: function(recordID, recordType, recordJson) {
+        eventBus.$emit('recordSelected', recordID, recordType, recordJson)
+      }
+    },
+    watch: {
+    }
+  }
+</script>

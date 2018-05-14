@@ -1,0 +1,6 @@
+export function InviteJson(inviteJson) {
+  this.id = inviteJson.id,
+    this.topicName = inviteJson.topicName,
+    this.subscribeAllowed = inviteJson.subscribeAllowed,
+    this.publishAllowed = inviteJson.publishAllowed
+}
