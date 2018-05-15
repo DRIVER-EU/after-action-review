@@ -13,8 +13,8 @@
 
 <script>
   import {eventBus} from "../main";
-  import LogDetails from "./LogDetails";
-  import InviteDetails from "./InviteDetails";
+  import LogDetails from "./DetailsTemplates/LogDetails";
+  import InviteDetails from "./DetailsTemplates/InviteDetails";
     export default {
       components: {LogDetails,InviteDetails},
       name: "DetailsPanel",

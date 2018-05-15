@@ -54,26 +54,30 @@ export const store = new Vuex.Store({
       state.socket.messageAccepted = true
     },
     RECORD_NOTIFICATION(state, record) {
-      record.recordJson = JSON.parse(record.recordJson)
-      if(record.recordJson.hasOwnProperty('dateTimeSent')) {
-        record.recordJson.dateTimeSent = parseDate(record.recordJson.dateTimeSent)
+      let newRecord = new Record(record)
+      newRecord.recordJson = JSON.parse(record.recordJson)
+      let splitDateTime = record.createDate.split(" ")
+      console.log(record.createDate, splitDateTime)
+      newRecord.createDate = splitDateTime[0]
+      newRecord.createTime = splitDateTime[1]
+      if(newRecord.recordJson.hasOwnProperty('dateTimeSent')) {
+        newRecord.recordJson.dateTimeSent = parseDate(newRecord.recordJson.dateTimeSent)
       }
-      state.records.push(new Record(record))
-      var keys = Object.keys(record)
-      keys.forEach(function(key){
-        if(state.filterOptions[key] && state.filterOptions[key].indexOf(record[key]) === -1 )  state.filterOptions[key].push(record[key])
-      })
+      state.records.push(newRecord)
+      createFilterOptions(newRecord, state.filterOptions)
     },
     GET_RECORDS(state, records) {
       records.forEach(function (record) {
-        record.recordJson = JSON.parse(record.recordJson)
-        record.createDate = parseDate(record.createDate)
-        if(record.recordJson.hasOwnProperty('dateTimeSent')) {
-          record.recordJson.dateTimeSent = parseDate(record.recordJson.dateTimeSent)
+        let newRecord = new Record(record)
+        newRecord.recordJson = JSON.parse(record.recordJson)
+        newRecord.createDate = parseDate(record.createDate, 'YYYY-MM-DD')
+        newRecord.createTime = parseDate(record.createDate, 'HH:mm:ss.SSS')
+        if(newRecord.recordJson.hasOwnProperty('dateTimeSent')) {
+          newRecord.recordJson.dateTimeSent = parseDate(newRecord.recordJson.dateTimeSent, 'YYYY-MM-DD HH:mm:ss.SSS')
         }
-        createFilterOptions(record, state.filterOptions)
+        state.records.push(newRecord)
+        createFilterOptions(newRecord, state.filterOptions)
       })
-      state.records = records
     }
   }
   ,
