@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>driver.eu</groupId>
 		<artifactId>aar-tool</artifactId>
-		<version>1.0.0</version>
+		<version>1.0.1</version>
 	</parent>
 
 	<name>DRIVER AAR Tool REST Backend</name>
@@ -28,7 +28,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<testbed.adaptor.version>1.0.4</testbed.adaptor.version>
+		<testbed.adaptor.version>1.0.9</testbed.adaptor.version>
 		<maven.shade.version>3.1.0</maven.shade.version>
 		<maven.compiler.version>3.7.0</maven.compiler.version>
 		<docker.image.prefix>springio</docker.image.prefix>
@@ -173,7 +173,7 @@
 						<archive>
 							<manifest>
 								<addClasspath>true</addClasspath>
-								<mainClass>eu.driver.admin.service.AdminServiceApplication</mainClass>
+								<mainClass>eu.driver.aar.service.AARServiceApplication</mainClass>
 							</manifest>
 						</archive>
 					</configuration>
@@ -204,7 +204,7 @@
 							<overwrite>true</overwrite>
 							<resources>
 								<resource>
-									<directory>${project.parent.basedir}/admin-frontend/target/dist</directory>
+									<directory>${project.parent.basedir}/aar-frontend/target/dist</directory>
 									<includes>
 										<include>static/</include>
 										<include>index.html</include>
@@ -220,7 +220,7 @@
 				<artifactId>docker-maven-plugin</artifactId>
 				<version>1.0.0</version>
 				<configuration>
-					<imageName>admintool</imageName>
+					<imageName>aartool</imageName>
 					<baseImage>java</baseImage>
 					<forceTags>true</forceTags>
 					<entryPoint>["java", "-jar", "/${project.build.finalName}.jar"]</entryPoint>
