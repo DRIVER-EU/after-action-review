@@ -24,6 +24,7 @@ import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
 import eu.driver.api.IAdaptorCallback;
+import eu.driver.model.core.Command;
 
 @RestController
 public class RecordRESTController implements IAdaptorCallback {
@@ -64,6 +65,15 @@ public class RecordRESTController implements IAdaptorCallback {
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TSO_2_0")) {
 			eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TimingControl")) {
+			eu.driver.model.core.TimingControl msg = (eu.driver.model.core.TimingControl) SpecificData.get().deepCopy(eu.driver.model.core.TimingControl.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+			
+			// ToDo: handle start/stop/pause trial
+			if (msg.getCommand().equals(Command.Stop)) {
+				// stop command received, trial is done, collect all trial specific data
+				
+			}
 		} else {
 			// unknown data
 			record = null;

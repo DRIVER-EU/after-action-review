@@ -52,6 +52,7 @@ public class AARServiceApplication {
 		cisAdapter = CISAdapter.getInstance(false);
 		
 		cisAdapter.addLogCallback(recordController);
+		cisAdapter.addCallback(recordController, TopicConstants.TIMING_CONTROL_TOPIC);
 		cisAdapter.addCallback(topicInviteController, TopicConstants.TOPIC_INVITE_TOPIC);
 		
 		Log logMsg = new Log(cisAdapter.getClientID(), (new Date()).getTime(), Level.INFO, "The AARService is up!" );
