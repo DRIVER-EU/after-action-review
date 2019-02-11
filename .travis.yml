@@ -1,0 +1,22 @@
+language: java
+jdk:
+- oraclejdk8
+
+env:
+  matrix:
+  - VERSION=1.2.1
+  global:
+  - secure: Kz9uP9CUsiNQNmE4R/e099u9ECX8q4qtQ8UiK6CUUHnbPCrMtOmezs2oWJD5JkN6jF1QnJqQITfhMzIIMGvUC7s1iPn2XFynlmFkn8P6+MXHOhIC5hwUjpeR1xt3AhvyEnqdMNZj0Wemamh2hfl1NsOpzBgiKLcleI9mncUnBTsT2I2LKOdI6xuNbv/xn5rBATxOLNN155p0yWAdqUpF9d0M1muzeNiCFw5s/qkpyKR+h+IQDk+dCkXgJ0ENMelmjtPD5BHSu5wsHBmuTNu6zi6FA08317CffxGMVA3MHaSwvrTWaKOXMHdQUa2Kb4KquXPfBHC2TZ3NT0Z22kRK+FrTShvXAH2j/a1ZvJY/Vc8IMcpG94lkztE0PfbuOXKDO7xLxxrqUV+OtPSIokzjFalYi1ivZPJ4QZ70oAZr2adpbKIPAeWEGukurOtoP4aoVSIfJ1VLqPsk9yqrbYtAvkf3Hi5PImh4IayrUJYHD71mPApingcZ0eD2uFdH+NQ9/+8L427Qf5kKCKHshfrEsMgRm4TFlicGMxpSIVKgLgzDkKmyb7DBaWkf/T+0spGm86rG/+S5OcHeIarzBM8zdFa9uOPlnuzRDTv2wvx8YJpyqXZjTFqdw6/qe0yOADdVCNOTo/jTXgcYtxYVLZ7WFwbIv4P5VKGgyliOZBE6ryM=
+  - secure: la9msHaOEv49D+LJ7j9fITOdL4QJxjdBs+4PJxH6X9RKCL/6QIlKQiIrqdPSq3DK209TswHsD4WV1lxUBF60rfgJ4EX0ABX0MLS7d4bieB5dLy375CF2SpCoCWiKgaxo1wjUMNWxo7cx2s3soguxwuYQ9MHMTk20meu83KyzWfhTV5PGy0R/2FXAsVAQHWZEkrvxHGhBswuJLkPTYRwj/ZMAGhYDYCG2YNTHCV+MsNTbDrD6wvV9WxtS5TBS+sMUkOClbDksouAwNP2t7d8FzS9mflcjkrJqGEfKgsYsfiUYVtxvfjkApmq/+8WVk+ggdAWBRyODX/5GeCw9TTRGsqzrl+dypnNxqwcNLLM+CP/JvX5Ewmgrzxbwkis9pR2gR4cOBYw/wsBxaeIKY38dydNMHg6ZBX2/bAOk5XQmqF1FegSCGn4KfeZfj23QEZM3Rqw1mptnVUNTeyjnJTiBZYF9X7q5Nc0zjqe7MzGNfYqXFutejkiV4SW6TXvrskojbCkHWWC5HS963qGxiS0t24CeZz/C/xhurIr9/XxNcqlpPa0/PRBeCn/5AZN6JhYH9j8ZVdx2NYPWw+f83Ff/5abNhb/81DIg68LIvMvZ6RjUYiBNY6bGIL0gbuRnO6YPfWFBTnH6MdCiOe5XitCSTYJP8iOZdwAk0gXf6NAgd+I=
+
+install: mvn install
+
+script: 
+  - docker build -t drivereu/after-action-review:latest -t drivereu/after-action-review:$VERSION .
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker push drivereu/after-action-review
+
+cache:
+  directories:
+  - ".autoconf"
+  - "$HOME/.m2"

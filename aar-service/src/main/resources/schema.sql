@@ -1,2 +1,1 @@
-DROP SCHEMA IF EXISTS aar_service CASCADE;
-CREATE SCHEMA aar_service;
+CREATE SCHEMA IF NOT EXISTS aar_service;

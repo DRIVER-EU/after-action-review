@@ -36,7 +36,7 @@
               </th>
             </tr>
           </template>
-          <template slot="items" slot-scope="props">
+          <template slot="items" slot-scope="props" style="max-height: 500px; overflow-y: scroll;" >
             <tr @click="recordSelected(props.item.id, props.item.recordType, props.item.recordJson)">
               <td >{{props.item.id}}</td>
               <td>{{props.item.clientId}}</td>
