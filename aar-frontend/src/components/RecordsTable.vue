@@ -1,6 +1,6 @@
 <template>
       <v-flex xs9>
-      <v-card style="height: 93vh">
+      <v-card style="height: 93vh; overflow-y: auto">
         <v-data-table :items=filteredRecords hide-actions>
           <template slot="headers" slot-scope="props">
             <tr>
@@ -32,16 +32,20 @@
                 ></v-select>
               </th>
               <th style="padding-bottom: 68px">
-                <div class="primary--text" style="padding: 16px">Date/Time</div>
+                <div class="primary--text" style="padding: 16px">Date</div>
+              </th>
+              <th style="padding-bottom: 68px">
+                <div class="primary--text" style="padding: 16px">Time</div>
               </th>
             </tr>
           </template>
           <template slot="items" slot-scope="props" style="max-height: 500px; overflow-y: scroll;" >
             <tr @click="recordSelected(props.item.id, props.item.recordType, props.item.recordJson)">
-              <td >{{props.item.id}}</td>
+              <td>{{props.item.id}}</td>
               <td>{{props.item.clientId}}</td>
               <td>{{props.item.recordType}}</td>
-              <td>{{props.item.createDate}}</td>
+              <td class="text-xs-center">{{props.item.createDate}}</td>
+              <td class="text-xs-center">{{props.item.createTime}}</td>
             </tr>
           </template>
         </v-data-table>

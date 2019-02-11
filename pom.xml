@@ -20,7 +20,7 @@
 	<repositories>
 	<repository>
          <id>localrepository</id>
-         <url>file://C:/Users/TObritzh/.m2/repository</url>
+         <url>file://C:/Users/hgoeritz/.m2/repository</url>
       </repository>
 		<repository>
 			<id>apache-repo</id>
