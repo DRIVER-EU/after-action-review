@@ -115,7 +115,7 @@
 		<dependency>
 			<groupId>driver.eu</groupId>
 			<artifactId>xml-json-to-avro-mapper</artifactId>
-			<version>0.0.1</version>
+			<version>1.0.1</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
