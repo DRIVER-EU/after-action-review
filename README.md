@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DRIVER-EU/after-action-review.svg?branch=master)](https://travis-ci.org/DRIVER-EU/after-action-review)
+
 # After-Action Review
 
 The After-Action Review (AAR) tool provides the possibility to show and review data that has been collected during and after a trial.
