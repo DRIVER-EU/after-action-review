@@ -18,10 +18,6 @@
 	</parent>
 	
 	<repositories>
-	<repository>
-         <id>localrepository</id>
-         <url>file://C:/Users/hgoeritz/.m2/repository</url>
-      </repository>
 		<repository>
 			<id>apache-repo</id>
 			<name>Apache Repository</name>
@@ -30,6 +26,14 @@
 		<repository>
 			<id>confluent</id>
 			<url>http://packages.confluent.io/maven/</url>
+		</repository>
+		<repository>
+			<id>driver-mvn-repo</id>
+			<url>https://raw.github.com/DRIVER-EU/maven-repo/master/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
 		</repository>
 	</repositories>
 
