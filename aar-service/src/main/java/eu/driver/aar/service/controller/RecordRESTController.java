@@ -40,12 +40,13 @@ public class RecordRESTController implements IAdaptorCallback {
 	}
 	
 	@Override
-	public void messageReceived(IndexedRecord key, IndexedRecord receivedMessage) {
+	public void messageReceived(IndexedRecord key, IndexedRecord receivedMessage, String topicName) {
 		Record record = new Record();
 		record.setCreateDate(new Date());
 		record.setRecordType(receivedMessage.getSchema().getName());
 		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
 		record.setClientId(msgKey.getSenderID().toString());
+		record.setTopic(topicName);
 		
 		if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
 			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
@@ -65,7 +66,16 @@ public class RecordRESTController implements IAdaptorCallback {
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TSO_2_0")) {
 			eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
-		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TimingControl")) {
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("LargeDataUpdate")) {
+			eu.driver.model.core.LargeDataUpdate msg = (eu.driver.model.core.LargeDataUpdate) SpecificData.get().deepCopy(eu.driver.model.core.LargeDataUpdate.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("GeoJSONEnvelope")) {
+			eu.driver.model.geojson.GeoJSONEnvelope msg = (eu.driver.model.geojson.GeoJSONEnvelope) SpecificData.get().deepCopy(eu.driver.model.geojson.GeoJSONEnvelope.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		}
+		
+		
+		else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TimingControl")) {
 			eu.driver.model.core.TimingControl msg = (eu.driver.model.core.TimingControl) SpecificData.get().deepCopy(eu.driver.model.core.TimingControl.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 			
@@ -81,9 +91,23 @@ public class RecordRESTController implements IAdaptorCallback {
 		}
 		
 		if(record != null) {
-			record = recordRepo.saveAndFlush(record);
-			WSRecordNotification notification = new WSRecordNotification(record.getId(), record.getClientId(), record.getCreateDate(), record.getRecordType(), record.getRecordJson(), record.getRecordData());
-			WSController.getInstance().sendMessage(mapper.objectToJSONString(notification));	
+			try {
+				record = recordRepo.saveAndFlush(record);
+				String data = record.getRecordJson();
+				if (data.length() > 100) {
+					data = data.substring(0, 100);
+				}
+				WSRecordNotification notification = new WSRecordNotification(record.getId(), 
+						record.getClientId(),
+						record.getTopic(),
+						record.getCreateDate(), 
+						record.getRecordType(), 
+						record.getRecordJson(), 
+						data);
+				WSController.getInstance().sendMessage(mapper.objectToJSONString(notification));
+			} catch(Exception e) {
+				log.error("Error processing the message!", e);
+			}
 		}
 	}
 	
@@ -96,6 +120,10 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<List<Record>> getAllRecords() {
 		log.info("-->getAllRecords");
 		List<Record> records = recordRepo.findAll();
+		/*if (records.size() > 20) {
+			log.info("getAllRecords-->");
+			return new ResponseEntity<List<Record>>(records.subList(records.size()-20, records.size()-1), HttpStatus.OK);
+		} */
 		
 		log.info("getAllRecords-->");
 		return new ResponseEntity<List<Record>>(records, HttpStatus.OK);

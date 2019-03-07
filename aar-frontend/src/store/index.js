@@ -21,6 +21,7 @@ export const store = new Vuex.Store({
     filterOptions: {
       id: ["All"],
       clientId: ["All"],
+      topic: ["All"],
       recordType: ["All"]
     }
   },

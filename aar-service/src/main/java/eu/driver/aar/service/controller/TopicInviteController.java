@@ -21,14 +21,14 @@ public class TopicInviteController implements IAdaptorCallback {
 	}
 	
 	@Override
-	public void messageReceived(IndexedRecord key, IndexedRecord receivedMessage) {
+	public void messageReceived(IndexedRecord key, IndexedRecord receivedMessage, String topicName) {
 		
 		eu.driver.model.core.TopicInvite inviteMsg = (eu.driver.model.core.TopicInvite) SpecificData.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
 		if (inviteMsg.getId().toString().equalsIgnoreCase(CISAdapter.getInstance().getClientID()) && inviteMsg.getSubscribeAllowed()) {
 			CISAdapter.getInstance().addCallback(recordCallback, inviteMsg.getTopicName().toString());
 		}
 		
-		recordCallback.messageReceived(key, receivedMessage);
+		recordCallback.messageReceived(key, receivedMessage, topicName);
 	}
 
 	public RecordRESTController getRecordCallback() {

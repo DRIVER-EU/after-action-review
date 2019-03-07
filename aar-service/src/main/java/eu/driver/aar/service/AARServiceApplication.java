@@ -57,6 +57,15 @@ public class AARServiceApplication {
 		
 		Log logMsg = new Log(cisAdapter.getClientID(), (new Date()).getTime(), Level.INFO, "The AARService is up!" );
 		cisAdapter.addLogEntry(logMsg);
+		
+		
+		cisAdapter.addCallback(recordController, TopicConstants.STANDARD_TOPIC_CAP);
+		cisAdapter.addCallback(recordController, "flood_prediction_netcdf");
+		cisAdapter.addCallback(recordController, "flood_prediction_geojson");
+		cisAdapter.addCallback(recordController, "flood_actual");
+		cisAdapter.addCallback(recordController, "lcms_plots");
+		cisAdapter.addCallback(recordController, "crisissuite_htm_plots");
+		cisAdapter.addCallback(recordController, "crisissuite_stedin_plots");
 	}
 	
 	@Bean

@@ -27,19 +27,22 @@ public class Record {
 	@Column(unique=true, nullable=false)
 	private Long id;
 	
-	@Column(name="clientId", length=25)
+	@Column(name="clientId", length=255)
 	private String clientId = null;
 	
 	@Column(name="createDate")
 	private Date createDate;
 	
+	@Column(name="topic")
+	private String topic;
+	
 	@Column(name="recordType")
 	private String recordType;
 	
-	@Column(name="recordJson", length=4096)
+	@Column(name="recordJson", columnDefinition = "TEXT")
 	private String recordJson;
 	
-	@Column(name="recordData", length=4096)
+	@Column(name="recordData", columnDefinition = "TEXT")
 	private String recordData;
 	
 	public Record() {
@@ -61,13 +64,21 @@ public class Record {
 	public void setClientId(String clientId) {
 		this.clientId = clientId;
 	}
-	
+
 	public Date getCreateDate() {
 		return createDate;
 	}
 
 	public void setCreateDate(Date createDate) {
 		this.createDate = createDate;
+	}
+
+	public String getTopic() {
+		return topic;
+	}
+
+	public void setTopic(String topic) {
+		this.topic = topic;
 	}
 
 	public String getRecordType() {

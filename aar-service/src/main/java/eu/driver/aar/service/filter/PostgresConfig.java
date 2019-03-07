@@ -67,7 +67,7 @@ public class PostgresConfig {
         hibernateProperties.setProperty("hibernate.format_sql", "true");
         hibernateProperties.setProperty("hibernate.id.new_generator_mappings", "true"); //Should pool the select nexval request but doesn't do so?
         hibernateProperties.setProperty("hbm2ddl.import_files", "schema.sql");
-        hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "create");
+        hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "update");
 
         hibernateProperties.setProperty("hibernate.generate_statistics", "false");
 

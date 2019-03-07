@@ -27,6 +27,7 @@ import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.WebSocketServer;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
+import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.model.core.Level;
 import eu.driver.model.core.Log;
 import eu.driver.model.core.TopicInvite;
@@ -70,7 +71,7 @@ public class WSNotificationController {
 		logRecord.setLevel(Level.INFO);
 		logRecord.setLog("This is the test log entry!");		
 		
-		WSRecordNotification notification = new WSRecordNotification(id, clientId, new Date(), "Log", logRecord.toString(), null);
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.LOGGING_TOPIC, new Date(), "Log", logRecord.toString(), null);
 		sendMessage(notification);
 		
 		log.info("sendLogRecordNotification -->");
@@ -105,7 +106,7 @@ public class WSNotificationController {
 		topicInvite.setPublishAllowed(publishAllowed);
 		topicInvite.setSubscribeAllowed(subscribeAllowed);
 		
-		WSRecordNotification notification = new WSRecordNotification(id, clientId, new Date(), "TopicInvite", topicInvite.toString(), null);
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.TOPIC_INVITE_TOPIC, new Date(), "TopicInvite", topicInvite.toString(), null);
 		sendMessage(notification);
 		
 		log.info("sendTopicinviteRecordNotification -->");

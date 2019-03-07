@@ -1,6 +1,6 @@
 <template>
       <v-flex xs9>
-      <v-card style="height: 93vh; overflow-y: auto">
+      <v-card style="height: 93vh; overflow: auto;">
         <v-data-table :items=filteredRecords hide-actions>
           <template slot="headers" slot-scope="props">
             <tr>
@@ -23,6 +23,15 @@
                 ></v-select>
               </th>
               <th>
+                <div class="primary--text" style="padding: 16px;">Topic</div>
+                <v-select
+                  :items="filterOptions.topic"
+                  label="All"
+                  single-line
+                  v-model="currentlySelectedTopicId"
+                ></v-select>
+              </th>
+              <th>
                 <div class="primary--text" style="padding: 16px;">Type</div>
                 <v-select
                   :items="filterOptions.recordType"
@@ -39,10 +48,11 @@
               </th>
             </tr>
           </template>
-          <template slot="items" slot-scope="props" style="max-height: 500px; overflow-y: scroll;" >
+          <template slot="items" slot-scope="props" style="height: 93vh; overflow: auto;" >
             <tr @click="recordSelected(props.item.id, props.item.recordType, props.item.recordJson)">
               <td>{{props.item.id}}</td>
               <td>{{props.item.clientId}}</td>
+              <td>{{props.item.topic}}</td>
               <td>{{props.item.recordType}}</td>
               <td class="text-xs-center">{{props.item.createDate}}</td>
               <td class="text-xs-center">{{props.item.createTime}}</td>
@@ -61,6 +71,7 @@
       return {
         currentlySelectedId: 'All',
         currentlySelectedClientId: 'All',
+        currentlySelectedTopicId: 'All',
         currentlySelectedRecordType: 'All'
       }
     },
@@ -76,8 +87,9 @@
         return this.records.filter((i) => {
           let idMatch = this.currentlySelectedId === "All" || this.currentlySelectedId === i.id
           let clientIdMatch = this.currentlySelectedClientId === "All" || this.currentlySelectedClientId === i.clientId
+          let topicIdMatch = this.currentlySelectedTopicId === "All" || this.currentlySelectedTopicId === i.topic
           let recordTypeMatch = this.currentlySelectedRecordType === "All" || this.currentlySelectedRecordType === i.recordType
-          return idMatch && clientIdMatch && recordTypeMatch
+          return idMatch && clientIdMatch && topicIdMatch && recordTypeMatch
         })
       }
     },
