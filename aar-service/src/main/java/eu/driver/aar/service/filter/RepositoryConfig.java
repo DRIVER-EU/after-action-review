@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
 
-import eu.driver.aar.service.dto.record.Record;
+import eu.driver.aar.service.dto.Record;
 
 @Configuration
 public class RepositoryConfig extends RepositoryRestConfigurerAdapter {

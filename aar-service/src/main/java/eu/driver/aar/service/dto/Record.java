@@ -1,4 +1,4 @@
-package eu.driver.aar.service.dto.record;
+package eu.driver.aar.service.dto;
 
 import java.util.Date;
 
@@ -30,8 +30,14 @@ public class Record {
 	@Column(name="clientId", length=255)
 	private String clientId = null;
 	
+	@Column(name="sessionId")
+	private String sessionId;
+	
 	@Column(name="createDate")
 	private Date createDate;
+	
+	@Column(name="trialDate")
+	private Date trialDate;
 	
 	@Column(name="topic")
 	private String topic;
@@ -71,6 +77,14 @@ public class Record {
 
 	public void setCreateDate(Date createDate) {
 		this.createDate = createDate;
+	}
+
+	public Date getTrialDate() {
+		return trialDate;
+	}
+
+	public void setTrialDate(Date trialDate) {
+		this.trialDate = trialDate;
 	}
 
 	public String getTopic() {
