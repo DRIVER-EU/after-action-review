@@ -41,7 +41,7 @@ public class PostgresConfig {
 	@SuppressWarnings("serial")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
-        entityManagerFactoryBean.setPersistenceUnitName("AARSerivice");
+        entityManagerFactoryBean.setPersistenceUnitName("AARService");
         entityManagerFactoryBean.setDataSource(dataSource());
         entityManagerFactoryBean.setPackagesToScan("eu.driver.aar.service.dto");
         entityManagerFactoryBean.setJpaProperties(buildHibernateProperties());

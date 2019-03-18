@@ -14,6 +14,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.QueryParam;
 
@@ -64,6 +65,9 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	@Autowired
 	SessionRepository sessionRepo;
+	
+	@PersistenceContext(unitName = "AARService")
+	private EntityManager entityManager;
 
 	public RecordRESTController() {
 		log.info("RecordRESTController");
@@ -168,10 +172,6 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<List<Record>> getAllRecords() {
 		log.info("-->getAllRecords");
 		List<Record> records = recordRepo.findAll();
-		/*if (records.size() > 20) {
-			log.info("getAllRecords-->");
-			return new ResponseEntity<List<Record>>(records.subList(records.size()-20, records.size()-1), HttpStatus.OK);
-		} */
 		
 		log.info("getAllRecords-->");
 		return new ResponseEntity<List<Record>>(records, HttpStatus.OK);
@@ -287,10 +287,10 @@ public class RecordRESTController implements IAdaptorCallback {
 	@RequestMapping(value = "/AARService/addNewSession", method = RequestMethod.POST)
 	@ApiImplicitParams({
 		@ApiImplicitParam(name = "szenarioID", value = "the id of the szenario", required = true, dataType = "string", paramType = "query"),
-		@ApiImplicitParam(name = "sessionID", value = "the id of the trial", required = true, dataType = "string", paramType = "query"),
-        @ApiImplicitParam(name = "sessionName", value = "the name of the trial", required = true, dataType = "string", paramType = "query"),
-        @ApiImplicitParam(name = "startDate", value = "the startDate of the trial", required = true, dataType = "date", paramType = "query"),
-        @ApiImplicitParam(name = "endDate", value = "the endDate of the trial", required = true, dataType = "date", paramType = "query")
+		@ApiImplicitParam(name = "sessionID", value = "the id of the session", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "sessionName", value = "the name of the session", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "startDate", value = "the startDate of the session", required = true, dataType = "date", paramType = "query"),
+        @ApiImplicitParam(name = "endDate", value = "the endDate of the session", required = true, dataType = "date", paramType = "query")
       })
 	@ApiResponses(value = {
 			@ApiResponse(code = 200, message = "Success", response = Boolean.class),
@@ -341,10 +341,8 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<List<Record>> getAllTimelineRecords() {
 		log.info("-->getAllTimelineRecords");
 		
-		EntityManagerFactory factory = Persistence.createEntityManagerFactory("AARSerivice");
-		EntityManager em = factory.createEntityManager();
-		String query = "SELECT NEW Record(i.id, i.topic, i.recordType) FROM Record";
-		TypedQuery<Record> typedQuery = em.createQuery(query , Record.class);
+		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate) FROM Record i";
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query , Record.class);
 		List<Record> records = typedQuery.getResultList();
 		
 		log.info("getAllTimelineRecords-->");

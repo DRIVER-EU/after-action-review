@@ -54,6 +54,13 @@ public class Record {
 	public Record() {
 		
 	}
+	
+	public Record(Long id, String topic, String recordType, Date createDate) {
+		this.id = id;
+		this.topic = topic;
+		this.recordType = recordType;
+		this.createDate = createDate;
+	}
 
 	public Long getId() {
 		return id;
