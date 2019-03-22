@@ -9,6 +9,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import RecordsTable from './components/RecordsTable'
 import DetailsPanel from './components/DetailsPanel'
+import TimelinePanel from './components/TimelinePanel'
 
 export const eventBus = new Vue()
 
@@ -39,6 +40,7 @@ Vue.config.productionTip = false
 
 Vue.component('records-table', RecordsTable)
 Vue.component('details-panel', DetailsPanel)
+Vue.component('timeline-panel', TimelinePanel)
 
 /* eslint-disable no-new */
 new Vue({

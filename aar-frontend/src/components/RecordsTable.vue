@@ -1,6 +1,6 @@
 <template>
-      <v-flex xs9>
-      <v-card style="height: 93vh; overflow: auto;">
+  <v-flex>
+      <v-card>
         <v-data-table :items=filteredRecords hide-actions>
           <template slot="headers" slot-scope="props">
             <tr>
@@ -60,7 +60,7 @@
           </template>
         </v-data-table>
       </v-card>
-      </v-flex>
+  </v-flex>
 </template>
 
 <script>
