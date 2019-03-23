@@ -80,7 +80,6 @@
         return this.$store.getters.records
       },
       filterOptions: function() {
-
         return this.$store.getters.filterOptions
       },
       filteredRecords: function() {

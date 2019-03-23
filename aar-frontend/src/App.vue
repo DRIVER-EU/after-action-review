@@ -8,10 +8,10 @@
     <main>
       <v-flex xs9>
           <v-flex>
-            <records-table style="height: 73vh; overflow: auto;" />
+            <records-table style="height: 63vh; overflow: auto;" />
           </v-flex>
           <v-flex>
-            <timeline-panel style="height: 20vh; overflow: auto;" />
+            <timeline-panel style="height: 30vh; overflow: auto;" />
           </v-flex>
       </v-flex>
       <v-flex xs3>

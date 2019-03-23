@@ -7,9 +7,11 @@ import 'vuetify/dist/vuetify.min.css'
 import VueNativeSock from 'vue-native-websocket'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
+import { Timeline } from 'vue2vis';
 import RecordsTable from './components/RecordsTable'
 import DetailsPanel from './components/DetailsPanel'
 import TimelinePanel from './components/TimelinePanel'
+import "vue2vis/dist/vue2vis.css"
 
 export const eventBus = new Vue()
 
@@ -41,6 +43,7 @@ Vue.config.productionTip = false
 Vue.component('records-table', RecordsTable)
 Vue.component('details-panel', DetailsPanel)
 Vue.component('timeline-panel', TimelinePanel)
+Vue.component('timeline', Timeline)
 
 /* eslint-disable no-new */
 new Vue({
@@ -49,6 +52,8 @@ new Vue({
   store,
   render: h => h(App),
   created() {
-      this.$store.dispatch('getRecords')
+    this.$store.dispatch('getRecords');
+    this.$store.dispatch('getAllTimelineRecords');
+    this.$store.dispatch('getActualTrial');
   }
 })
