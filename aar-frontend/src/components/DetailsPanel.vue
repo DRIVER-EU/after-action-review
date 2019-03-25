@@ -1,6 +1,6 @@
 <template>
-  <v-flex xs3>
-    <v-card style="height: 93vh; overflow: auto;">
+  <v-flex>
+    <v-card>
       <v-card-title class="justify-center primary--text">Details</v-card-title>
       <v-card-text v-if="!recordJson" class="text-xs-center">Choose an entry from the list to show it's details.</v-card-text>
       <v-card-text v-else>

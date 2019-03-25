@@ -25,3 +25,4 @@ hs_err_pid*
 /.project
 /aar-frontend/node
 /aar-service/src/main/resources/public
+aar-frontend/target
