@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiResponses;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import org.apache.avro.generic.IndexedRecord;
@@ -24,17 +26,22 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.driver.aar.service.dto.Record;
+import eu.driver.aar.service.dto.RecordFilter;
 import eu.driver.aar.service.dto.Session;
 import eu.driver.aar.service.dto.Szenario;
+import eu.driver.aar.service.dto.TopicReceiver;
 import eu.driver.aar.service.dto.Trial;
 import eu.driver.aar.service.repository.RecordRepository;
 import eu.driver.aar.service.repository.SessionRepository;
 import eu.driver.aar.service.repository.SzenarioRepository;
+import eu.driver.aar.service.repository.TopicReceiverRepository;
 import eu.driver.aar.service.repository.TrialRepository;
 import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
@@ -54,6 +61,8 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 	
+	private RecordFilter actualFilter = new RecordFilter();
+	
 	@Autowired
 	RecordRepository recordRepo;
 	
@@ -65,6 +74,11 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	@Autowired
 	SessionRepository sessionRepo;
+	
+	@Autowired
+	TopicReceiverRepository topicReceiverRepo;
+	
+	
 	
 	@PersistenceContext(unitName = "AARService")
 	private EntityManager entityManager;
@@ -90,6 +104,23 @@ public class RecordRESTController implements IAdaptorCallback {
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("TopicInvite")) {
 			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			
+			// create the TopicReceiver entries
+			String clientId = msg.getId().toString();
+			String receiverTopicName = msg.getTopicName().toString();
+			Boolean subscribeAllowed = msg.getSubscribeAllowed();
+			if (subscribeAllowed) {
+				String trialId = "unknown";
+				TopicReceiver topicReceiver = topicReceiverRepo.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
+				if (topicReceiver == null) {
+					topicReceiver = new TopicReceiver();
+					topicReceiver.setClientId(clientId);
+					topicReceiver.setTopicName(receiverTopicName);
+					topicReceiver.setTrialId(trialId);
+					
+					topicReceiverRepo.saveAndFlush(topicReceiver);
+				}
+			}
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Alert")) {
 			eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
@@ -113,6 +144,25 @@ public class RecordRESTController implements IAdaptorCallback {
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("SessionMgmt")) {
 			eu.driver.model.core.SessionMgmt msg = (eu.driver.model.core.SessionMgmt) SpecificData.get().deepCopy(eu.driver.model.core.SessionMgmt.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			
+			// check the session
+			String trialId = msg.getTrialId().toString();
+			Trial trial = trialRepo.findObjectByTrialId(trialId);
+			if (trial == null) {
+				
+			}
+			
+			String szenarioId = msg.getScenarioId().toString();
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(szenarioId);
+			if (szenario == null) {
+				
+			}
+			
+			String sessionId = msg.getSessionId().toString();
+			Session session = sessionRepo.findObjectBySessionId(sessionId);
+			if (session == null) {
+				
+			}
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("PhaseMessage")) {
 			eu.driver.model.core.PhaseMessage msg = (eu.driver.model.core.PhaseMessage) SpecificData.get().deepCopy(eu.driver.model.core.PhaseMessage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
@@ -175,6 +225,23 @@ public class RecordRESTController implements IAdaptorCallback {
 		
 		log.info("getAllRecords-->");
 		return new ResponseEntity<List<Record>>(records, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "getRecord", nickname = "getRecord")
+	@RequestMapping(value = "/AARService/getRecord/{id}", method = RequestMethod.GET)
+	@ApiImplicitParams({
+        @ApiImplicitParam(name = "id", value = "the id of the log record", required = true, dataType = "long", paramType = "path")
+      })
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
+	public ResponseEntity<Record> getRecord(@PathVariable Long id) {
+		log.info("-->getAllRecords");
+		Record record = recordRepo.findObjectById(id);
+		
+		log.info("getAllRecords-->");
+		return new ResponseEntity<Record>(record, HttpStatus.OK);
 	}
 	
 	@ApiOperation(value = "getActualTrial", nickname = "getActualTrial")
@@ -347,6 +414,79 @@ public class RecordRESTController implements IAdaptorCallback {
 		
 		log.info("getAllTimelineRecords-->");
 		return new ResponseEntity<List<Record>>(records, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "getActualFilter", nickname = "getActualFilter")
+	@RequestMapping(value = "/AARService/getActualFilter", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
+			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
+	public ResponseEntity<RecordFilter> getActualFilter() {
+		log.info("-->getActualFilter");
+		
+		log.info("getActualFilter-->");
+		return new ResponseEntity<RecordFilter>(this.actualFilter, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "setActualFilter", nickname = "setActualFilter")
+	@RequestMapping(value = "/AARService/setActualFilter", method = RequestMethod.POST )
+	@ApiImplicitParams({
+        @ApiImplicitParam(name = "filter", value = "the filter that should be applied", required = true, dataType = "json", paramType = "body")
+      })
+	@ApiResponses(value = { 
+            @ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
+            @ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
+            @ApiResponse(code = 500, message = "Failure", response = RecordFilter.class)})
+	public ResponseEntity<RecordFilter> setActualFilter(@RequestBody RecordFilter filter) {
+		log.info("-->setActualFilter");
+		
+		this.actualFilter = filter;
+		
+		log.info("setActualFilter-->");
+		return new ResponseEntity<RecordFilter>(this.actualFilter, HttpStatus.OK);
+	}
+	
+	public ResponseEntity<List<String>> getRecordTypes() {
+		log.info("-->getRecordTypes");
+		
+		log.info("getRecordTypes-->");
+		return new ResponseEntity<List<String>>(new ArrayList<String>(), HttpStatus.OK);
+	}
+	
+	public ResponseEntity<List<String>> getTopicNames() {
+		log.info("-->getTopicNames");
+		
+		log.info("getTopicNames-->");
+		return new ResponseEntity<List<String>>(new ArrayList<String>(), HttpStatus.OK);
+	}
+	
+	public ResponseEntity<List<String>> getSenderClientIds() {
+		log.info("-->getSenderClientIds");
+		
+		log.info("getSenderClientIds-->");
+		return new ResponseEntity<List<String>>(new ArrayList<String>(), HttpStatus.OK);
+	}
+	
+	public ResponseEntity<List<String>> getReceiverClientIds() {
+		log.info("-->getReceiverClientIds");
+		
+		log.info("getReceiverClientIds-->");
+		return new ResponseEntity<List<String>>(new ArrayList<String>(), HttpStatus.OK);
+	}
+	
+	public ResponseEntity<String> createSequenceDiagram() {
+		log.info("-->createSequenceDiagram");
+		
+		log.info("createSequenceDiagram-->");
+		return new ResponseEntity<String>("", HttpStatus.OK);
+	}
+	
+	public ResponseEntity<Boolean> exportData() {
+		log.info("-->exportData");
+		
+		log.info("exportData-->");
+		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
 	}
 	
 
