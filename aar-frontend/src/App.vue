@@ -6,17 +6,17 @@
       <v-spacer></v-spacer>
     </v-toolbar>
     <main>
-      <v-flex xs9>
-          <v-flex>
-            <records-table style="height: 63vh; overflow: auto;" />
-          </v-flex>
-          <v-flex>
-            <timeline-panel style="height: 30vh; overflow: auto;" />
-          </v-flex>
-      </v-flex>
-      <v-flex xs3>
-        <details-panel style="height: 93vh; overflow: auto;" />
-      </v-flex>
+      <v-layout row wrap>
+        <v-flex xs9>
+          <records-table style="height: 53vh; overflow: auto;" />
+        </v-flex>
+        <v-flex xs3>
+          <details-panel style="height: 53vh; overflow: auto;" />
+        </v-flex>
+        <v-flex xs12>
+          <timeline-panel style="height: 40vh; overflow: auto;" />
+        </v-flex>
+      </v-layout>
     </main>
   </v-app>
 </template>

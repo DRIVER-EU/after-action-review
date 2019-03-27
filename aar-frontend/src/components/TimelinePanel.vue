@@ -1,6 +1,6 @@
 <template>
   <v-flex>
-    <v-card>
+    <v-card style="border-top: 1px solid #999999;">
       <v-card-title class="justify-center primary--text">Timeline</v-card-title>
       <v-card-text v-if="!items" class="text-xs-center">Loading...</v-card-text>
       <v-card-text v-else>
@@ -20,6 +20,14 @@
 
   import {eventBus} from '../main'
 
+  const GROUP_TRIALS = 1;
+
+  const GROUP_SCENARIOS = 2;
+
+  const GROUP_SESSIONS = 3;
+
+  const GROUP_RECORDS = 4;
+
   export default {
     name: 'TimelinePanel',
     data: function () {
@@ -27,13 +35,16 @@
         recordID: '',
         recordData: null,
         groups: [{
-          id: 1,
+          id: GROUP_TRIALS,
           content: 'Trials'
         }, {
-          id: 2,
+          id: GROUP_SCENARIOS,
           content: 'Scenarios'
         }, {
-          id: 3,
+          id: GROUP_SESSIONS,
+          content: 'Sessions'
+        }, {
+          id: GROUP_RECORDS,
           content: 'Events'
         }],
       }
@@ -43,20 +54,25 @@
       items: function () {
         const trial = this.$store.state.trial;
         const records = this.getRecords();
-        console.log("itemsx", trial, records);
+        const items = [];
         if (trial != null && records != null) {
-          const scenarios = trial.szenarioList || [];
-          const items = [];
           items.push(this.createTrialItem(trial));
+          const scenarios = trial.szenarioList || [];
           for (let i = 0; i < scenarios.length; i++) {
-            items.push(this.createScenarioItem(scenarios[i]));
+            const scenario = scenarios[i];
+            items.push(this.createScenarioItem(scenario));
+            const sessions = scenario.sessionList || [];
+            for (let j = 0; j < sessions.length; j++) {
+              const session = sessions[j];
+              items.push(this.createSessionItem(session));
+            }
           }
           for (let i = 0; i < records.length; i++) {
             items.push(this.createRecordItem(records[i]));
           }
           console.log("Rendering items", items);
-          return items;
         }
+        return items;
       },
       options: function() {
         const records = this.getRecords();
@@ -87,7 +103,7 @@
       },
       createTrialItem: function(trial) {
         return {
-          group: 1,
+          group: GROUP_TRIALS,
           start: new Date(trial.startDate),
           end: new Date(trial.endDate),
           content: trial.trialName,
@@ -95,17 +111,26 @@
       },
       createScenarioItem: function(scenario) {
         return {
-          group: 2,
+          group: GROUP_SCENARIOS,
           start: new Date(scenario.startDate),
           end: new Date(scenario.endDate),
           content: scenario.szenarioName,
         }
       },
+      createSessionItem: function(session) {
+        return {
+          group: GROUP_SESSIONS,
+          start: new Date(session.startDate),
+          end: new Date(session.endDate),
+          content: session.sessionName,
+        }
+      },
       createRecordItem: function(record) {
         return {
-          group: 3,
+          group: GROUP_RECORDS,
           start: new Date(record.createDate),
           content: "" + record.id,
+          className: record.recordType
         }
       },
     },
