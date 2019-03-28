@@ -49,7 +49,7 @@
             </tr>
           </template>
           <template slot="items" slot-scope="props" style="height: 93vh; overflow: auto;" >
-            <tr @click="recordSelected(props.item.id, props.item.recordType, props.item.recordJson)">
+            <tr @click="recordSelected(props.item.id, props.item.recordType)">
               <td>{{props.item.id}}</td>
               <td>{{props.item.clientId}}</td>
               <td>{{props.item.topic}}</td>
@@ -65,9 +65,10 @@
 
 <script>
   import {eventBus} from "../main";
+
   export default {
     name: "RecordsTable",
-    data() {
+    data: function() {
       return {
         currentlySelectedId: 'All',
         currentlySelectedClientId: 'All',
@@ -93,8 +94,8 @@
       }
     },
     methods: {
-      recordSelected: function(recordID, recordType, recordJson) {
-        eventBus.$emit('recordSelected', recordID, recordType, recordJson)
+      recordSelected: function(recordID, recordType) {
+        eventBus.$emit('recordSelected', recordID, recordType)
       }
     },
     watch: {

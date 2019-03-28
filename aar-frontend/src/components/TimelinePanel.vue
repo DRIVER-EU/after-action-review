@@ -7,7 +7,9 @@
         <timeline ref="timeline"
                   :items="items"
                   :groups="groups"
-                  :options="options">
+                  :options="options"
+                  :events="['click']"
+                  @click="handleClick">
         </timeline>
       </v-card-text>
     </v-card>
@@ -79,6 +81,7 @@
         const options = {
           editable: false,
           stack: false,
+          selectable: false,
         };
         if (records != null) {
           /*
@@ -97,6 +100,10 @@
       }
     },
     methods: {
+      handleClick: function(data) {
+        const recordId = data.item;
+        eventBus.$emit('recordSelected', recordId, null)
+      },
       getRecords: function() {
         const records = this.$store.state.timelineRecords;
         return records != null ? records : null; // .slice(0, Math.min(1000, records.length - 1))
@@ -127,6 +134,7 @@
       },
       createRecordItem: function(record) {
         return {
+          id: record.id,
           group: GROUP_RECORDS,
           start: new Date(record.createDate),
           content: "" + record.id,

@@ -19,6 +19,7 @@ export const store = new Vuex.Store({
     },
     records: [],
     timelineRecords: null,
+    record: null,
     trial: null,
     filterOptions: {
       id: ['All'],
@@ -84,6 +85,9 @@ export const store = new Vuex.Store({
         createFilterOptions(newRecord, state.filterOptions)
       })
     },
+    GET_RECORD (state, record) {
+      state.record = record;
+    },
     GET_TIMELINE_RECORDS (state, records) {
       state.timelineRecords = records;
     },
@@ -92,6 +96,11 @@ export const store = new Vuex.Store({
     }
   },
   actions: {
+    getRecord (context, payload) {
+      this.axios.get('getRecord/' + payload.id).then(response => {
+        context.commit('GET_RECORD', (response.data))
+      }).catch(ex => console.log(ex))
+    },
     getRecords (context) {
       this.axios.get('getAllRecords').then(response => {
         context.commit('GET_RECORDS', (response.data))
