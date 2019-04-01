@@ -17,6 +17,7 @@ import eu.driver.aar.service.controller.RecordRESTController;
 import eu.driver.aar.service.controller.TopicInviteController;
 import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.adapter.core.CISAdapter;
+import eu.driver.adapter.excpetion.CommunicationException;
 import eu.driver.adapter.properties.ClientProperties;
 import eu.driver.model.core.Level;
 import eu.driver.model.core.Log;
@@ -59,16 +60,19 @@ public class AARServiceApplication {
 			cisAdapter.addLogCallback(recordController);
 			
 			Log logMsg = new Log(cisAdapter.getClientID(), (new Date()).getTime(), Level.INFO, "The AARService is up!" );
-			cisAdapter.addLogEntry(logMsg);
+			try {
+				cisAdapter.addLogEntry(logMsg);	
+			} catch(CommunicationException cEx) {
+				log.error("Error sending the log entry to the topic!", cEx);
+			}
 			
-			
-			cisAdapter.addCallback(recordController, TopicConstants.STANDARD_TOPIC_CAP);
+			/*cisAdapter.addCallback(recordController, TopicConstants.STANDARD_TOPIC_CAP);
 			cisAdapter.addCallback(recordController, "flood_prediction_netcdf");
 			cisAdapter.addCallback(recordController, "flood_prediction_geojson");
 			cisAdapter.addCallback(recordController, "flood_actual");
 			cisAdapter.addCallback(recordController, "lcms_plots");
 			cisAdapter.addCallback(recordController, "crisissuite_htm_plots");
-			cisAdapter.addCallback(recordController, "crisissuite_stedin_plots");
+			cisAdapter.addCallback(recordController, "crisissuite_stedin_plots");*/
 		}
 	}
 	

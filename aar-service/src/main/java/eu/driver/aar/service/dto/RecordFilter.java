@@ -71,4 +71,26 @@ public class RecordFilter {
 	public void setReceiverClientId(String receiverClientId) {
 		this.receiverClientId = receiverClientId;
 	}
+	
+	public boolean isFilterEnabled() {
+		boolean enabled = false;
+		
+		if (this.id != null) {
+			enabled = true;
+		} else if (this.fromDate != null) {
+			enabled = true;
+		} else if (this.toDate != null) {
+			enabled = true;
+		} else if (this.recordType != null) {
+			enabled = true;
+		} else if (this.topicName != null) {
+			enabled = true;
+		} else if (this.senderClientId != null) {
+			enabled = true;
+		} else if (this.receiverClientId != null) {
+			enabled = true;
+		} 
+		
+		return enabled;
+	}
 }
