@@ -12,14 +12,15 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "json-tree-view": "^0.4.10",
     "lodash.uniqueid": "^4.0.1",
     "material-icons": "^0.1.0",
     "moment": "^2.21.0",
+    "vis": "^4.21.0",
     "vue": "^2.5.2",
     "vue-axios": "^2.0.2",
     "vue-native-websocket": "^2.0.5",
     "vue-router": "^3.0.1",
-    "vue2vis": "0.0.16",
     "vuetify": "^0.17.7",
     "vuex": "^3.0.1"
   },

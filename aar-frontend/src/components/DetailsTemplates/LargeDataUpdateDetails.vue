@@ -16,7 +16,7 @@
           <v-subheader style="align-items: normal;">Url:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{dataJson.url}}
+          {{recordData.url}}
         </v-flex>
       </v-layout>
     </li>
@@ -26,7 +26,7 @@
           <v-subheader style="align-items: normal;">DataType:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{dataJson.dataType}}
+          {{recordData.dataType}}
         </v-flex>
       </v-layout>
     </li>
@@ -36,7 +36,7 @@
           <v-subheader style="align-items: normal;">Title:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{dataJson.title}}
+          {{recordData.title}}
         </v-flex>
       </v-layout>
     </li>
@@ -46,7 +46,7 @@
           <v-subheader style="align-items: normal;">Description:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{dataJson.description}}
+          {{recordData.description}}
         </v-flex>
       </v-layout>
     </li>
@@ -54,10 +54,10 @@
 </template>
 
 <script>
-    export default {
-        name: "LargeDataUpdate",
-      props: ['recordID','dataJson']
-    }
+  export default {
+    name: 'LargeDataUpdate',
+    props: ['recordID', 'recordData']
+  };
 </script>
 
 <style scoped>

@@ -16,7 +16,7 @@
           <v-subheader style="align-items: normal;">Sender:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{alertJson.sender}}
+          {{record.recordData.sender}}
         </v-flex>
       </v-layout>
     </li>
@@ -26,7 +26,7 @@
           <v-subheader style="align-items: normal;">Date/Time:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{alertJson.sent}}
+          {{record.createDate}} {{record.createTime}}
         </v-flex>
       </v-layout>
     </li>
@@ -36,7 +36,7 @@
           <v-subheader style="align-items: normal;">Message:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{alertJson}}
+          <json-tree :json="record.recordJson"></json-tree>
         </v-flex>
       </v-layout>
     </li>
@@ -44,10 +44,10 @@
 </template>
 
 <script>
-    export default {
-        name: "Alert",
-      props: ['recordID','alertJson']
-    }
+  export default {
+    name: 'Alert',
+    props: ['recordID', 'record']
+  };
 </script>
 
 <style scoped>

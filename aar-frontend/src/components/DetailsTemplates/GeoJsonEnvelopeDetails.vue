@@ -16,7 +16,7 @@
           <v-subheader style="align-items: normal;">Client ID:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{logJson.id}}
+          {{record.clientId}}
         </v-flex>
       </v-layout>
     </li>
@@ -26,7 +26,7 @@
           <v-subheader style="align-items: normal;">Date/Time:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{logJson.dateTimeSent}}
+          {{record.createDate}} {{record.createTime}}
         </v-flex>
       </v-layout>
     </li>
@@ -36,7 +36,7 @@
           <v-subheader style="align-items: normal;">Level:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{logJson.level}}
+          {{record.level}}
         </v-flex>
       </v-layout>
     </li>
@@ -46,7 +46,7 @@
           <v-subheader style="align-items: normal;">Message:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{logJson.log}}
+          <json-tree :json="record.recordJson"></json-tree>
         </v-flex>
       </v-layout>
     </li>
@@ -54,10 +54,10 @@
 </template>
 
 <script>
-    export default {
-        name: "GeoJsonEnvelope",
-      props: ['recordID','envelopeJson']
-    }
+  export default {
+    name: 'GeoJsonEnvelope',
+    props: ['recordID', 'record']
+  };
 </script>
 
 <style scoped>

@@ -16,7 +16,7 @@
           <v-subheader style="align-items: normal;">ID:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{inviteJson.id}}
+          {{recordData.id}}
         </v-flex>
       </v-layout>
     </li>
@@ -26,7 +26,7 @@
           <v-subheader style="align-items: normal;">Topic name:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{inviteJson.topicName}}
+          {{recordData.topicName}}
         </v-flex>
       </v-layout>
     </li>
@@ -36,7 +36,7 @@
           <v-subheader style="align-items: normal;">Subscribing allowed:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{inviteJson.subscribeAllowed}}
+          {{recordData.subscribeAllowed}}
         </v-flex>
       </v-layout>
     </li>
@@ -46,7 +46,7 @@
           <v-subheader style="align-items: normal;">Publishing allowed:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{inviteJson.publishAllowed}}
+          {{recordData.publishAllowed}}
         </v-flex>
       </v-layout>
     </li>
@@ -55,9 +55,9 @@
 
 <script>
   export default {
-    name: "InviteDetails",
-    props: ['recordID','inviteJson']
-  }
+    name: 'InviteDetails',
+    props: ['recordID', 'recordData']
+  };
 </script>
 
 <style scoped>
