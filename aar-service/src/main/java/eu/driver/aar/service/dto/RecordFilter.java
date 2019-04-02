@@ -93,4 +93,24 @@ public class RecordFilter {
 		
 		return enabled;
 	}
+	
+	public boolean meetsRecordFilter(Record record) {
+		boolean enabled = true;
+		
+		if (this.id != null || this.id == record.getId()) {
+			enabled = false;
+		} else if (this.fromDate != null && this.fromDate.before(record.getCreateDate())) {
+			enabled = false;
+		} else if (this.toDate != null && this.toDate.after(record.getCreateDate())) {
+			enabled = false;
+		} else if (this.recordType != null && this.recordType != record.getRecordType()) {
+			enabled = false;
+		} else if (this.topicName != null && this.topicName != record.getTopic()) {
+			enabled = false;
+		} else if (this.senderClientId != null && this.senderClientId != record.getClientId()) {
+			enabled = true;
+		}
+		
+		return enabled; 
+	}
 }

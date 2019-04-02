@@ -169,6 +169,13 @@
 			<version>42.1.4</version>
 		</dependency>
 
+		<dependency>
+			<groupId>net.sourceforge.plantuml</groupId>
+			<artifactId>plantuml</artifactId>
+			<version>8059</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

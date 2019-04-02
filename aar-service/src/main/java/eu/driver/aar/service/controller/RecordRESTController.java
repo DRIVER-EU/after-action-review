@@ -6,6 +6,10 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,11 +20,17 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.QueryParam;
 
+import net.sourceforge.plantuml.SourceStringReader;
+
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.specific.SpecificData;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -273,8 +283,10 @@ public class RecordRESTController implements IAdaptorCallback {
 				record = recordRepo.saveAndFlush(record);
 				// check if the record needs to be send via the websocket
 				boolean sendRecord = true;
+				// ToDo: check if record meets filter criteras, if yes, push it to the client
 				if (this.actualFilter != null && this.actualFilter.isFilterEnabled()) {
-					sendRecord = false;
+					// check if record meets filter criteria
+					sendRecord = this.actualFilter.meetsRecordFilter(record);
 				}
 				
 				if (sendRecord) {
@@ -503,9 +515,11 @@ public class RecordRESTController implements IAdaptorCallback {
 		log.info("-->getAllTimelineRecords");
 
 		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate) FROM Record i";
-		query += this.createFilterQuery();
-		TypedQuery<Record> typedQuery = entityManager.createQuery(query,
-				Record.class);
+		if (this.actualFilter == null) {
+			query += this.createFilterQuery();
+		}
+
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
 		List<Record> records = typedQuery.getResultList();
 
 		log.info("getAllTimelineRecords-->");
@@ -576,11 +590,38 @@ public class RecordRESTController implements IAdaptorCallback {
 				HttpStatus.OK);
 	}
 
-	public ResponseEntity<String> createSequenceDiagram() {
+	@ApiOperation(value = "createSequenceDiagram", nickname = "createSequenceDiagram")
+	@RequestMapping(value = "/AARService/createSequenceDiagram", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = byte[].class),
+			@ApiResponse(code = 400, message = "Bad Request", response = byte[].class),
+			@ApiResponse(code = 500, message = "Failure", response = byte[].class) })
+	public ResponseEntity<byte[]> createSequenceDiagram() {
 		log.info("-->createSequenceDiagram");
-
+		ByteArrayOutputStream bous = new ByteArrayOutputStream();
+		List<Record> records = getAllTimelineRecords().getBody();
+		if (records != null && records.size() > 0) {
+			List<TopicReceiver> receivers = topicReceiverRepo.findAll();
+			String source = createSequenceDiagramString(records, receivers);
+			SourceStringReader reader = new SourceStringReader(source);
+		    // Write the first image to "png"
+			String desc = null;
+		    try {
+				desc = reader.generateImage(bous);
+			} catch (IOException e) {
+				log.error("Error creating the sequence diagram!");
+			}
+		    // Return a null string if no generation
+		    byte[] media = bous.toByteArray();
+			
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.IMAGE_PNG);
+		    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
+		    log.info("createSequenceDiagram-->");
+		    return new ResponseEntity<byte[]>(media, headers, HttpStatus.OK);
+		}
 		log.info("createSequenceDiagram-->");
-		return new ResponseEntity<String>("", HttpStatus.OK);
+		return new ResponseEntity<byte[]>("".getBytes(), HttpStatus.OK);
 	}
 
 	public ResponseEntity<Boolean> exportData() {
@@ -589,7 +630,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		log.info("exportData-->");
 		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
 	}
-
+	
 	private String createFilterQuery() {
 		String query = "";
 		Boolean firstParam = true;
@@ -660,6 +701,16 @@ public class RecordRESTController implements IAdaptorCallback {
 
 		return query;
 
+	}
+	
+	private String createSequenceDiagramString(List<Record> records, List<TopicReceiver> receivers) {
+		log.info("-->createSequenceDiagramString");
+		String data = "@startuml\n";
+		data += "Bob -> Alice : hello\n";
+		data += "@enduml\n";
+
+		log.info("createSequenceDiagramString-->");
+		return data;
 	}
 
 }
