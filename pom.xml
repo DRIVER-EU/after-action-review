@@ -19,6 +19,14 @@
 	
 	<repositories>
 		<repository>
+			<id>driver-mvn-repo</id>
+			<url>https://raw.github.com/DRIVER-EU/maven-repo/master/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+		<repository>
 			<id>apache-repo</id>
 			<name>Apache Repository</name>
 			<url>https://repository.apache.org/content/repositories/releases</url>
@@ -26,14 +34,6 @@
 		<repository>
 			<id>confluent</id>
 			<url>http://packages.confluent.io/maven/</url>
-		</repository>
-		<repository>
-			<id>driver-mvn-repo</id>
-			<url>https://raw.github.com/DRIVER-EU/maven-repo/master/</url>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>always</updatePolicy>
-			</snapshots>
 		</repository>
 	</repositories>
 

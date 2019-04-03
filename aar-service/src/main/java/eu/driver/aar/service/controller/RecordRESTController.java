@@ -8,8 +8,6 @@ import io.swagger.annotations.ApiResponses;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,7 +22,6 @@ import net.sourceforge.plantuml.SourceStringReader;
 
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.specific.SpecificData;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -558,30 +555,66 @@ public class RecordRESTController implements IAdaptorCallback {
 				HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "getRecordTypes", nickname = "getRecordTypes")
+	@RequestMapping(value = "/AARService/getRecordTypes", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
 	public ResponseEntity<List<String>> getRecordTypes() {
 		log.info("-->getRecordTypes");
+		
+		String query = "SELECT DISTINCT (i.recordType) FROM Record i";
+		
+		TypedQuery<String> typedQuery = entityManager.createQuery(query, String.class);
+		List<String> records = typedQuery.getResultList();
 
 		log.info("getRecordTypes-->");
-		return new ResponseEntity<List<String>>(new ArrayList<String>(),
-				HttpStatus.OK);
+		return new ResponseEntity<List<String>>(records, HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "getTopicNames", nickname = "getTopicNames")
+	@RequestMapping(value = "/AARService/getTopicNames", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
 	public ResponseEntity<List<String>> getTopicNames() {
 		log.info("-->getTopicNames");
+		
+		String query = "SELECT DISTINCT (i.topic) FROM Record i";
+		
+		TypedQuery<String> typedQuery = entityManager.createQuery(query, String.class);
+		List<String> records = typedQuery.getResultList();
 
 		log.info("getTopicNames-->");
-		return new ResponseEntity<List<String>>(new ArrayList<String>(),
-				HttpStatus.OK);
+		return new ResponseEntity<List<String>>(records, HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "getSenderClientIds", nickname = "getSenderClientIds")
+	@RequestMapping(value = "/AARService/getSenderClientIds", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
 	public ResponseEntity<List<String>> getSenderClientIds() {
 		log.info("-->getSenderClientIds");
+		
+		String query = "SELECT DISTINCT (i.clientId) FROM Record i";
+		
+		TypedQuery<String> typedQuery = entityManager.createQuery(query, String.class);
+		List<String> records = typedQuery.getResultList();
 
 		log.info("getSenderClientIds-->");
-		return new ResponseEntity<List<String>>(new ArrayList<String>(),
-				HttpStatus.OK);
+		return new ResponseEntity<List<String>>(records, HttpStatus.OK);
 	}
 
+	@ApiOperation(value = "getReceiverClientIds", nickname = "getReceiverClientIds")
+	@RequestMapping(value = "/AARService/getReceiverClientIds", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
 	public ResponseEntity<List<String>> getReceiverClientIds() {
 		log.info("-->getReceiverClientIds");
 
