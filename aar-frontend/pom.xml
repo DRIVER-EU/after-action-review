@@ -8,6 +8,9 @@
 		<artifactId>aar-tool</artifactId>
 		<version>1.2.2</version>
 	</parent>
+	
+	<name>DRIVER+ AAR Tool Frontend</name>
+	<url>http://www.driverproject.eu</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -66,7 +69,7 @@
 						<phase>generate-resources</phase>
 						<!-- Optional configuration which provides for running any npm command -->
 						<configuration>
-							<arguments>install</arguments>
+							<arguments>install --force --no-optiopnal --no-package-lock</arguments>
 						</configuration>
 					</execution>
 					<!-- Build and minify static files -->
