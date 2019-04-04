@@ -99,8 +99,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		record.setTrialDate(CISAdapter.getInstance().getTrialTime());
 		record.setRecordType(receivedMessage.getSchema().getName());
 		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData
-				.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$,
-						key);
+				.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
 		record.setClientId(msgKey.getSenderID().toString());
 		record.setTopic(topicName);
 
@@ -108,14 +107,12 @@ public class RecordRESTController implements IAdaptorCallback {
 
 		if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
 			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData
-					.get().deepCopy(eu.driver.model.core.Log.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("TopicInvite")) {
 			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData
-					.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 
 			// create the TopicReceiver entries
@@ -125,8 +122,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			if (subscribeAllowed) {
 				String trialId = "unknown";
 				TopicReceiver topicReceiver = topicReceiverRepo
-						.findObjectByTrialClientTopic(trialId, clientId,
-								receiverTopicName);
+						.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
 				if (topicReceiver == null) {
 					topicReceiver = new TopicReceiver();
 					topicReceiver.setClientId(clientId);
@@ -139,34 +135,29 @@ public class RecordRESTController implements IAdaptorCallback {
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("Alert")) {
 			eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData
-					.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("SlRep")) {
 			eu.driver.model.mlp.SlRep msg = (eu.driver.model.mlp.SlRep) SpecificData
-					.get().deepCopy(eu.driver.model.mlp.SlRep.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.mlp.SlRep.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("FeatureCollection")) {
 			eu.driver.model.geojson.FeatureCollection msg = (eu.driver.model.geojson.FeatureCollection) SpecificData
 					.get().deepCopy(
-							eu.driver.model.geojson.FeatureCollection.SCHEMA$,
-							receivedMessage);
+							eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("TSO_2_0")) {
 			eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData
-					.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("LargeDataUpdate")) {
 			eu.driver.model.core.LargeDataUpdate msg = (eu.driver.model.core.LargeDataUpdate) SpecificData
 					.get().deepCopy(
-							eu.driver.model.core.LargeDataUpdate.SCHEMA$,
-							receivedMessage);
+							eu.driver.model.core.LargeDataUpdate.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 
 			// Todo: Download the file and save it to the Disk, replace the link
@@ -174,14 +165,12 @@ public class RecordRESTController implements IAdaptorCallback {
 				.equalsIgnoreCase("GeoJSONEnvelope")) {
 			eu.driver.model.geojson.GeoJSONEnvelope msg = (eu.driver.model.geojson.GeoJSONEnvelope) SpecificData
 					.get().deepCopy(
-							eu.driver.model.geojson.GeoJSONEnvelope.SCHEMA$,
-							receivedMessage);
+							eu.driver.model.geojson.GeoJSONEnvelope.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("SessionMgmt")) {
 			eu.driver.model.core.SessionMgmt msg = (eu.driver.model.core.SessionMgmt) SpecificData
-					.get().deepCopy(eu.driver.model.core.SessionMgmt.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.core.SessionMgmt.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 
 			// check the session
@@ -192,10 +181,9 @@ public class RecordRESTController implements IAdaptorCallback {
 				trial.setActual(true);
 				trial.setTrialName(msg.getTrialName().toString());
 				trial.setTrialId(msg.getTrialId().toString());
-			}
-			if (msg.getSessionState() == SessionState.START) {
 				trial.setStartDate(new Date());
-			} else {
+			}
+			if (msg.getSessionState()== SessionState.STOP) {
 				trial.setEndDate(new Date());
 			}
 
@@ -206,11 +194,10 @@ public class RecordRESTController implements IAdaptorCallback {
 				szenario.setTrial(trial);
 				szenario.setSzenarioId(msg.getScenarioId().toString());
 				szenario.setSzenarioName(msg.getScenarioName().toString());
+				szenario.setStartDate(new Date());
 				trial.addSzenario(szenario);
 			}
-			if (msg.getSessionState() == SessionState.START) {
-				szenario.setStartDate(new Date());
-			} else {
+			if (msg.getSessionState() == SessionState.STOP) {
 				szenario.setEndDate(new Date());
 			}
 
@@ -221,30 +208,26 @@ public class RecordRESTController implements IAdaptorCallback {
 				session.setSzenario(szenario);
 				session.setSessionId(msg.getSessionId().toString());
 				session.setSessionName(msg.getSessionName().toString());
-			}
-			if (msg.getSessionState() == SessionState.START) {
 				session.setStartDate(new Date());
-			} else {
+			}
+			if (msg.getSessionState() == SessionState.STOP) {
 				session.setEndDate(new Date());
 			}
 			trialRepo.saveAndFlush(trial);
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("PhaseMessage")) {
 			eu.driver.model.core.PhaseMessage msg = (eu.driver.model.core.PhaseMessage) SpecificData
-					.get().deepCopy(eu.driver.model.core.PhaseMessage.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.core.PhaseMessage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("RolePlayer")) {
 			eu.driver.model.core.RolePlayerMessage msg = (eu.driver.model.core.RolePlayerMessage) SpecificData
-					.get().deepCopy(eu.driver.model.core.RolePlayerMessage.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.core.RolePlayerMessage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("Timing")) {
 			eu.driver.model.core.Timing msg = (eu.driver.model.core.Timing) SpecificData
-					.get().deepCopy(eu.driver.model.core.Timing.SCHEMA$,
-							receivedMessage);
+					.get().deepCopy(eu.driver.model.core.Timing.SCHEMA$, receivedMessage);
 			if (!msg.getState().equals(currentTimingState)
 					|| msg.getTrialTimeSpeed() != currentTrialTimeSpeed) {
 				this.currentTimingState = msg.getState();
@@ -259,15 +242,13 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.core.RequestChangeOfTrialStage msg = (eu.driver.model.core.RequestChangeOfTrialStage) SpecificData
 					.get()
 					.deepCopy(
-							eu.driver.model.core.RequestChangeOfTrialStage.SCHEMA$,
-							receivedMessage);
+							eu.driver.model.core.RequestChangeOfTrialStage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("ObserverToolAnswer")) {
 			eu.driver.model.core.ObserverToolAnswer msg = (eu.driver.model.core.ObserverToolAnswer) SpecificData
 					.get().deepCopy(
-							eu.driver.model.core.ObserverToolAnswer.SCHEMA$,
-							receivedMessage);
+							eu.driver.model.core.ObserverToolAnswer.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else {
 			// unknown data
