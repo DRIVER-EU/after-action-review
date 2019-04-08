@@ -1,6 +1,6 @@
 <template>
   <v-flex>
-    <v-card>
+    <v-card class="detailsPanel">
       <v-card-title class="justify-center primary--text">Details</v-card-title>
       <v-card-text v-if="!record.recordData" class="text-xs-center">Choose an entry from the list to show it's details.</v-card-text>
       <v-card-text v-else>

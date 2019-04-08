@@ -87,6 +87,7 @@ class TimelineService {
       start: new Date(trial.startDate),
       end: new Date(trial.endDate),
       content: trial.trialName,
+      className: "trial"
     }
   }
 
@@ -96,6 +97,7 @@ class TimelineService {
       start: new Date(scenario.startDate),
       end: new Date(scenario.endDate),
       content: scenario.szenarioName,
+      className: "scenario"
     }
   }
 
@@ -105,6 +107,7 @@ class TimelineService {
       start: new Date(session.startDate),
       end: new Date(session.endDate),
       content: session.sessionName,
+      className: "session"
     }
   }
 

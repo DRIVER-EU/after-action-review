@@ -13,39 +13,100 @@ html {
   margin: 4px;
 }
 
-.jsonView {
-  white-space: normal !important;
-  font-size: 12px;
+.recordsTable {
+  table {
+  }
+
+  thead {
+    tr {
+      /*
+      display: block;
+      position: relative;
+       */
+    }
+    th {
+      /*
+      position: sticky;
+       */
+    }
+  }
+
+  tbody {
+    /*
+    display: block;
+    overflow: auto;
+    width: 100%;
+     */
+  }
 }
 
-.jsonView > .spacing {
-  display: none;
+.detailsPanel {
+  .jsonView {
+    white-space: normal !important;
+    font-size: 12px;
+  }
+
+  .jsonView > .spacing {
+    display: none;
+  }
 }
 
-.timelinePanel .includeLogs {
-  width: 150px;
-  text-align: right;
-  position: absolute;
-  right: 0px;
-  top: 10px;
-}
+.timelinePanel {
+  .includeLogs {
+    width: 150px;
+    text-align: right;
+    position: absolute;
+    right: 0px;
+    top: 10px;
+  }
 
-.vis-item.Alert {
-  background-color: #ffdddd;
-  border-color: #ff9999;
-}
+  .vis-item.trial {
+    border-color: #ffbb33;
+    background-color: #ffeebb;
+  }
 
-.vis-item.Log {
+  .vis-item.scenario {
+    border-color: lighten(#ffbb33, 10);
+    background-color: lighten(#ffeebb, 7);
+  }
+
+  .vis-item.session {
+    border-color: lighten(#ffbb33, 20);
+    background-color: lighten(#ffeebb, 14);
+  }
+
+  .vis-item.Alert {
+    background-color: #ffeedd;
+    border-color: #ffbb99;
+  }
+
+  .vis-item.Log {
+    background-color: #d5ddf6;
+    border-color: #97b0f8;
+  }
+
+  .vis-item.LargeDataUpdate {
+    background-color: #eeeeee;
+    border-color: #aaaaaa;
+  }
+
+  .vis-item.GeoJSONEnvelope {
+    background-color: #ddffdd;
+    border-color: #99ff99;
+  }
+
+  /*
+  background-color: #ddffff;
+  border-color: #99ffff;
+
   background-color: #d5ddf6;
   border-color: #97b0f8;
+
+  background-color: #ffffdd;
+  border-color: #ffff99;
+
+  background-color: #ffddff;
+  border-color: #ff99ff;
+  */
 }
 
-.vis-item.LargeDataUpdate {
-  background-color: lightgray;
-  border-color: gray;
-}
-
-.vis-item.GeoJSONEnvelope {
-  background-color: #ddffdd;
-  border-color: #99ff99;
-}
