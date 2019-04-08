@@ -66,6 +66,14 @@ public class Record {
 		
 	}
 	
+	public Record(Long id, String clientId, String topic, String recordType, Date createDate) {
+		this.id = id;
+		this.clientId = clientId;
+		this.topic = topic;
+		this.recordType = recordType;
+		this.createDate = createDate;
+	}
+	
 	public Record(Long id, String topic, String recordType, Date createDate) {
 		this.id = id;
 		this.topic = topic;
