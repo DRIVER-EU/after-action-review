@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -613,7 +615,12 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<byte[]> createSequenceDiagram() {
 		log.info("-->createSequenceDiagram");
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
-		List<Record> records = getAllTimelineRecords().getBody();
+		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i";
+		if (this.actualFilter == null) {
+			query += this.createFilterQuery();
+		}
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		List<Record> records = typedQuery.getResultList();
 		if (records != null && records.size() > 0) {
 			List<TopicReceiver> receivers = topicReceiverRepo.findAll();
 			String source = createSequenceDiagramString(records, receivers);
@@ -720,11 +727,42 @@ public class RecordRESTController implements IAdaptorCallback {
 	private String createSequenceDiagramString(List<Record> records, List<TopicReceiver> receivers) {
 		log.info("-->createSequenceDiagramString");
 		String data = "@startuml\n";
-		data += "Bob -> Alice : hello\n";
+		Map<String, List<TopicReceiver>> receiverMap = new HashMap<String, List<TopicReceiver>>();
+
+		for (TopicReceiver receiver : receivers) {
+			List<TopicReceiver> topicReceiver = receiverMap.get(receiver.getTopicName());
+			if (topicReceiver == null) {
+				topicReceiver = new ArrayList<TopicReceiver>();
+			}
+			topicReceiver.add(receiver);
+			receiverMap.put(receiver.getTopicName(), topicReceiver);
+		}
+		
+		for (Record record : records) {
+			if (!record.getRecordType().equalsIgnoreCase("LOG")) {
+				String sender = record.getClientId().replaceAll("-", "_");
+				String topic = record.getTopic();
+				String msg = this.getMessageFromRecord(record);
+				data += sender + " -> " + topic + " : " + msg + "\n";
+				List<TopicReceiver> topicReceiver = receiverMap.get(topic);
+				if (topicReceiver != null) {
+					for (TopicReceiver receiver : topicReceiver) {
+						data += topic + " -> " + receiver.getClientId().replaceAll("-", "_") + " : " + msg + "\n";	
+					}
+				}
+			}
+		}
 		data += "@enduml\n";
 
 		log.info("createSequenceDiagramString-->");
 		return data;
+	}
+	
+	private String getMessageFromRecord(Record record) {
+		String msg = "";
+		msg += record.getCreateDate() + " - " + record.getRecordType();
+		
+		return msg;
 	}
 
 }
