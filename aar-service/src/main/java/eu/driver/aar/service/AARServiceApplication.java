@@ -57,6 +57,10 @@ public class AARServiceApplication {
 			
 			cisAdapter.addCallback(topicInviteController, TopicConstants.TOPIC_INVITE_TOPIC);
 			cisAdapter.addCallback(recordController, TopicConstants.TIMING_CONTROL_TOPIC);
+			cisAdapter.addCallback(recordController, TopicConstants.OST_ANSWER_TOPIC);
+			cisAdapter.addCallback(recordController, TopicConstants.SESSION_MGMT_TOPIC);
+			cisAdapter.addCallback(recordController, TopicConstants.PHASE_MESSAGE_TOPIC);
+			cisAdapter.addCallback(recordController, TopicConstants.ROLE_PLAYER_TOPIC);
 			cisAdapter.addLogCallback(recordController);
 			
 			Log logMsg = new Log(cisAdapter.getClientID(), (new Date()).getTime(), Level.INFO, "The AARService is up!" );

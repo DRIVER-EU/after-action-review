@@ -211,9 +211,18 @@ public class RecordRESTController implements IAdaptorCallback {
 				session.setSessionId(msg.getSessionId().toString());
 				session.setSessionName(msg.getSessionName().toString());
 				session.setStartDate(new Date());
+				szenario.addSession(session);
 			}
 			if (msg.getSessionState() == SessionState.STOP) {
 				session.setEndDate(new Date());
+			}
+			// check if there is a actual trial that is not that trial.
+			if (trial.getId() == null) {
+				Trial actTrial = trialRepo.findActualTrial();
+				if (actTrial != null) {
+					actTrial.setActual(false);
+					trialRepo.saveAndFlush(actTrial);
+				}
 			}
 			trialRepo.saveAndFlush(trial);
 		} else if (receivedMessage.getSchema().getName()

@@ -18,13 +18,16 @@ import VueLoadImage from 'vue-load-image'
 
 
 export const eventBus = new Vue();
+const host = window.location.host;
+const httpUrl = 'http://' + host + '/AARService';
+const wsUrl = 'ws://'+ host + '/AARServiceWSEndpoint';
 
 Vue.use(VueAxios, axios.create({
-  baseURL: Urls.BASE
+  baseURL: httpUrl
 }));
 store.axios = Vue.prototype.axios;
 
-Vue.use(VueNativeSock, 'ws://localhost:8095//AARServiceWSEndpoint', {
+Vue.use(VueNativeSock, wsUrl, {
   store: store,
   format: 'json',
   reconnection: true,
