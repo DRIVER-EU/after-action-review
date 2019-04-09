@@ -12,12 +12,15 @@ import DetailsPanel from './components/DetailsPanel';
 import TimelinePanel from './components/TimelinePanel';
 import JsonTree from './components/JsonTree';
 import 'vis/dist/vis.css';
+import DiagramPopup from './components/DiagramPopup';
+import Urls from './constants/Urls';
+import VueLoadImage from 'vue-load-image'
 
 
 export const eventBus = new Vue();
 
 Vue.use(VueAxios, axios.create({
-  baseURL: 'http://localhost:8095/AARService'
+  baseURL: Urls.BASE
 }));
 store.axios = Vue.prototype.axios;
 
@@ -45,6 +48,8 @@ Vue.component('records-table', RecordsTable);
 Vue.component('details-panel', DetailsPanel);
 Vue.component('timeline-panel', TimelinePanel);
 Vue.component('json-tree', JsonTree);
+Vue.component('diagram-popup', DiagramPopup);
+Vue.component('vue-load-image', VueLoadImage);
 
 /* eslint-disable no-new */
 new Vue({

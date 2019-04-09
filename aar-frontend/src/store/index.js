@@ -106,7 +106,7 @@ export const store = new Vuex.Store({
     getAllTimelineRecords (context) {
       this.axios.get('getAllTimelineRecords').then(response => {
         let list = response.data;
-        // list = list.slice(0, Math.min(list.length - 1, 300)); // FIXME
+        list = list.slice(0, Math.min(list.length - 1, 300)); // FIXME
         context.commit('GET_TIMELINE_RECORDS', list);
       }).catch(ex => console.log(ex));
     },

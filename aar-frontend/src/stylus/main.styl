@@ -8,9 +8,34 @@ html {
   width: 300px;
 }
 
+.toolbar {
+}
+
 .project-logo {
-  height: 40px;
+  height: 40px !important;
   margin: 4px;
+}
+
+.diagramButton {
+  margin-right: 20px !important;
+}
+
+.diagramPopup {
+  .diagramImage {
+    display: block;
+    margin: 0px auto;
+    max-width: 100%;
+    text-align: center;
+
+    &> img {
+      max-width: 100%;
+      text-align: center;
+    }
+  }
+
+  .btn {
+    color: #FDB836;
+  }
 }
 
 .recordsTable {
@@ -24,6 +49,7 @@ html {
       position: relative;
        */
     }
+
     th {
       /*
       position: sticky;
@@ -58,6 +84,10 @@ html {
     position: absolute;
     right: 0px;
     top: 10px;
+
+    &> div {
+      margin-top: 0px;
+    }
   }
 
   .vis-item.trial {
@@ -67,12 +97,12 @@ html {
 
   .vis-item.scenario {
     border-color: lighten(#ffbb33, 10);
-    background-color: lighten(#ffeebb, 7);
+    background-color: lighten(#ffeebb, 6);
   }
 
   .vis-item.session {
-    border-color: lighten(#ffbb33, 20);
-    background-color: lighten(#ffeebb, 14);
+    border-color: lighten(#ffbb33, 15);
+    background-color: lighten(#ffeebb, 12);
   }
 
   .vis-item.Alert {
