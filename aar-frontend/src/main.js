@@ -16,18 +16,14 @@ import DiagramPopup from './components/DiagramPopup';
 import Urls from './constants/Urls';
 import VueLoadImage from 'vue-load-image'
 
-
 export const eventBus = new Vue();
-const host = window.location.host;
-const httpUrl = 'http://' + host + '/AARService';
-const wsUrl = 'ws://'+ host + '/AARServiceWSEndpoint';
 
 Vue.use(VueAxios, axios.create({
-  baseURL: httpUrl
+  baseURL: Urls.HTTP_BASE
 }));
 store.axios = Vue.prototype.axios;
 
-Vue.use(VueNativeSock, wsUrl, {
+Vue.use(VueNativeSock, Urls.WEBSOCKET, {
   store: store,
   format: 'json',
   reconnection: true,

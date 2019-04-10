@@ -36,7 +36,7 @@
     },
     computed: {
       getImageUrl: function () {
-        return Urls.BASE + '/createSequenceDiagram?t=' + this.t; // http://localhost:8095/AARService/createSequenceDiagram
+        return Urls.HTTP_BASE + '/createSequenceDiagram?t=' + this.t; // http://localhost:8095/AARService/createSequenceDiagram
       }
     },
     methods: {
