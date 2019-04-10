@@ -53,6 +53,7 @@ import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
 import eu.driver.adapter.core.CISAdapter;
+import eu.driver.adapter.properties.ClientProperties;
 import eu.driver.api.IAdaptorCallback;
 import eu.driver.model.core.State;
 import eu.driver.model.tm.SessionState;
@@ -70,6 +71,9 @@ public class RecordRESTController implements IAdaptorCallback {
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
 
 	private RecordFilter actualFilter = new RecordFilter();
+	
+	private Map<String, Boolean> registeredCallbacks = new HashMap<String, Boolean>();
+	private String ownClientID = ClientProperties.getInstance().getProperty("client.id");
 
 	@Autowired
 	RecordRepository recordRepo;
@@ -121,7 +125,14 @@ public class RecordRESTController implements IAdaptorCallback {
 			String clientId = msg.getId().toString();
 			String receiverTopicName = msg.getTopicName().toString();
 			Boolean subscribeAllowed = msg.getSubscribeAllowed();
-			if (subscribeAllowed) {
+			if (ownClientID.equalsIgnoreCase(clientId)) {
+				// add a callback if not done already
+				if (registeredCallbacks.get(msgKey) == null) {
+					log.info("Adding a callback receiver for: " + receiverTopicName);
+					CISAdapter.getInstance().addCallback(this, receiverTopicName);
+					registeredCallbacks.put(receiverTopicName, true);
+				}
+			} else if (subscribeAllowed) {
 				String trialId = "unknown";
 				TopicReceiver topicReceiver = topicReceiverRepo
 						.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
