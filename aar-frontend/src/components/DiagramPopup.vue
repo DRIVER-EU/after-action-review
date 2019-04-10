@@ -8,7 +8,7 @@
           <!--<v-img :src="getImageUrl" :lazy-src="require('../assets/sequenceDiagramDummy.png')" class="diagramImage"></v-img>-->
           <vue-load-image class="diagramImage">
             <img slot="image" :src="getImageUrl"/>
-            <img slot="preloader" :src="require('../assets/loading-spinner.gif')"/>
+            <img slot="preloader" :src="loadingSpinner"/>
             <div slot="error">Missing image.</div>
           </vue-load-image>
         </v-card-text>
@@ -26,17 +26,23 @@
   import EventName from '../constants/EventName';
   import Urls from '../constants/Urls';
   import { saveAs } from 'file-saver';
+  import loadingSpinner from '../assets/loading-spinner.gif';
 
   export default {
     data () {
       return {
         dialog: false,
+        loadingSpinner: loadingSpinner,
         t: 0
       };
     },
     computed: {
       getImageUrl: function () {
-        return Urls.HTTP_BASE + '/createSequenceDiagram?t=' + this.t; // http://localhost:8095/AARService/createSequenceDiagram
+        if (this.dialog) {
+          return Urls.HTTP_BASE + '/createSequenceDiagram?t=' + this.t; // http://localhost:8095/AARService/createSequenceDiagram
+        } else {
+          return loadingSpinner;
+        }
       }
     },
     methods: {

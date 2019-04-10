@@ -68,9 +68,11 @@ export const store = new Vuex.Store({
     SOCKET_ONERROR () {
     },
     HBRESPONSE (state) {
+      // console.log("Received heartbeat response");
       state.socket.messageAccepted = true;
     },
     RECORD_NOTIFICATION (state, record) {
+      console.log("Received record notification", record);
       let newRecord = createRecord(record);
       state.records.push(newRecord);
       createFilterOptions(newRecord, state.filterOptions);
