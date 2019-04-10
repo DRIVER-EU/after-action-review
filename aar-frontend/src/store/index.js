@@ -4,6 +4,7 @@ import {Record} from '../objects/record';
 import {heartbeatController} from '../heartbeatController';
 import {createFilterOptions} from '../helper';
 import {parseDate} from '../helper';
+import {environment} from '../service/EnvironmentService';
 
 Vue.use(Vuex);
 
@@ -108,7 +109,9 @@ export const store = new Vuex.Store({
     getAllTimelineRecords (context) {
       this.axios.get('getAllTimelineRecords').then(response => {
         let list = response.data;
-        list = list.slice(0, Math.min(list.length - 1, 300)); // FIXME
+        if (environment.isLocalDevelopment()) {
+          list = list.slice(0, Math.min(list.length - 1, 300)); // FIXME: limits number of timeline items to 300
+        }
         context.commit('GET_TIMELINE_RECORDS', list);
       }).catch(ex => console.log(ex));
     },
