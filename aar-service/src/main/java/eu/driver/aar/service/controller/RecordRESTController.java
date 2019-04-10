@@ -210,9 +210,15 @@ public class RecordRESTController implements IAdaptorCallback {
 				szenario.setSzenarioName(msg.getScenarioName().toString());
 				szenario.setStartDate(new Date());
 				trial.addSzenario(szenario);
-			}
-			if (msg.getSessionState() == SessionState.STOP) {
-				szenario.setEndDate(new Date());
+			} else {
+				if (msg.getSessionState() == SessionState.STOP) {
+					List<Szenario> szenarioList = trial.getSzenarioList();
+					for (Szenario szen : szenarioList) {
+						if (szen.getId() == szenario.getId()) {
+							szen.setEndDate(new Date());
+						}
+					}
+				}
 			}
 
 			String sessionId = msg.getSessionId().toString();
@@ -224,10 +230,22 @@ public class RecordRESTController implements IAdaptorCallback {
 				session.setSessionName(msg.getSessionName().toString());
 				session.setStartDate(new Date());
 				szenario.addSession(session);
+			} else {
+				if (msg.getSessionState() == SessionState.STOP) {
+					List<Szenario> szenarioList = trial.getSzenarioList();
+					for (Szenario szen : szenarioList) {
+						if (szen.getId() == szenario.getId()) {
+							List<Session> sessionList = szen.getSessionList();
+							for (Session sess : sessionList) {
+								if (sess.getId() == session.getId()) {
+									sess.setEndDate(new Date());
+								}
+							}
+						}
+					}
+				}
 			}
-			if (msg.getSessionState() == SessionState.STOP) {
-				session.setEndDate(new Date());
-			}
+
 			// check if there is a actual trial that is not that trial.
 			if (trial.getId() == null) {
 				Trial actTrial = trialRepo.findActualTrial();

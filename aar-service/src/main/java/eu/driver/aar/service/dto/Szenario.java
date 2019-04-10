@@ -52,7 +52,7 @@ public class Szenario {
 	private Trial trial;
 	
 	@JsonManagedReference
-	@OneToMany( mappedBy = "szenario", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany( mappedBy = "szenario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<Session> sessionList = new ArrayList<Session>();
 	
 	public Szenario() {
