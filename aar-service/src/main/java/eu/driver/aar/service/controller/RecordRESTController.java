@@ -56,6 +56,7 @@ import eu.driver.adapter.core.CISAdapter;
 import eu.driver.adapter.properties.ClientProperties;
 import eu.driver.api.IAdaptorCallback;
 import eu.driver.model.core.State;
+import eu.driver.model.sim.entity.station.ScenarioLabel;
 import eu.driver.model.tm.SessionState;
 
 @RestController
@@ -302,6 +303,32 @@ public class RecordRESTController implements IAdaptorCallback {
 				log.error("Error processing the message!", e);
 			}
 		}
+	}
+	
+	@ApiOperation(value = "getCleanDB", nickname = "getCleanDB")
+	@RequestMapping(value = "/AARService/getCleanDB", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = Boolean.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = Boolean.class),
+			@ApiResponse(code = 500, message = "Failure", response = Boolean.class) })
+	public ResponseEntity<Boolean> getCleanDB () {
+		log.info("-->getCleanDB");
+		
+		try {
+			sessionRepo.deleteAll();
+			szenarioRepo.deleteAll();
+			trialRepo.deleteAll();
+			
+			topicReceiverRepo.deleteAll();
+			recordRepo.deleteAll();
+		} catch(Exception e) {
+			log.error("Error cleaning the DB", e);
+			return new ResponseEntity<Boolean>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		
+		log.info("getCleanDB-->");
+		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
 	}
 
 	@ApiOperation(value = "getAllRecords", nickname = "getAllRecords")
