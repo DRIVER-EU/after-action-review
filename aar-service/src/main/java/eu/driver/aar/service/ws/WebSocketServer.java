@@ -22,17 +22,19 @@ public class WebSocketServer extends TextWebSocketHandler {
 	 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-    	log.info("The WebSocket has been closed!");
-    	log.info("Socket closed: " + status.getCode());
-    	session.close();
-    	WSController.getInstance().setWSSession(null)
-    	;
+    	log.info("The WebSocket has been closed: " + status.getCode());
+    	try {
+    		WSController.getInstance().removeWSSession(session.getId());
+    		session.close();
+    	} catch (Exception e) {
+    		log.error("Error closing the WebSocketSession!");
+    	}
     }
  
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
     	log.info("The WebSocket has been opened!");
-    	WSController.getInstance().setWSSession(session);
+    	WSController.getInstance().addWSSession(session);
     }
     
     @Override
@@ -44,7 +46,11 @@ public class WebSocketServer extends TextWebSocketHandler {
     		WSHeartbeatRequest hbRequest = mapper.stringToHBRequestMessage(textMessage.getPayload());
     		
     		TextMessage responseMsg = new TextMessage(mapper.objectToJSONString(hbRequest.createResponse()));
-    		session.sendMessage(responseMsg);
+    		try {
+    			session.sendMessage(responseMsg);
+    		} catch (Exception e) {
+        		log.error("Error sending the heartbeat!");
+        	}
     	}
     }
 }
