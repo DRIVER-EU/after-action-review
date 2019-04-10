@@ -387,6 +387,15 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<Trial> getActualTrial() {
 		log.info("-->getActualTrial");
 		Trial trial = trialRepo.findActualTrial();
+		
+		if (trial == null) {
+			trial = new Trial();
+			trial.setActual(true);
+			trial.setStartDate(new Date());
+			trial.setEndDate(new Date());
+			trial.setTrialId("1");
+			trial.setTrialName("TMP Trial");
+		}
 
 		log.info("getActualTrial-->");
 		return new ResponseEntity<Trial>(trial, HttpStatus.OK);
