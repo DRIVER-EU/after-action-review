@@ -19,6 +19,8 @@ import javax.persistence.UniqueConstraint;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import eu.driver.aar.service.constants.AARConstants;
+
 
 @Entity
 @Table(name="trial", schema = "aar_service", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
@@ -118,5 +120,39 @@ public class Trial {
     public void removeSzenario(Szenario szenario) {
     	this.szenarioList.remove(szenario);
         szenario.setTrial(null);
+    }
+    
+    public String createBackupString(String backupType) {
+    	StringBuffer backupBuffer = new StringBuffer();
+    	
+    	if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+    		// create the CSV strings
+    		backupBuffer.append("\"").append(this.id).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.trialId).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.trialName).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.startDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.endDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.actual).append("\"").append("\n");
+    		
+    		for (Szenario szenario : this.szenarioList) {
+    			backupBuffer.append(szenario.createBackupString(backupType));
+    		}
+    		
+    	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+    		// create the SQL insert commands
+    		for (Szenario szenario : this.szenarioList) {
+    			backupBuffer.append(szenario.createBackupString(backupType));
+    		}
+    		
+    		backupBuffer.append("inseret into trial (id, trialId, trialName, startDate, endDate, actual) values (");
+    		backupBuffer.append(this.id).append(",");
+    		backupBuffer.append("'").append(this.trialId).append("'").append(",");
+    		backupBuffer.append("'").append(this.trialName).append("'").append(",");
+    		backupBuffer.append("'").append(this.startDate).append("'").append(",");
+    		backupBuffer.append("'").append(this.endDate).append("'").append(",");
+    		backupBuffer.append(this.actual).append(");").append("\n");
+    	}
+    	
+    	return backupBuffer.toString();
     }
 }
