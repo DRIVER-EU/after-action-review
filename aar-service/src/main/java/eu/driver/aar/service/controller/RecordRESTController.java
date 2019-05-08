@@ -7,9 +7,11 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -716,7 +718,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
 			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
-	public ResponseEntity<Boolean> exportData(@QueryParam("exportType")String exportType) {
+	public ResponseEntity<byte[]> exportData(@QueryParam("exportType")String exportType) {
 		log.info("-->exportData");
 		
 		StringBuffer exportBuffer = new StringBuffer();
@@ -736,22 +738,43 @@ public class RecordRESTController implements IAdaptorCallback {
 			exportBuffer.append(record.createBackupString(exportType));
 		}
 		
+		byte[] fileContent = null;
+		String fileName = "";
+		
 		try {
 			PrintStream out = null;
+			
 			if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
-				out = new PrintStream(new FileOutputStream("export.sql"));
+				fileName = "export.sql";
 			} else if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
-				out = new PrintStream(new FileOutputStream("export.csv"));
+				fileName = "export.csv";
 			}
+			out = new PrintStream(new FileOutputStream(fileName));
 			
 			out.print(exportBuffer.toString());
 			out.close();
+			
+			File file = new File(fileName);
+			
+			try {
+				fileContent = Files.readAllBytes(file.toPath());
+			} catch (IOException e) {
+				log.error("Error loading the file!", e);
+			}
 		} catch (Exception e) {
-		    log.warn("Could not write the plantUML file!");
+		    log.warn("Could not write the export file!");
 		}
 
-		log.info("exportData-->");
-		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
+		HttpHeaders headers = new HttpHeaders();
+		if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+			headers.setContentType(MediaType.parseMediaType("application/sql"));
+		} else if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+			headers.setContentType(MediaType.parseMediaType("application/comma-separated-values"));
+		}
+		headers.setContentDispositionFormData("attachment", fileName); 
+	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
+	    log.info("exportData-->");
+	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
 	}
 	
 	private String createFilterQuery() {
