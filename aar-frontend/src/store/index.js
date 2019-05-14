@@ -5,6 +5,7 @@ import {heartbeatController} from '../heartbeatController';
 import {createFilterOptions} from '../helper';
 import {parseDate} from '../helper';
 import {environment} from '../service/EnvironmentService';
+import FilterOption from '../constants/FilterOption';
 
 Vue.use(Vuex);
 
@@ -34,10 +35,10 @@ export const store = new Vuex.Store({
     record: null,
     trial: null,
     filterOptions: {
-      id: ['All'],
-      clientId: ['All'],
-      topic: ['All'],
-      recordType: ['All']
+      id: [FilterOption.ALL],
+      clientId: [FilterOption.ALL],
+      topic: [FilterOption.ALL],
+      recordType: [FilterOption.ALL]
     }
   },
   getters: {
@@ -76,13 +77,35 @@ export const store = new Vuex.Store({
       console.log("Received record notification", record);
       let newRecord = createRecord(record);
       state.records.push(newRecord);
-      createFilterOptions(newRecord, state.filterOptions);
+      // createFilterOptions(newRecord, state.filterOptions);
     },
     GET_RECORDS (state, records) {
+      state.records = [];
       records.forEach(function (record) {
         const newRecord = createRecord(record);
         state.records.push(newRecord);
-        createFilterOptions(newRecord, state.filterOptions);
+        // createFilterOptions(newRecord, state.filterOptions);
+      });
+    },
+    GET_RECORD_TYPES (state, recordTypes) {
+      recordTypes.forEach(recordType => {
+        if (state.filterOptions.recordType.indexOf(recordType) === -1) {
+          state.filterOptions.recordType.push(recordType)
+        }
+      });
+    },
+    GET_TOPIC_NAMES (state, topics) {
+      topics.forEach(topic => {
+        if (state.filterOptions.topic.indexOf(topic) === -1) {
+          state.filterOptions.topic.push(topic)
+        }
+      });
+    },
+    GET_CLIENT_IDS (state, clientIds) {
+      clientIds.forEach(clientId => {
+        if (state.filterOptions.clientId.indexOf(clientId) === -1) {
+          state.filterOptions.clientId.push(clientId)
+        }
       });
     },
     GET_RECORD (state, record) {
@@ -96,6 +119,20 @@ export const store = new Vuex.Store({
     }
   },
   actions: {
+    getFilterOptions(context) {
+      this.axios.get('getRecordTypes').then(response => {
+        context.commit('GET_RECORD_TYPES', (response.data));
+      }).catch(ex => console.log(ex));
+      this.axios.get('getTopicNames').then(response => {
+        context.commit('GET_TOPIC_NAMES', (response.data));
+      }).catch(ex => console.log(ex));
+      this.axios.get('getSenderClientIds').then(response => {
+        context.commit('GET_CLIENT_IDS', (response.data));
+      }).catch(ex => console.log(ex));
+      this.axios.get('getReceiverClientIds').then(response => {
+        context.commit('GET_CLIENT_IDS', (response.data));
+      }).catch(ex => console.log(ex));
+    },
     getRecord (context, payload) {
       this.axios.get('getRecord/' + payload.id).then(response => {
         context.commit('GET_RECORD', (response.data));
@@ -103,6 +140,7 @@ export const store = new Vuex.Store({
     },
     getRecords (context) {
       this.axios.get('getAllRecords').then(response => {
+        console.log('/getAllRecords returned count', response.data.length);
         context.commit('GET_RECORDS', (response.data));
       }).catch(ex => console.log(ex));
     },
