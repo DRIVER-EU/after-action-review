@@ -2,9 +2,9 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import {Record} from '../objects/record';
 import {heartbeatController} from '../heartbeatController';
-import {createFilterOptions} from '../helper';
 import {parseDate} from '../helper';
 import {environment} from '../service/EnvironmentService';
+import EventName from '../constants/EventName';
 import FilterOption from '../constants/FilterOption';
 
 Vue.use(Vuex);
@@ -74,17 +74,16 @@ export const store = new Vuex.Store({
       state.socket.messageAccepted = true;
     },
     RECORD_NOTIFICATION (state, record) {
-      console.log("Received record notification", record);
+      // console.log("Received record notification", record);
       let newRecord = createRecord(record);
       state.records.push(newRecord);
-      // createFilterOptions(newRecord, state.filterOptions);
+      this.eventBus.$emit(EventName.RECORD_NOTIFICATION, newRecord);
     },
     GET_RECORDS (state, records) {
       state.records = [];
       records.forEach(function (record) {
         const newRecord = createRecord(record);
         state.records.push(newRecord);
-        // createFilterOptions(newRecord, state.filterOptions);
       });
     },
     GET_RECORD_TYPES (state, recordTypes) {

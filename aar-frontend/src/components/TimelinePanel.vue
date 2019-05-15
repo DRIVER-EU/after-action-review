@@ -15,7 +15,6 @@
   </v-flex>
 </template>
 
-
 <script>
   import {eventBus} from '../main';
   import {Timeline, DataSet} from 'vis';
