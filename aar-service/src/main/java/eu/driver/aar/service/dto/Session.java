@@ -18,6 +18,8 @@ import javax.persistence.UniqueConstraint;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import eu.driver.aar.service.constants.AARConstants;
+
 
 @Entity
 @Table(name="session", schema = "aar_service", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
@@ -98,4 +100,31 @@ public class Session {
 	public void setSzenario(Szenario szenario) {
 		this.szenario = szenario;
 	}
+	
+	public String createBackupString(String backupType) {
+    	StringBuffer backupBuffer = new StringBuffer();
+    	
+    	if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+    		// create the CSV strings
+    		backupBuffer.append("\"").append(this.id).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.sessionId).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.sessionName).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.startDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.endDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.szenario.getId()).append("\"").append("\n");
+    		
+    	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+    		// create the SQL insert commands
+    		backupBuffer.append("inseret into trial (id, sessionId, sessionName, startDate, endDate, szenario_id) values (");
+    		
+    		backupBuffer.append(this.id).append(",");
+    		backupBuffer.append("'").append(this.sessionId).append("'").append(",");
+    		backupBuffer.append("'").append(this.sessionName).append("'").append(",");
+    		backupBuffer.append("'").append(this.startDate).append("'").append(",");
+    		backupBuffer.append("'").append(this.endDate).append("'").append(",");
+    		backupBuffer.append(this.szenario.getId()).append(");").append("\n");
+    	}
+    	
+    	return backupBuffer.toString();
+    }
 }

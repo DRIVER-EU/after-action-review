@@ -7,13 +7,18 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -38,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import eu.driver.aar.service.constants.AARConstants;
 import eu.driver.aar.service.dto.Record;
 import eu.driver.aar.service.dto.RecordFilter;
 import eu.driver.aar.service.dto.Session;
@@ -72,6 +78,8 @@ public class RecordRESTController implements IAdaptorCallback {
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
 
 	private RecordFilter actualFilter = new RecordFilter();
+	private int currentPageSize = 20;
+	private int currentPage = 0;
 	
 	private Map<String, Boolean> registeredCallbacks = new HashMap<String, Boolean>();
 	private String ownClientID = ClientProperties.getInstance().getProperty("client.id");
@@ -365,7 +373,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		String query = "SELECT NEW Record(i.id, i.clientId, i.sessionId, i.topic, i.recordType, i.createDate, i.trialDate) FROM Record i";
 
 		// create the query using the active Filter
-		if (this.actualFilter == null) {
+		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
 
@@ -374,6 +382,9 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (page != null && size != null) {
 			typedQuery.setFirstResult(page * size);
 			typedQuery.setMaxResults(size);
+			
+			this.currentPageSize = size;
+			this.currentPage = page;
 		}
 		List<Record> records = typedQuery.getResultList();
 
@@ -394,6 +405,24 @@ public class RecordRESTController implements IAdaptorCallback {
 
 		log.info("getAllRecords-->");
 		return new ResponseEntity<Record>(record, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "getPageCount", nickname = "getPageCount")
+	@RequestMapping(value = "/AARService/getPageCount", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
+	public ResponseEntity<Long> getPageCount() {
+		log.info("-->getAllRecords");
+		Long recCount = recordRepo.count();
+		Long pageCount = 1L;
+		if (recCount > 0 && this.currentPageSize > 0) {
+			pageCount = recCount/this.currentPageSize;
+		}
+
+		log.info("getAllRecords-->");
+		return new ResponseEntity<Long>(pageCount, HttpStatus.OK);
 	}
 
 	@ApiOperation(value = "getActualTrial", nickname = "getActualTrial")
@@ -569,7 +598,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		log.info("-->getAllTimelineRecords");
 
 		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate) FROM Record i";
-		if (this.actualFilter == null) {
+		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
 
@@ -690,10 +719,66 @@ public class RecordRESTController implements IAdaptorCallback {
 		log.info("-->createSequenceDiagram");
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
 		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i";
-		if (this.actualFilter == null) {
+		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		List<Record> records = typedQuery.getResultList();
+		if (records != null && records.size() > 0) {
+			List<TopicReceiver> receivers = topicReceiverRepo.findAll();
+			String source = createSequenceDiagramString(records, receivers);
+			UUID uuid = UUID.randomUUID();
+	        String fileName = uuid.toString();
+			try {
+				PrintStream out = new PrintStream(new FileOutputStream(fileName + ".txt"));
+				out.print(source);
+				out.close();
+			} catch (Exception e) {
+			    log.warn("Could not write the plantUML file!");
+			}
+			SourceStringReader reader = new SourceStringReader(source);
+		    // Write the first image to "png"
+			String desc = null;
+		    try {
+				desc = reader.generateImage(bous);
+			} catch (IOException e) {
+				log.error("Error creating the sequence diagram!");
+			}
+		    // Return a null string if no generation
+		    byte[] media = bous.toByteArray();
+		    
+		    try {
+		    	FileOutputStream fos = new FileOutputStream(fileName + ".png");
+		    	fos.write(media);
+		    	fos.close();
+		    } catch (Exception e) {
+		    	log.warn("Could not write the plantUML file!");
+	    	}
+			
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.IMAGE_PNG);
+		    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
+		    log.info("createSequenceDiagram-->");
+		    return new ResponseEntity<byte[]>(media, headers, HttpStatus.OK);
+		}
+		log.info("createSequenceDiagram-->");
+		return new ResponseEntity<byte[]>("".getBytes(), HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "createOverviewSequenceDiagram", nickname = "createOverviewSequenceDiagram")
+	@RequestMapping(value = "/AARService/createOverviewSequenceDiagram", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = byte[].class),
+			@ApiResponse(code = 400, message = "Bad Request", response = byte[].class),
+			@ApiResponse(code = 500, message = "Failure", response = byte[].class) })
+	public ResponseEntity<byte[]> createOverviewSequenceDiagram() {
+		log.info("-->createOverviewSequenceDiagram");
+		ByteArrayOutputStream bous = new ByteArrayOutputStream();
+		Long recCount = recordRepo.count();
+		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i WHERE i.recordType != 'Log'";
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		//typedQuery.setFirstResult(recCount.intValue()-20);
+		typedQuery.setMaxResults(20);
 		List<Record> records = typedQuery.getResultList();
 		if (records != null && records.size() > 0) {
 			List<TopicReceiver> receivers = topicReceiverRepo.findAll();
@@ -715,15 +800,74 @@ public class RecordRESTController implements IAdaptorCallback {
 		    log.info("createSequenceDiagram-->");
 		    return new ResponseEntity<byte[]>(media, headers, HttpStatus.OK);
 		}
-		log.info("createSequenceDiagram-->");
+		log.info("createOverviewSequenceDiagram-->");
 		return new ResponseEntity<byte[]>("".getBytes(), HttpStatus.OK);
 	}
 
-	public ResponseEntity<Boolean> exportData() {
+	@ApiOperation(value = "exportData", nickname = "exportData")
+	@RequestMapping(value = "/AARService/exportData", method = RequestMethod.GET)
+	@ApiImplicitParams({ @ApiImplicitParam(name = "exportType", value = "the type how the export should be created", required = true, dataType = "string", paramType = "query", allowableValues="SQL,CSV") })
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
+			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
+	public ResponseEntity<byte[]> exportData(@QueryParam("exportType")String exportType) {
 		log.info("-->exportData");
+		
+		StringBuffer exportBuffer = new StringBuffer();
+		
+		List<Trial> trials =  trialRepo.findAll();
+		for (Trial trial : trials) {
+			exportBuffer.append(trial.createBackupString(exportType));
+		}
+		
+		List<TopicReceiver> topicReceivers = topicReceiverRepo.findAll();
+		for (TopicReceiver topicReceiver : topicReceivers) {
+			exportBuffer.append(topicReceiver.createBackupString(exportType));
+		}
+		
+		List<Record> records = recordRepo.findAll();
+		for (Record record : records) {
+			exportBuffer.append(record.createBackupString(exportType));
+		}
+		
+		byte[] fileContent = null;
+		String fileName = "";
+		
+		try {
+			PrintStream out = null;
+			
+			if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+				fileName = "export.sql";
+			} else if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+				fileName = "export.csv";
+			}
+			out = new PrintStream(new FileOutputStream(fileName));
+			
+			out.print(exportBuffer.toString());
+			out.close();
+			
+			File file = new File(fileName);
+			
+			try {
+				fileContent = Files.readAllBytes(file.toPath());
+			} catch (IOException e) {
+				log.error("Error loading the file!", e);
+			}
+		} catch (Exception e) {
+		    log.warn("Could not write the export file!");
+		}
 
-		log.info("exportData-->");
-		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
+		HttpHeaders headers = new HttpHeaders();
+		if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+			headers.setContentType(MediaType.parseMediaType("application/sql"));
+		} else if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+			headers.setContentType(MediaType.parseMediaType("application/comma-separated-values"));
+		}
+		headers.setContentDispositionFormData("attachment", fileName); 
+	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
+	    log.info("exportData-->");
+	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
 	}
 	
 	private String createFilterQuery() {
@@ -745,7 +889,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			} else {
 				query += " AND ";
 			}
-			query += "i.recordType=" + this.actualFilter.getRecordType();
+			query += "i.recordType='" + this.actualFilter.getRecordType() + "'";
 		}
 
 		if (this.actualFilter.getTopicName() != null) {
@@ -755,7 +899,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			} else {
 				query += " AND ";
 			}
-			query += "i.topicName=" + this.actualFilter.getTopicName();
+			query += "i.topic='" + this.actualFilter.getTopicName() + "'";
 		}
 
 		if (this.actualFilter.getSenderClientId() != null) {
@@ -765,7 +909,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			} else {
 				query += " AND ";
 			}
-			query += "i.clientId=" + this.actualFilter.getSenderClientId();
+			query += "i.clientId='" + this.actualFilter.getSenderClientId() + "'";;
 		}
 
 		/*
@@ -813,7 +957,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		}
 		
 		for (Record record : records) {
-			if (!record.getRecordType().equalsIgnoreCase("LOG")) {
+			if (!record.getRecordType().equalsIgnoreCase("LOG") && !record.getRecordType().equalsIgnoreCase("TopicInvite")) {
 				String sender = record.getClientId().replaceAll("-", "_");
 				String topic = record.getTopic();
 				String msg = this.getMessageFromRecord(record);
@@ -821,13 +965,14 @@ public class RecordRESTController implements IAdaptorCallback {
 				List<TopicReceiver> topicReceiver = receiverMap.get(topic);
 				if (topicReceiver != null) {
 					for (TopicReceiver receiver : topicReceiver) {
-						data += topic + " -> " + receiver.getClientId().replaceAll("-", "_") + " : " + msg + "\n";	
+						if (!receiver.getClientId().equals(sender)) {
+							data += topic + " -> " + receiver.getClientId().replaceAll("-", "_")  + " : " + msg + "\n";
+						}
 					}
 				}
 			}
 		}
 		data += "@enduml\n";
-
 		log.info("createSequenceDiagramString-->");
 		return data;
 	}

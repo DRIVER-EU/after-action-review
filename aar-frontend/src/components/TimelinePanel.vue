@@ -24,7 +24,7 @@
   export default {
     name: 'TimelinePanel',
     isInitialized: false,
-    data: function () {
+    data: function() {
       return {
         isLogIncluded: false,
       };

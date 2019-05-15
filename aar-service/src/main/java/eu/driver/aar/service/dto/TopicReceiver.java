@@ -10,6 +10,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import eu.driver.aar.service.constants.AARConstants;
+
 @Entity
 @Table(name="topicreceiver", schema = "aar_service", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
 @NamedQuery(name="TopicReceiver.findAll", query="SELECT u FROM TopicReceiver u")
@@ -65,4 +67,26 @@ public class TopicReceiver {
 	public void setClientId(String clientId) {
 		this.clientId = clientId;
 	}
+	
+	public String createBackupString(String backupType) {
+    	StringBuffer backupBuffer = new StringBuffer();
+    	
+    	if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+    		// create the CSV strings
+    		backupBuffer.append("\"").append(this.Id).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.trialId).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.topicName).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.clientId).append("\"").append("\n");
+    		
+    	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+    		// create the SQL insert commands
+    		backupBuffer.append("inseret into trial (Id, trialId, topicName, clientId) values (");
+    		backupBuffer.append(this.Id).append(",");
+    		backupBuffer.append("'").append(this.trialId).append("'").append(",");
+    		backupBuffer.append("'").append(this.topicName).append("'").append(",");
+    		backupBuffer.append("'").append(this.clientId).append("'").append(");").append("\n");
+    	}
+    	
+    	return backupBuffer.toString();
+    }
 }

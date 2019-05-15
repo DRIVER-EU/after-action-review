@@ -15,6 +15,7 @@ import 'vis/dist/vis.css';
 import DiagramPopup from './components/DiagramPopup';
 import Urls from './constants/Urls';
 import VueLoadImage from 'vue-load-image'
+import {recordFilter} from './service/RecordFilterService';
 
 export const eventBus = new Vue();
 
@@ -57,8 +58,10 @@ new Vue({
   store,
   render: h => h(App),
   created () {
-    this.$store.dispatch('getRecords');
-    this.$store.dispatch('getAllTimelineRecords');
+    recordFilter.resetFilter();
+    this.$store.dispatch('getFilterOptions');
     this.$store.dispatch('getActualTrial');
+    // this.$store.dispatch('getRecords'); // done implicitly by resetFilter
+    // this.$store.dispatch('getAllTimelineRecords'); // done implicitly by resetFilter
   }
 });

@@ -22,6 +22,8 @@ import javax.persistence.UniqueConstraint;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import eu.driver.aar.service.constants.AARConstants;
+
 
 @Entity
 @Table(name="szenario", schema = "aar_service", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
@@ -123,5 +125,39 @@ public class Szenario {
     public void removeSession(Session session) {
     	this.sessionList.remove(session);
     	session.setSzenario(null);
+    }
+    
+    public String createBackupString(String backupType) {
+    	StringBuffer backupBuffer = new StringBuffer();
+    	
+    	if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+    		// create the CSV strings
+    		backupBuffer.append("\"").append(this.id).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.szenarioId).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.szenarioName).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.startDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.endDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.trial.getId()).append("\"").append("\n");
+    		
+    		for (Session session : this.sessionList) {
+    			backupBuffer.append(session.createBackupString(backupType));
+    		}
+    		
+    	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+    		// create the SQL insert commands
+    		for (Session session : this.sessionList) {
+    			backupBuffer.append(session.createBackupString(backupType));
+    		}
+    		
+    		backupBuffer.append("inseret into trial (id, szenarioId, szenarioName, startDate, endDate, trial_id) values (");
+    		backupBuffer.append(this.id).append(",");
+    		backupBuffer.append("'").append(this.szenarioId).append("'").append(",");
+    		backupBuffer.append("'").append(this.szenarioName).append("'").append(",");
+    		backupBuffer.append("'").append(this.startDate).append("'").append(",");
+    		backupBuffer.append("'").append(this.endDate).append("'").append(",");
+    		backupBuffer.append(this.trial.getId()).append(");").append("\n");
+    	}
+    	
+    	return backupBuffer.toString();
     }
 }

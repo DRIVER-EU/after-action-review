@@ -12,6 +12,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import eu.driver.aar.service.constants.AARConstants;
+
 /**
  * The persistent class for the record database table.
  * 
@@ -144,4 +146,37 @@ public class Record {
 	public void setRecordData(String recordData) {
 		this.recordData = recordData;
 	}
+	
+	public String createBackupString(String backupType) {
+    	StringBuffer backupBuffer = new StringBuffer();
+    	
+    	if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+    		// create the CSV strings
+    		backupBuffer.append("\"").append(this.id).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.clientId).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.sessionId).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.createDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.trialDate).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.topic).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.recordType).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.recordJson).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.recordData).append("\"").append("\n");
+    		
+    	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+    		// create the SQL insert commands
+    		backupBuffer.append("inseret into trial (id, clientId, sessionId, createDate, trialDate, topic, recordType, recordJson, recordData) values (");
+    		
+    		backupBuffer.append(this.id).append(",");
+    		backupBuffer.append("'").append(this.clientId).append("'").append(",");
+    		backupBuffer.append("'").append(this.sessionId).append("'").append(",");
+    		backupBuffer.append("'").append(this.createDate).append("'").append(",");
+    		backupBuffer.append("'").append(this.trialDate).append("'").append(",");
+    		backupBuffer.append("'").append(this.topic).append("'").append(",");
+    		backupBuffer.append("'").append(this.recordType).append("'").append(",");
+    		backupBuffer.append("'").append(this.recordJson).append("'").append(",");
+    		backupBuffer.append("'").append(this.recordData).append("'").append(");").append("\n");
+    	}
+    	
+    	return backupBuffer.toString();
+    }
 }

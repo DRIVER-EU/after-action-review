@@ -1,19 +1,19 @@
-import RecordType from '../constants/RecordType'
+import RecordType from '../constants/RecordType';
 
 class TimelineService {
-  static INSTANCE = new TimelineService()
+  static INSTANCE = new TimelineService();
 
   static getInstance () {
-    return TimelineService.INSTANCE
+    return TimelineService.INSTANCE;
   }
 
-  static GROUP_TRIALS = 1
+  static GROUP_TRIALS = 1;
 
-  static GROUP_SCENARIOS = 2
+  static GROUP_SCENARIOS = 2;
 
-  static GROUP_SESSIONS = 3
+  static GROUP_SESSIONS = 3;
 
-  static GROUP_RECORDS = 4
+  static GROUP_RECORDS = 4;
 
   getGroups () {
     return [{
@@ -28,7 +28,7 @@ class TimelineService {
     }, {
       id: TimelineService.GROUP_RECORDS,
       content: 'Events'
-    }]
+    }];
   };
 
   getOptions () {
@@ -36,7 +36,7 @@ class TimelineService {
       editable: false,
       stack: false,
       selectable: false,
-    }
+    };
     // const records = this.getRecords();
     // if (records != null) {
     /*
@@ -50,30 +50,30 @@ class TimelineService {
     // options.zoomMax = 1 * 60 * 1000;
     */
     // }
-    console.log('Using options', options)
-    return options
+    console.log('Using options', options);
+    return options;
   }
 
   // for clustering see: https://codepen.io/anon/pen/OZYwQN (as well as https://github.com/almende/vis/issues/3859)
   // for performance see http://visjs.org/examples/timeline/other/groupsPerformance.html?count=10000
-  getItems(trial, records, isLogIncluded) {
+  getItems (trial, records, isLogIncluded) {
     const items = [];
     if (trial != null && records != null) {
-      items.push(this.createTrialItem(trial))
-      const scenarios = trial.szenarioList || []
+      items.push(this.createTrialItem(trial));
+      const scenarios = trial.szenarioList || [];
       for (let i = 0; i < scenarios.length; i++) {
-        const scenario = scenarios[i]
-        items.push(this.createScenarioItem(scenario))
-        const sessions = scenario.sessionList || []
+        const scenario = scenarios[i];
+        items.push(this.createScenarioItem(scenario));
+        const sessions = scenario.sessionList || [];
         for (let j = 0; j < sessions.length; j++) {
-          const session = sessions[j]
-          items.push(this.createSessionItem(session))
+          const session = sessions[j];
+          items.push(this.createSessionItem(session));
         }
       }
       for (let i = 0; i < records.length; i++) {
         const record = records[i];
         const isLogRecord = record.recordType === RecordType.LOG;
-        if (!isLogRecord || isLogIncluded)  {
+        if (!isLogRecord || isLogIncluded) {
           items.push(this.createRecordItem(record));
         }
       }
@@ -87,8 +87,8 @@ class TimelineService {
       start: new Date(trial.startDate),
       end: new Date(trial.endDate),
       content: trial.trialName,
-      className: "trial"
-    }
+      className: 'trial'
+    };
   }
 
   createScenarioItem (scenario) {
@@ -97,8 +97,8 @@ class TimelineService {
       start: new Date(scenario.startDate),
       end: new Date(scenario.endDate),
       content: scenario.szenarioName,
-      className: "scenario"
-    }
+      className: 'scenario'
+    };
   }
 
   createSessionItem (session) {
@@ -107,8 +107,8 @@ class TimelineService {
       start: new Date(session.startDate),
       end: new Date(session.endDate),
       content: session.sessionName,
-      className: "session"
-    }
+      className: 'session'
+    };
   }
 
   createRecordItem (record) {
@@ -119,14 +119,14 @@ class TimelineService {
       content: '' + record.id,
       className: record.recordType,
       record: record
-    }
+    };
   }
 
-  isRecordGroup(groupId) {
+  isRecordGroup (groupId) {
     return groupId === TimelineService.GROUP_RECORDS;
   }
 }
 
-const timeline = TimelineService.getInstance()
+const timeline = TimelineService.getInstance();
 
-export {TimelineService, timeline}
+export {TimelineService, timeline};
