@@ -1,5 +1,6 @@
 import FilterOption from '../constants/FilterOption';
 import {store} from '../store';
+import {fetchService} from './FetchService';
 
 class RecordFilterService {
   static INSTANCE = new RecordFilterService();
@@ -24,12 +25,11 @@ class RecordFilterService {
       topicName: currentlySelectedTopicId === FilterOption.ALL ? null : currentlySelectedTopicId,
     };
     console.log('/setActualFilter invoked with', filter);
-    store.axios.post('setActualFilter', filter).then(response => {
-      // console.log('Filter has been set', response.data);
+    fetchService.performPost('setActualFilter', filter).then(() => {
       store.dispatch('getRecords');
       store.dispatch('getAllTimelineRecords');
       /**
-      store.axios.get('getActualFilter').then(response => {
+       fetchService.performGet('getActualFilter').then(response => {
         console.log('/getActualFilter returned', response.data);
       }).catch(ex => console.log(ex));
        **/

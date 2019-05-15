@@ -99,7 +99,7 @@
         return this.$store.getters.filterOptions;
       },
       filteredRecords: function () {
-        return this.records.filter(() => true);
+        return this.records;
       }
     },
     methods: {
