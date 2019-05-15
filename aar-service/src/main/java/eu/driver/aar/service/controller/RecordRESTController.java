@@ -710,6 +710,45 @@ public class RecordRESTController implements IAdaptorCallback {
 		log.info("createSequenceDiagram-->");
 		return new ResponseEntity<byte[]>("".getBytes(), HttpStatus.OK);
 	}
+	
+	@ApiOperation(value = "createOverviewSequenceDiagram", nickname = "createOverviewSequenceDiagram")
+	@RequestMapping(value = "/AARService/createOverviewSequenceDiagram", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = byte[].class),
+			@ApiResponse(code = 400, message = "Bad Request", response = byte[].class),
+			@ApiResponse(code = 500, message = "Failure", response = byte[].class) })
+	public ResponseEntity<byte[]> createOverviewSequenceDiagram() {
+		log.info("-->createOverviewSequenceDiagram");
+		ByteArrayOutputStream bous = new ByteArrayOutputStream();
+		Long recCount = recordRepo.count();
+		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i WHERE i.recordType != 'Log'";
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		//typedQuery.setFirstResult(recCount.intValue()-20);
+		typedQuery.setMaxResults(20);
+		List<Record> records = typedQuery.getResultList();
+		if (records != null && records.size() > 0) {
+			List<TopicReceiver> receivers = topicReceiverRepo.findAll();
+			String source = createSequenceDiagramString(records, receivers);
+			SourceStringReader reader = new SourceStringReader(source);
+		    // Write the first image to "png"
+			String desc = null;
+		    try {
+				desc = reader.generateImage(bous);
+			} catch (IOException e) {
+				log.error("Error creating the sequence diagram!");
+			}
+		    // Return a null string if no generation
+		    byte[] media = bous.toByteArray();
+			
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.IMAGE_PNG);
+		    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
+		    log.info("createSequenceDiagram-->");
+		    return new ResponseEntity<byte[]>(media, headers, HttpStatus.OK);
+		}
+		log.info("createOverviewSequenceDiagram-->");
+		return new ResponseEntity<byte[]>("".getBytes(), HttpStatus.OK);
+	}
 
 	@ApiOperation(value = "exportData", nickname = "exportData")
 	@RequestMapping(value = "/AARService/exportData", method = RequestMethod.GET)
@@ -806,7 +845,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			} else {
 				query += " AND ";
 			}
-			query += "i.topicName='" + this.actualFilter.getTopicName() + "'";
+			query += "i.topic='" + this.actualFilter.getTopicName() + "'";
 		}
 
 		if (this.actualFilter.getSenderClientId() != null) {
