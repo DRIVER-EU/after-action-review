@@ -6,6 +6,7 @@ import {parseDate} from '../helper';
 import {environment} from '../service/EnvironmentService';
 import EventName from '../constants/EventName';
 import FilterOption from '../constants/FilterOption';
+import Settings from '../constants/Settings';
 
 Vue.use(Vuex);
 
@@ -20,8 +21,6 @@ function createRecord(record) {
   return newRecord;
 }
 
-const PAGE_SIZE = 20;
-
 export const store = new Vuex.Store({
   state: {
     socket: {
@@ -33,8 +32,8 @@ export const store = new Vuex.Store({
       messageAccepted: false
     },
     records: [],
-    recordsPageCount: 5,
-    timelineRecords: null,
+    recordsPageCount: 1,
+    timelineRecords: [],
     record: null,
     trial: null,
     filterOptions: {
@@ -77,9 +76,9 @@ export const store = new Vuex.Store({
       state.socket.messageAccepted = true;
     },
     RECORD_NOTIFICATION (state, record) {
-      // console.log("Received record notification", record);
       let newRecord = createRecord(record);
-      state.records.push(newRecord);
+      console.log("Received record notification", record, newRecord);
+      state.timelineRecords.push(record);
       this.eventBus.$emit(EventName.RECORD_NOTIFICATION, newRecord);
     },
     GET_RECORDS (state, records) {
@@ -151,7 +150,7 @@ export const store = new Vuex.Store({
     },
     getRecords (context, payload) {
       const page = payload ? payload.page : null;
-      const url = page ? 'getAllRecords?size=' + PAGE_SIZE + "&page=" + page : 'getAllRecords';
+      const url = page ? 'getAllRecords?size=' + Settings.PAGE_SIZE + "&page=" + page : 'getAllRecords';
       this.axios.get(url).then(response => {
         console.log('/getAllRecords returned count', response.data.length);
         context.commit('GET_RECORDS', (response.data));

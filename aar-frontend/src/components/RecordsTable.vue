@@ -70,6 +70,7 @@
   import {eventBus} from '../main';
   import {recordFilter} from '../service/RecordFilterService';
   import EventName from '../constants/EventName';
+  import Settings from '../constants/Settings';
 
   export default {
     name: 'RecordsTable',
@@ -79,6 +80,7 @@
         currentlySelectedClientId: 'All',
         currentlySelectedTopicId: 'All',
         currentlySelectedRecordType: 'All',
+        additionalRecords: [],
         pagination: {
           page: 1,
         }
@@ -109,12 +111,18 @@
         return this.$store.getters.filterOptions;
       },
       filteredRecords: function () {
-        return this.records;
+        if (this.pagination.page === 1) {
+          let result = [];
+          result = result.concat(this.additionalRecords.slice(0, Settings.PAGE_SIZE));
+          result = result.concat(this.records.slice(0, Settings.PAGE_SIZE - result.length));
+          return result;
+        } else {
+          return this.records;
+        }
       }
     },
     methods: {
       switchPage (page) {
-        console.log("GO TO PAGE", page);
         this.$store.dispatch('getRecords', {page: page});
       },
       recordSelected: function (recordID, recordType) {
@@ -129,6 +137,9 @@
       this.$store.dispatch('getRecords', {page: vm.pagination.page});
       eventBus.$on(EventName.FILTER_CHANGED, () => {
         this.$store.dispatch('getRecords', {page: vm.pagination.page});
+      });
+      eventBus.$on(EventName.RECORD_NOTIFICATION, (newRecord) => {
+        vm.additionalRecords.unshift(newRecord);
       });
     }
   };
