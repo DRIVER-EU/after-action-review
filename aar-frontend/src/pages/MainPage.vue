@@ -63,6 +63,7 @@
     },
     created () {
       recordFilter.resetFilter();
+      this.$store.dispatch('getPageCount');
       this.$store.dispatch('getFilterOptions');
       this.$store.dispatch('getActualTrial');
       // this.$store.dispatch('getRecords'); // done implicitly by resetFilter

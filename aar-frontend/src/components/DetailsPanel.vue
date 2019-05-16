@@ -21,6 +21,7 @@
   import AlertDetails from './DetailsTemplates/AlertDetails';
   import GeoJsonEnvelopeDetails from './DetailsTemplates/GeoJsonEnvelopeDetails';
   import LargeDataUpdateDetails from './DetailsTemplates/LargeDataUpdateDetails';
+  import EventName from '../constants/EventName';
 
   export default {
       components: {LogDetails,InviteDetails,AlertDetails,LargeDataUpdateDetails,GeoJsonEnvelopeDetails},
@@ -37,7 +38,7 @@
         }
       },
       created: function() {
-        eventBus.$on('recordSelected', (recordID, recordType) => {
+        eventBus.$on(EventName.RECORD_SELECTED, (recordID, recordType) => {
           this.$store.dispatch('getRecord', {id: recordID});
         });
       }

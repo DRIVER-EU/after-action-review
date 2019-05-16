@@ -59,6 +59,9 @@
           </tr>
         </template>
       </v-data-table>
+      <div class="text-xs-center" style="padding: 10px 0px">
+        <v-pagination v-model="pagination.page" :length=recordsPageCount :total-visible="11" @input="switchPage"></v-pagination>
+      </div>
     </v-card>
   </v-flex>
 </template>
@@ -66,6 +69,7 @@
 <script>
   import {eventBus} from '../main';
   import {recordFilter} from '../service/RecordFilterService';
+  import EventName from '../constants/EventName';
 
   export default {
     name: 'RecordsTable',
@@ -74,7 +78,10 @@
         currentlySelectedId: 'All',
         currentlySelectedClientId: 'All',
         currentlySelectedTopicId: 'All',
-        currentlySelectedRecordType: 'All'
+        currentlySelectedRecordType: 'All',
+        pagination: {
+          page: 1,
+        }
       };
     },
     watch: {
@@ -95,6 +102,9 @@
       records: function () {
         return this.$store.getters.records;
       },
+      recordsPageCount: function () {
+        return this.$store.state.recordsPageCount;
+      },
       filterOptions: function () {
         return this.$store.getters.filterOptions;
       },
@@ -103,12 +113,23 @@
       }
     },
     methods: {
-      recordSelected: function (recordID, recordType) {
-        eventBus.$emit('recordSelected', recordID, recordType);
+      switchPage (page) {
+        console.log("GO TO PAGE", page);
+        this.$store.dispatch('getRecords', {page: page});
       },
-      updateFilter: function() {
+      recordSelected: function (recordID, recordType) {
+        eventBus.$emit(EventName.RECORD_SELECTED, recordID, recordType);
+      },
+      updateFilter: function () {
         recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType, this.currentlySelectedTopicId);
       }
     },
+    created () {
+      const vm = this;
+      this.$store.dispatch('getRecords', {page: vm.pagination.page});
+      eventBus.$on(EventName.FILTER_CHANGED, () => {
+        this.$store.dispatch('getRecords', {page: vm.pagination.page});
+      });
+    }
   };
 </script>

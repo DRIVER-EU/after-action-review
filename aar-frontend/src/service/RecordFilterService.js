@@ -1,6 +1,8 @@
 import FilterOption from '../constants/FilterOption';
 import {store} from '../store';
+import {eventBus} from '../main';
 import {fetchService} from './FetchService';
+import EventName from '../constants/EventName';
 
 class RecordFilterService {
   static INSTANCE = new RecordFilterService();
@@ -26,7 +28,7 @@ class RecordFilterService {
     };
     console.log('/setActualFilter invoked with', filter);
     fetchService.performPost('setActualFilter', filter).then(() => {
-      store.dispatch('getRecords');
+      eventBus.$emit(EventName.FILTER_CHANGED);
       store.dispatch('getAllTimelineRecords');
       /**
        fetchService.performGet('getActualFilter').then(response => {

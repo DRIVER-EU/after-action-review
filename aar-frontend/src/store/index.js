@@ -20,6 +20,8 @@ function createRecord(record) {
   return newRecord;
 }
 
+const PAGE_SIZE = 20;
+
 export const store = new Vuex.Store({
   state: {
     socket: {
@@ -31,6 +33,7 @@ export const store = new Vuex.Store({
       messageAccepted: false
     },
     records: [],
+    recordsPageCount: 5,
     timelineRecords: null,
     record: null,
     trial: null,
@@ -86,6 +89,10 @@ export const store = new Vuex.Store({
         state.records.push(newRecord);
       });
     },
+    GET_RECORDS_PAGE_COUNT (state, count) {
+      // console.log("Received records page count", count);
+      state.recordsPageCount = count;
+    },
     GET_RECORD_TYPES (state, recordTypes) {
       recordTypes.forEach(recordType => {
         if (state.filterOptions.recordType.indexOf(recordType) === -1) {
@@ -137,8 +144,15 @@ export const store = new Vuex.Store({
         context.commit('GET_RECORD', (response.data));
       }).catch(ex => console.log(ex));
     },
-    getRecords (context) {
-      this.axios.get('getAllRecords').then(response => {
+    getPageCount (context) {
+      this.axios.get('getPageCount').then(response => {
+        context.commit('GET_RECORDS_PAGE_COUNT', (response.data));
+      }).catch(ex => console.log(ex));
+    },
+    getRecords (context, payload) {
+      const page = payload ? payload.page : null;
+      const url = page ? 'getAllRecords?size=' + PAGE_SIZE + "&page=" + page : 'getAllRecords';
+      this.axios.get(url).then(response => {
         console.log('/getAllRecords returned count', response.data.length);
         context.commit('GET_RECORDS', (response.data));
       }).catch(ex => console.log(ex));
