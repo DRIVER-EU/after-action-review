@@ -3,4 +3,5 @@ export default {
   RECORD_NOTIFICATION: "recordNotification",
   RECORD_SELECTED: "recordSelected",
   FILTER_CHANGED: "filterChanged",
+  LOG_ERROR_RECEIVED: "logErrorReceived"
 }

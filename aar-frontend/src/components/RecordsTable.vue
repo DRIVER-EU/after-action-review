@@ -49,7 +49,7 @@
           </tr>
         </template>
         <template slot="items" slot-scope="props" style="height: 93vh; overflow: auto;">
-          <tr @click="recordSelected(props.item.id, props.item.recordType)">
+          <tr @click="recordSelected(props.item.id, props.item.recordType)" v-bind:class="getRowClass(props.item)">
             <td>{{props.item.id}}</td>
             <td>{{props.item.clientId}}</td>
             <td>{{props.item.topic}}</td>
@@ -71,6 +71,7 @@
   import {recordFilter} from '../service/RecordFilterService';
   import EventName from '../constants/EventName';
   import Settings from '../constants/Settings';
+  import RecordType from '../constants/RecordType';
 
   export default {
     name: 'RecordsTable',
@@ -130,6 +131,14 @@
       },
       updateFilter: function () {
         recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType, this.currentlySelectedTopicId);
+      },
+      getRowClass: function(item) {
+        if (item.recordType === RecordType.LOG) {
+          const level = item.recordData ? item.recordData.level : "unknown";
+          return "log-" + level;
+        } else {
+          return null;
+        }
       }
     },
     created () {

@@ -7,6 +7,8 @@ import {environment} from '../service/EnvironmentService';
 import EventName from '../constants/EventName';
 import FilterOption from '../constants/FilterOption';
 import Settings from '../constants/Settings';
+import RecordType from '../constants/RecordType';
+import LogLevel from '../constants/LogLevel';
 
 Vue.use(Vuex);
 
@@ -19,6 +21,14 @@ function createRecord(record) {
     newRecord.recordJson.dateTimeSent = parseDate(newRecord.recordJson.dateTimeSent);
   }
   return newRecord;
+}
+
+function isErrorLog(record) {
+  if (record.recordType === RecordType.LOG) {
+    return record.recordData && record.recordData.level === LogLevel.ERROR;
+  } else {
+    return false;
+  }
 }
 
 export const store = new Vuex.Store({
@@ -76,10 +86,13 @@ export const store = new Vuex.Store({
       state.socket.messageAccepted = true;
     },
     RECORD_NOTIFICATION (state, record) {
+      // console.log("Received record notification", record);
       let newRecord = createRecord(record);
-      console.log("Received record notification", record, newRecord);
       state.timelineRecords.push(record);
       this.eventBus.$emit(EventName.RECORD_NOTIFICATION, newRecord);
+      if (isErrorLog(newRecord)) {
+        this.eventBus.$emit(EventName.LOG_ERROR_RECEIVED);
+      }
     },
     GET_RECORDS (state, records) {
       state.records = [];

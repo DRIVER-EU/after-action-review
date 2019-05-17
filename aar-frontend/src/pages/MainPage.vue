@@ -31,6 +31,12 @@
           <timeline-panel style="height: 40vh; overflow: auto;"/>
         </v-flex>
       </v-layout>
+      <v-snackbar v-model="snackbar.visible" :top="true" :timeout="0" color="error">
+        {{snackbar.text}}
+        <v-btn flat @click="snackbar.visible = false">
+          Close
+        </v-btn>
+      </v-snackbar>
     </main>
     <diagram-popup/>
   </v-app>
@@ -47,7 +53,11 @@
       exportDataItems: [
         {exportType: 'CSV', title: 'CSV'},
         {exportType: 'SQL', title: 'SQL'},
-      ]
+      ],
+      snackbar: {
+        visible: false,
+        text: ""
+      }
     }),
     methods: {
       openDiagramPopup () {
@@ -62,12 +72,15 @@
       }
     },
     created () {
+      const vm = this;
       recordFilter.resetFilter();
       this.$store.dispatch('getPageCount');
       this.$store.dispatch('getFilterOptions');
       this.$store.dispatch('getActualTrial');
-      // this.$store.dispatch('getRecords'); // done implicitly by resetFilter
-      // this.$store.dispatch('getAllTimelineRecords'); // done implicitly by resetFilter
+      eventBus.$on(EventName.LOG_ERROR_RECEIVED, () => {
+        vm.snackbar.text = "A record of type Log on level ERROR has been received.";
+        vm.snackbar.visible = true;
+      });
     }
   };
 </script>
