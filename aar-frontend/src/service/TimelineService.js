@@ -118,7 +118,8 @@ class TimelineService {
       start: new Date(record.createDate),
       content: '' + record.id,
       className: record.recordType,
-      record: record
+      record: record,
+      title: record.recordType
     };
   }
 
