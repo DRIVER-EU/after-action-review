@@ -124,7 +124,7 @@
     },
     methods: {
       switchPage (page) {
-        this.$store.dispatch('getRecords', {page: page});
+        this.reloadData();
       },
       recordSelected: function (recordID, recordType) {
         eventBus.$emit(EventName.RECORD_SELECTED, recordID, recordType);
@@ -139,14 +139,16 @@
         } else {
           return null;
         }
+      },
+      reloadData() {
+        this.additionalRecords = [];
+        this.$store.dispatch('getRecords', {page: this.pagination.page});
       }
     },
     created () {
       const vm = this;
       this.$store.dispatch('getRecords', {page: vm.pagination.page});
-      eventBus.$on(EventName.FILTER_CHANGED, () => {
-        this.$store.dispatch('getRecords', {page: vm.pagination.page});
-      });
+      eventBus.$on(EventName.FILTER_CHANGED, this.reloadData);
       eventBus.$on(EventName.RECORD_NOTIFICATION, (newRecord) => {
         vm.additionalRecords.unshift(newRecord);
       });

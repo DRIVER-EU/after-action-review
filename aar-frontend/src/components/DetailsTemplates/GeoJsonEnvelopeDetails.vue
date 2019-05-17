@@ -57,7 +57,7 @@
 
 <script>
   export default {
-    name: 'GeoJsonEnvelope',
+    name: 'GeoJsonEnvelopeDetails',
     props: ['recordID', 'record']
   };
 </script>
