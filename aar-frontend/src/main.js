@@ -18,6 +18,7 @@ import Urls from './constants/Urls';
 import VueLoadImage from 'vue-load-image';
 import DatetimePicker from 'vuetify-datetime-picker';
 import 'vuetify-datetime-picker/src/stylus/main.styl';
+import 'vuetify-stylus-fixed-table-header/index.styl';
 
 export const eventBus = new Vue();
 store.eventBus = eventBus;

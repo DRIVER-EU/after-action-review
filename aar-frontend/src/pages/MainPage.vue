@@ -19,17 +19,21 @@
         </v-card>
       </v-menu>
     </toolbar>
-    <main>
-      <v-layout row wrap>
-        <v-flex xs9>
-          <records-table style="height: 53vh; overflow: auto;"/>
-        </v-flex>
-        <v-flex xs3>
-          <details-panel style="height: 53vh; overflow: auto;"/>
-        </v-flex>
-        <v-flex xs12>
-          <timeline-panel style="height: 40vh; overflow: auto;"/>
-        </v-flex>
+    <main style="height: 100%">
+      <v-layout column justify-space-between class="purple" fill-height>
+        <v-card style="height: 100%">
+          <v-layout row wrap fill-height>
+            <v-flex xs9>
+              <records-table style="height: 100%; overflow: auto;"/>
+            </v-flex>
+            <v-flex xs3>
+              <details-panel style="height: 53vh; overflow: auto;"/>
+            </v-flex>
+          </v-layout>
+        </v-card>
+        <v-card>
+          <timeline-panel style="overflow: auto;"/>
+        </v-card>
       </v-layout>
       <v-snackbar v-model="snackbar.visible" :top="true" :timeout="0" color="error">
         {{snackbar.text}}

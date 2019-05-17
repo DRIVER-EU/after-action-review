@@ -1,6 +1,6 @@
 <template>
   <v-flex>
-    <v-card class="timelinePanel" style="border-top: 1px solid #999999;">
+    <v-card class="timelinePanel">
       <v-card-title class="justify-center primary--text">
         <span>Timeline</span>
         <div class="includeLogs">

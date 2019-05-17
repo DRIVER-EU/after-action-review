@@ -1,6 +1,6 @@
 <template>
   <v-flex>
-    <v-card>
+    <v-card class="tablePanel" style="height: 100%">
       <v-data-table :items=filteredRecords hide-actions class="recordsTable">
         <template slot="headers" slot-scope="props">
           <tr>

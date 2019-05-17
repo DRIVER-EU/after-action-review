@@ -1,4 +1,5 @@
 @import '../../node_modules/vuetify/src/stylus/main'
+@import '~vuetify-stylus-fixed-table-header';
 
 html {
   overflow-y: auto
@@ -38,35 +39,18 @@ html {
   }
 }
 
+.tablePanel {
+  border-right: 1px solid #999999 !important;
+}
+
 .recordsTable {
-  table {
-  }
-
-  thead {
-    tr {
-      /*
-      display: block;
-      position: relative;
-       */
-    }
-
-    th {
-      /*
-      position: sticky;
-       */
-    }
-  }
-
-  tbody {
-    /*
-    display: block;
-    overflow: auto;
-    width: 100%;
-     */
-  }
+  fixed-table-header(55vh);
 }
 
 .detailsPanel {
+  box-shadow: none;
+  height: 100%;
+
   .jsonView {
     white-space: normal !important;
     font-size: 12px;
@@ -78,6 +62,8 @@ html {
 }
 
 .timelinePanel {
+  border-top: 1px solid #999999 !important;
+
   .includeLogs {
     width: 150px;
     text-align: right;
