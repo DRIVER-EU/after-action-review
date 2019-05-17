@@ -1,7 +1,7 @@
 <template>
   <v-flex>
-    <v-card class="tablePanel" style="height: 100%">
-      <v-data-table :items=filteredRecords hide-actions class="recordsTable">
+    <v-card class="tablePanel" style="position:absolute;top:0px;left:0px;right:0px;bottom:60px;">
+      <v-data-table :items=filteredRecords hide-actions class="recordsTable" style="height:100%">
         <template slot="headers" slot-scope="props">
           <tr>
             <th>
@@ -61,6 +61,8 @@
           </tr>
         </template>
       </v-data-table>
+    </v-card>
+    <v-card class="tablePanel" style="position:absolute;bottom:0px;left:0px;right:0px;height:60px;">
       <div class="text-xs-center" style="padding: 10px 0px">
         <v-pagination v-model="pagination.page" :length=recordsPageCount :total-visible="11" @input="switchPage"></v-pagination>
       </div>

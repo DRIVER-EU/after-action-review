@@ -20,20 +20,20 @@
       </v-menu>
     </toolbar>
     <main style="height: 100%">
-      <v-layout column justify-space-between class="purple" fill-height>
-        <v-card style="height: 100%">
+      <v-layout column justify-space-between fill-height>
+        <div style="position:absolute;top:64px;bottom:300px;left:0px;right:0px;">
           <v-layout row wrap fill-height>
-            <v-flex xs9>
+            <div style="position:absolute;top:0px;bottom:0px;left:0px;right:400px;">
               <records-table style="height: 100%; overflow: auto;"/>
-            </v-flex>
-            <v-flex xs3>
-              <details-panel style="height: 53vh; overflow: auto;"/>
-            </v-flex>
+            </div>
+            <div style="position:absolute;top:0px;bottom:0px;right:0px;width:400px;">
+              <details-panel style="height: 100%; overflow: auto;"/>
+            </div>
           </v-layout>
-        </v-card>
-        <v-card>
+        </div>
+        <div style="position:absolute;bottom:0px;height:300px;left:0px;right:0px;">
           <timeline-panel style="overflow: auto;"/>
-        </v-card>
+        </div>
       </v-layout>
       <v-snackbar v-model="snackbar.visible" :top="true" :timeout="0" color="error">
         {{snackbar.text}}

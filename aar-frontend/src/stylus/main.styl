@@ -1,6 +1,43 @@
 @import '../../node_modules/vuetify/src/stylus/main'
 @import '~vuetify-stylus-fixed-table-header';
 
+/** from vuetify-stylus-fixed-table-header, modified to work based on absolute positions **/
+
+@import '~vuetify/src/stylus/settings/_theme.styl'
+
+fixed-table-header-absolute() {
+  .v-table__overflow {
+    overflow-y: auto !important
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+  }
+
+  .theme--light th {
+    background-color: $material-light.cards
+  }
+  .theme--dark th {
+    background-color: $material-dark.cards
+  }
+
+  th {
+    position: sticky
+    top: 0
+    z-index: 1
+  }
+
+  tr.v-datatable__progress {
+    th {
+      top: 55px
+      height: 1px;
+    }
+  }
+}
+
+/** end of import */
+
 html {
   overflow-y: auto
 }
@@ -44,7 +81,7 @@ html {
 }
 
 .recordsTable {
-  fixed-table-header(55vh);
+  fixed-table-header-absolute();
 }
 
 .detailsPanel {
