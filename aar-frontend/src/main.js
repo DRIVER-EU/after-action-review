@@ -15,7 +15,9 @@ import 'vis/dist/vis.css';
 import DiagramPopup from './components/DiagramPopup';
 import Toolbar from './components/Toolbar';
 import Urls from './constants/Urls';
-import VueLoadImage from 'vue-load-image'
+import VueLoadImage from 'vue-load-image';
+import DatetimePicker from 'vuetify-datetime-picker';
+import 'vuetify-datetime-picker/src/stylus/main.styl';
 
 export const eventBus = new Vue();
 store.eventBus = eventBus;
@@ -42,6 +44,7 @@ Vue.use(Vuetify, {
     error: '#b71c1c'
   }
 });
+Vue.use(DatetimePicker);
 
 Vue.config.productionTip = false;
 

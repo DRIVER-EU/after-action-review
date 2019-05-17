@@ -40,11 +40,14 @@
                 v-model="currentlySelectedRecordType"
               ></v-select>
             </th>
-            <th style="padding-bottom: 68px">
+            <th>
               <div class="primary--text" style="padding: 16px">Date</div>
-            </th>
-            <th style="padding-bottom: 68px">
-              <div class="primary--text" style="padding: 16px">Time</div>
+              <table>
+                <tr>
+                  <td><v-datetime-picker label="From" v-model="currentlySelectedFromDate" style="min-width: 150px"></v-datetime-picker></td>
+                  <td><v-datetime-picker label="To" v-model="currentlySelectedToDate" style="min-width: 150px"></v-datetime-picker></td>
+                </tr>
+              </table>
             </th>
           </tr>
         </template>
@@ -54,8 +57,7 @@
             <td>{{props.item.clientId}}</td>
             <td>{{props.item.topic}}</td>
             <td>{{props.item.recordType}}</td>
-            <td class="text-xs-center">{{props.item.createDate}}</td>
-            <td class="text-xs-center">{{props.item.createTime}}</td>
+            <td class="text-xs-center">{{props.item.createDate}}&nbsp;{{props.item.createTime}}</td>
           </tr>
         </template>
       </v-data-table>
@@ -81,6 +83,8 @@
         currentlySelectedClientId: 'All',
         currentlySelectedTopicId: 'All',
         currentlySelectedRecordType: 'All',
+        currentlySelectedFromDate: null,
+        currentlySelectedToDate: null,
         additionalRecords: [],
         pagination: {
           page: 1,
@@ -98,6 +102,12 @@
         this.updateFilter();
       },
       currentlySelectedRecordType: function () {
+        this.updateFilter();
+      },
+      currentlySelectedFromDate: function () {
+        this.updateFilter();
+      },
+      currentlySelectedToDate: function () {
         this.updateFilter();
       },
     },
@@ -130,7 +140,7 @@
         eventBus.$emit(EventName.RECORD_SELECTED, recordID, recordType);
       },
       updateFilter: function () {
-        recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType, this.currentlySelectedTopicId);
+        recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType, this.currentlySelectedTopicId, this.currentlySelectedFromDate, this.currentlySelectedToDate);
       },
       getRowClass: function(item) {
         if (item.recordType === RecordType.LOG) {

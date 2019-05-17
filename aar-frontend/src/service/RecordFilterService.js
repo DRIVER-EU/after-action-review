@@ -15,11 +15,11 @@ class RecordFilterService {
     this.updateFilter(null, null, null, null);
   }
 
-  updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId) {
+  updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId, currentlySelectedFromDate, currentlySelectedToDate) {
     const filter = {
       filterEnabled: true,
-      fromDate: null,
-      toDate: null,
+      fromDate: currentlySelectedFromDate ? currentlySelectedFromDate.getTime() : null,
+      toDate: currentlySelectedToDate? currentlySelectedToDate.getTime() : null,
       receiverClientId: null,
       id: currentlySelectedId === FilterOption.ALL ? null : currentlySelectedId,
       senderClientId: currentlySelectedClientId === FilterOption.ALL ? null : currentlySelectedClientId,
