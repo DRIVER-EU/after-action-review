@@ -70,13 +70,16 @@ public class AARServiceApplication {
 				log.error("Error sending the log entry to the topic!", cEx);
 			}
 			
-			/*cisAdapter.addCallback(recordController, TopicConstants.STANDARD_TOPIC_CAP);
+			/*cisAdapter.addCallback(recordController, "photo_geojson");
+			cisAdapter.addCallback(recordController, "assign_info");
+			cisAdapter.addCallback(recordController, "large_data_update");
+			cisAdapter.addCallback(recordController, "crowd-tasker_info");*/
 			cisAdapter.addCallback(recordController, "flood_prediction_netcdf");
 			cisAdapter.addCallback(recordController, "flood_prediction_geojson");
 			cisAdapter.addCallback(recordController, "flood_actual");
 			cisAdapter.addCallback(recordController, "lcms_plots");
 			cisAdapter.addCallback(recordController, "crisissuite_htm_plots");
-			cisAdapter.addCallback(recordController, "crisissuite_stedin_plots");*/
+			cisAdapter.addCallback(recordController, "crisissuite_stedin_plots");
 		}
 	}
 	

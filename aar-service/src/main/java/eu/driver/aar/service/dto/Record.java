@@ -1,16 +1,25 @@
 package eu.driver.aar.service.dto;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import eu.driver.aar.service.constants.AARConstants;
 
@@ -53,8 +62,19 @@ public class Record {
 	@Column(name="recordData", columnDefinition = "TEXT")
 	private String recordData;
 	
+	@Column(name="headline", columnDefinition = "TEXT")
+	private String headline;
+	
+	@JsonManagedReference
+	@OneToMany( mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Attachement> fileList = new ArrayList<Attachement>();
+	
 	public Record() {
 		
+	}
+	
+	public Record(Long id) {
+		this.id = id;
 	}
 	
 	public Record(Long id, String clientId, String sessionId, String topic, String recordType, Date createDate, Date trialDate) {
@@ -147,6 +167,26 @@ public class Record {
 		this.recordData = recordData;
 	}
 	
+	public String getHeadline() {
+		return headline;
+	}
+
+	public void setHeadline(String headline) {
+		this.headline = headline;
+	}
+
+	public List<Attachement> getFileList() {
+		return fileList;
+	}
+
+	public void setFileList(List<Attachement> fileList) {
+		this.fileList = fileList;
+	}
+	
+	public void addFile(Attachement file) {
+		this.fileList.add(file);
+	}
+
 	public String createBackupString(String backupType) {
     	StringBuffer backupBuffer = new StringBuffer();
     	
