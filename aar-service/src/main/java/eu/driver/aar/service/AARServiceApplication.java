@@ -74,6 +74,7 @@ public class AARServiceApplication {
 			cisAdapter.addCallback(recordController, "assign_info");
 			cisAdapter.addCallback(recordController, "large_data_update");
 			cisAdapter.addCallback(recordController, "crowd-tasker_info");*/
+			cisAdapter.addCallback(recordController, "standard_cap");
 			cisAdapter.addCallback(recordController, "flood_prediction_netcdf");
 			cisAdapter.addCallback(recordController, "flood_prediction_geojson");
 			cisAdapter.addCallback(recordController, "flood_actual");

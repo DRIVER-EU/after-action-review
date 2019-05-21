@@ -126,6 +126,9 @@ public class RecordRESTController implements IAdaptorCallback {
 		record.setRecordType(receivedMessage.getSchema().getName());
 		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData
 				.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
+		
+		String clientID = msgKey.getSenderID().toString();
+		
 		record.setClientId(msgKey.getSenderID().toString());
 		record.setTopic(topicName);
 
@@ -145,14 +148,14 @@ public class RecordRESTController implements IAdaptorCallback {
 			String clientId = msg.getId().toString();
 			String receiverTopicName = msg.getTopicName().toString();
 			Boolean subscribeAllowed = msg.getSubscribeAllowed();
-			if (ownClientID.equalsIgnoreCase(clientId)) {
+			/*if (ownClientID.equalsIgnoreCase(clientId)) {
 				// add a callback if not done already
 				if (registeredCallbacks.get(msgKey) == null) {
 					log.info("Adding a callback receiver for: " + receiverTopicName);
 					CISAdapter.getInstance().addCallback(this, receiverTopicName);
 					registeredCallbacks.put(receiverTopicName, true);
 				}
-			} else if (subscribeAllowed) {
+			} else */if (subscribeAllowed) {
 				String trialId = "unknown";
 				TopicReceiver topicReceiver = topicReceiverRepo
 						.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
