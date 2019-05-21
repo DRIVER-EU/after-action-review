@@ -276,7 +276,12 @@ public class RecordRESTController implements IAdaptorCallback {
 			}
 
 			String szenarioId = msg.getScenarioId().toString();
-			Szenario szenario = szenarioRepo.findObjectBySzenarioId(szenarioId);
+			Szenario szenario = null;
+			for (Szenario tmpSzenario : trial.getSzenarioList()) {
+				if (tmpSzenario.getSzenarioId().equals(szenarioId)) {
+					szenario = tmpSzenario;
+				}
+			}
 			if (szenario == null) {
 				szenario = new Szenario();
 				szenario.setTrial(trial);
@@ -290,7 +295,12 @@ public class RecordRESTController implements IAdaptorCallback {
 			}
 
 			String sessionId = msg.getSessionId().toString();
-			Session session = sessionRepo.findObjectBySessionId(sessionId);
+			Session session = null;
+			for (Session tmpSession : szenario.getSessionList()) {
+				if (tmpSession.getSessionId().equals(sessionId)) {
+					session = tmpSession;
+				}
+			}
 			if (session == null) {
 				session = new Session();
 				session.setSzenario(szenario);
@@ -1048,7 +1058,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				List<TopicReceiver> topicReceiver = receiverMap.get(topic);
 				if (topicReceiver != null) {
 					for (TopicReceiver receiver : topicReceiver) {
-						if (!receiver.getClientId().equals(sender)) {
+						if (!receiver.getClientId().equals(record.getClientId())) {
 							String client = receiver.getClientId();
 							idx = client.indexOf("--");
 							if (idx > -1) {
