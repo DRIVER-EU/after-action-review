@@ -118,7 +118,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	}
 
 	@Override
-	public void messageReceived(IndexedRecord key,
+	public synchronized void messageReceived(IndexedRecord key,
 			IndexedRecord receivedMessage, String topicName) {
 		Record record = new Record();
 		record.setCreateDate(new Date());
@@ -317,7 +317,7 @@ public class RecordRESTController implements IAdaptorCallback {
 					.get().deepCopy(eu.driver.model.core.PhaseMessage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("RolePlayer")) {
+				.equalsIgnoreCase("RolePlayerMessage")) {
 			eu.driver.model.core.RolePlayerMessage msg = (eu.driver.model.core.RolePlayerMessage) SpecificData
 					.get().deepCopy(eu.driver.model.core.RolePlayerMessage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
@@ -350,7 +350,8 @@ public class RecordRESTController implements IAdaptorCallback {
 		} else {
 			// unknown data
 			record = null;
-			log.error("Unknown message received!");
+			log.error("Unknown message received: " + topicName);
+			log.error(receivedMessage);
 		}
 
 		if (record != null) {
@@ -486,6 +487,15 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<Trial> getActualTrial() {
 		log.info("-->getActualTrial");
 		Trial trial = trialRepo.findActualTrial();
+		
+		if (trial == null) {
+			// create Dummy Trial
+			trial = new Trial();
+			trial.setActual(true);
+			trial.setStartDate(new Date());
+			trial.setTrialId("Temp_1");
+			trial.setTrialName("Trial");
+		}
 
 		log.info("getActualTrial-->");
 		return new ResponseEntity<Trial>(trial, HttpStatus.OK);
@@ -1018,19 +1028,42 @@ public class RecordRESTController implements IAdaptorCallback {
 		}
 		
 		for (Record record : records) {
+			String cis = "Testbed";
 			if (!record.getRecordType().equalsIgnoreCase("LOG") && !record.getRecordType().equalsIgnoreCase("TopicInvite")) {
-				String sender = record.getClientId().replaceAll("-", "_");
+				String sender = record.getClientId();
+				int idx = sender.indexOf("--");
+				if (idx > -1) {
+					sender = sender.substring(0, idx);
+				}
+				sender = sender.replaceAll(" ", "_");
+				sender = sender.replaceAll("-", "_");
+				sender = sender.replaceAll("\\.", "_");
+				sender = sender.replaceAll(":", "_");
+						
 				String topic = record.getTopic();
 				String msg = this.getMessageFromRecord(record);
-				data += sender + " -> " + topic + " : " + msg + "\n";
+				data += "group " + sender + " - " + record.getRecordType() + "\n"; 
+				data += sender + " -[#green]-> " + cis + " : " + msg + "\n";
+				data += "activate " + sender + "\n";
 				List<TopicReceiver> topicReceiver = receiverMap.get(topic);
 				if (topicReceiver != null) {
 					for (TopicReceiver receiver : topicReceiver) {
 						if (!receiver.getClientId().equals(sender)) {
-							data += topic + " -> " + receiver.getClientId().replaceAll("-", "_")  + " : " + msg + "\n";
+							String client = receiver.getClientId();
+							idx = client.indexOf("--");
+							if (idx > -1) {
+								client = client.substring(0, idx);
+							}
+							client = client.replaceAll(" ", "_");
+							client = client.replaceAll("-", "_");
+							client = client.replaceAll("\\.", "_");
+							client = client.replaceAll(":", "_");
+							data += cis + " -[#blue]-> " + client  + " : " + msg + "\n";
 						}
 					}
 				}
+				data += "deactivate  " + sender + "\n";;
+				data += "end\n";
 			}
 		}
 		data += "@enduml\n";
