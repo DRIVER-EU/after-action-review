@@ -1,6 +1,6 @@
 <template>
   <v-flex>
-    <v-card class="timelinePanel" style="border-top: 1px solid #999999;">
+    <v-card class="timelinePanel">
       <v-card-title class="justify-center primary--text">
         <span>Timeline</span>
         <div class="includeLogs">
@@ -15,11 +15,11 @@
   </v-flex>
 </template>
 
-
 <script>
   import {eventBus} from '../main';
   import {Timeline, DataSet} from 'vis';
   import {timeline} from '../service/TimelineService';
+  import EventName from '../constants/EventName';
 
   export default {
     name: 'TimelinePanel',
@@ -39,7 +39,7 @@
       handleClick: function (data) {
         const recordId = data.item;
         if (recordId && timeline.isRecordGroup(data.group)) {
-          eventBus.$emit('recordSelected', recordId, null);
+          eventBus.$emit(EventName.RECORD_SELECTED, recordId, null);
         }
       },
       getRecords: function () {
@@ -67,7 +67,7 @@
       },
     },
     created () {
-      eventBus.$on('recordSelected', (recordID, recordData) => {
+      eventBus.$on(EventName.RECORD_SELECTED, (recordID, recordData) => {
       });
     },
     mounted () {

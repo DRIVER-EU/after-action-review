@@ -1,5 +1,8 @@
 import FilterOption from '../constants/FilterOption';
 import {store} from '../store';
+import {eventBus} from '../main';
+import {fetchService} from './FetchService';
+import EventName from '../constants/EventName';
 
 class RecordFilterService {
   static INSTANCE = new RecordFilterService();
@@ -12,11 +15,11 @@ class RecordFilterService {
     this.updateFilter(null, null, null, null);
   }
 
-  updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId) {
+  updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId, currentlySelectedFromDate, currentlySelectedToDate) {
     const filter = {
       filterEnabled: true,
-      fromDate: null,
-      toDate: null,
+      fromDate: currentlySelectedFromDate ? currentlySelectedFromDate.getTime() : null,
+      toDate: currentlySelectedToDate? currentlySelectedToDate.getTime() : null,
       receiverClientId: null,
       id: currentlySelectedId === FilterOption.ALL ? null : currentlySelectedId,
       senderClientId: currentlySelectedClientId === FilterOption.ALL ? null : currentlySelectedClientId,
@@ -24,12 +27,11 @@ class RecordFilterService {
       topicName: currentlySelectedTopicId === FilterOption.ALL ? null : currentlySelectedTopicId,
     };
     console.log('/setActualFilter invoked with', filter);
-    store.axios.post('setActualFilter', filter).then(response => {
-      // console.log('Filter has been set', response.data);
-      store.dispatch('getRecords');
+    fetchService.performPost('setActualFilter', filter).then(() => {
+      eventBus.$emit(EventName.FILTER_CHANGED);
       store.dispatch('getAllTimelineRecords');
       /**
-      store.axios.get('getActualFilter').then(response => {
+       fetchService.performGet('getActualFilter').then(response => {
         console.log('/getActualFilter returned', response.data);
       }).catch(ex => console.log(ex));
        **/

@@ -42,10 +42,12 @@
     </li>
     <li>
       <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Message:</v-subheader>
+        <v-flex xs12>
+          <v-subheader style="align-items: normal;height: 24px;">Message:</v-subheader>
         </v-flex>
-        <v-flex xs8>
+      </v-layout>
+      <v-layout row>
+        <v-flex xs12>
           <json-tree :json="record.recordJson"></json-tree>
         </v-flex>
       </v-layout>
@@ -55,7 +57,7 @@
 
 <script>
   export default {
-    name: 'GeoJsonEnvelope',
+    name: 'GeoJsonEnvelopeDetails',
     props: ['recordID', 'record']
   };
 </script>

@@ -13,11 +13,15 @@ import TimelinePanel from './components/TimelinePanel';
 import JsonTree from './components/JsonTree';
 import 'vis/dist/vis.css';
 import DiagramPopup from './components/DiagramPopup';
+import Toolbar from './components/Toolbar';
 import Urls from './constants/Urls';
-import VueLoadImage from 'vue-load-image'
-import {recordFilter} from './service/RecordFilterService';
+import VueLoadImage from 'vue-load-image';
+import DatetimePicker from 'vuetify-datetime-picker';
+import 'vuetify-datetime-picker/src/stylus/main.styl';
+import 'vuetify-stylus-fixed-table-header/index.styl';
 
 export const eventBus = new Vue();
+store.eventBus = eventBus;
 
 Vue.use(VueAxios, axios.create({
   baseURL: Urls.HTTP_BASE
@@ -41,27 +45,22 @@ Vue.use(Vuetify, {
     error: '#b71c1c'
   }
 });
+Vue.use(DatetimePicker);
 
 Vue.config.productionTip = false;
 
 Vue.component('records-table', RecordsTable);
 Vue.component('details-panel', DetailsPanel);
-Vue.component('timeline-panel', TimelinePanel);
 Vue.component('json-tree', JsonTree);
 Vue.component('diagram-popup', DiagramPopup);
 Vue.component('vue-load-image', VueLoadImage);
+Vue.component('toolbar', Toolbar);
+Vue.component('timeline-panel', TimelinePanel);
 
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   router,
   store,
-  render: h => h(App),
-  created () {
-    recordFilter.resetFilter();
-    this.$store.dispatch('getFilterOptions');
-    this.$store.dispatch('getActualTrial');
-    // this.$store.dispatch('getRecords'); // done implicitly by resetFilter
-    // this.$store.dispatch('getAllTimelineRecords'); // done implicitly by resetFilter
-  }
+  render: h => h(App)
 });

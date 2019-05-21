@@ -10,18 +10,23 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.QueryParam;
 
@@ -44,6 +49,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.driver.aar.service.constants.AARConstants;
+import eu.driver.aar.service.dto.Attachement;
 import eu.driver.aar.service.dto.Record;
 import eu.driver.aar.service.dto.RecordFilter;
 import eu.driver.aar.service.dto.Session;
@@ -62,7 +68,9 @@ import eu.driver.adapter.core.CISAdapter;
 import eu.driver.adapter.properties.ClientProperties;
 import eu.driver.api.IAdaptorCallback;
 import eu.driver.model.core.State;
-import eu.driver.model.sim.entity.station.ScenarioLabel;
+import eu.driver.model.geojson.photo.Feature;
+import eu.driver.model.geojson.photo.properties;
+import eu.driver.model.geojson.photo.files.files;
 import eu.driver.model.tm.SessionState;
 
 @RestController
@@ -76,9 +84,12 @@ public class RecordRESTController implements IAdaptorCallback {
 
 	private SimpleDateFormat format = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
+	
+	private SimpleDateFormat filterFormat = new SimpleDateFormat(
+			"yyyy-MM-dd HH:mm:ss.SSS");
 
 	private RecordFilter actualFilter = new RecordFilter();
-	private int currentPageSize = 20;
+	private Double currentPageSize = 20D;
 	private int currentPage = 0;
 	
 	private Map<String, Boolean> registeredCallbacks = new HashMap<String, Boolean>();
@@ -166,10 +177,44 @@ public class RecordRESTController implements IAdaptorCallback {
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("FeatureCollection")) {
-			eu.driver.model.geojson.FeatureCollection msg = (eu.driver.model.geojson.FeatureCollection) SpecificData
-					.get().deepCopy(
-							eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
+			try {
+				eu.driver.model.geojson.FeatureCollection msg = (eu.driver.model.geojson.FeatureCollection) SpecificData
+						.get().deepCopy(
+								eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+			} catch(Exception e) {
+				eu.driver.model.geojson.photo.FeatureCollection msg = (eu.driver.model.geojson.photo.FeatureCollection) SpecificData
+						.get().deepCopy(
+								eu.driver.model.geojson.photo.FeatureCollection.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				
+				List<Feature> featureList = msg.getFeatures();
+				for (Feature feature : featureList) {
+					properties properties = feature.getProperties();
+					List<files> files = properties.getFiles();
+					for (files file : files) {
+						try {
+							String storeName = properties.getId() + "/";
+							if (file.getUrl() != null) {
+								String url = file.getUrl().toString();
+								if (url.length() > 0) {
+									int lastIdx = url.lastIndexOf("/");
+									storeName += url.substring(lastIdx+1);
+									InputStream in = new java.net.URL(url).openStream();
+									Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
+									
+									Attachement attachement = new Attachement();
+									attachement.setRecord(record);
+									attachement.setName("record/attachements/" + storeName);
+									record.addFile(attachement);
+								}
+							}
+						} catch (Exception ex) {
+							log.error("Error loading and storing the message attachement: " + file.getUrl());
+						}
+					}
+				}
+			}
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("TSO_2_0")) {
 			eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData
@@ -180,9 +225,27 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.core.LargeDataUpdate msg = (eu.driver.model.core.LargeDataUpdate) SpecificData
 					.get().deepCopy(
 							eu.driver.model.core.LargeDataUpdate.SCHEMA$, receivedMessage);
+			
 			record.setRecordJson(msg.toString());
-
-			// Todo: Download the file and save it to the Disk, replace the link
+			try {
+				String storeName = "/";
+				if (msg.getUrl() != null) {
+					String url = msg.getUrl().toString();
+					if (url.length() > 0) {
+						int lastIdx = url.lastIndexOf("/");
+						storeName += url.substring(lastIdx+1);
+						InputStream in = new java.net.URL(url).openStream();
+						Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
+						
+						Attachement attachement = new Attachement();
+						attachement.setRecord(record);
+						attachement.setName("record/attachements/" + storeName);
+						record.addFile(attachement);
+					}
+				}
+			} catch (Exception ex) {
+				log.error("Error loading and storing the message attachement: " + msg.getUrl());
+			}
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("GeoJSONEnvelope")) {
 			eu.driver.model.geojson.GeoJSONEnvelope msg = (eu.driver.model.geojson.GeoJSONEnvelope) SpecificData
@@ -218,15 +281,9 @@ public class RecordRESTController implements IAdaptorCallback {
 				szenario.setSzenarioName(msg.getScenarioName().toString());
 				szenario.setStartDate(new Date());
 				trial.addSzenario(szenario);
-			} else {
-				if (msg.getSessionState() == SessionState.STOP) {
-					List<Szenario> szenarioList = trial.getSzenarioList();
-					for (Szenario szen : szenarioList) {
-						if (szen.getId() == szenario.getId()) {
-							szen.setEndDate(new Date());
-						}
-					}
-				}
+			}
+			if (msg.getSessionState() == SessionState.STOP) {
+				szenario.setEndDate(new Date());
 			}
 
 			String sessionId = msg.getSessionId().toString();
@@ -238,22 +295,10 @@ public class RecordRESTController implements IAdaptorCallback {
 				session.setSessionName(msg.getSessionName().toString());
 				session.setStartDate(new Date());
 				szenario.addSession(session);
-			} else {
-				if (msg.getSessionState() == SessionState.STOP) {
-					List<Szenario> szenarioList = trial.getSzenarioList();
-					for (Szenario szen : szenarioList) {
-						if (szen.getId() == szenario.getId()) {
-							List<Session> sessionList = szen.getSessionList();
-							for (Session sess : sessionList) {
-								if (sess.getId() == session.getId()) {
-									sess.setEndDate(new Date());
-								}
-							}
-						}
-					}
-				}
 			}
-
+			if (msg.getSessionState() == SessionState.STOP) {
+				session.setEndDate(new Date());
+			}
 			// check if there is a actual trial that is not that trial.
 			if (trial.getId() == null) {
 				Trial actTrial = trialRepo.findActualTrial();
@@ -330,32 +375,6 @@ public class RecordRESTController implements IAdaptorCallback {
 			}
 		}
 	}
-	
-	@ApiOperation(value = "getCleanDB", nickname = "getCleanDB")
-	@RequestMapping(value = "/AARService/getCleanDB", method = RequestMethod.GET)
-	@ApiResponses(value = {
-			@ApiResponse(code = 200, message = "Success", response = Boolean.class),
-			@ApiResponse(code = 400, message = "Bad Request", response = Boolean.class),
-			@ApiResponse(code = 500, message = "Failure", response = Boolean.class) })
-	public ResponseEntity<Boolean> getCleanDB () {
-		log.info("-->getCleanDB");
-		
-		try {
-			sessionRepo.deleteAll();
-			szenarioRepo.deleteAll();
-			trialRepo.deleteAll();
-			
-			topicReceiverRepo.deleteAll();
-			recordRepo.deleteAll();
-		} catch(Exception e) {
-			log.error("Error cleaning the DB", e);
-			return new ResponseEntity<Boolean>(false, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		
-		
-		log.info("getCleanDB-->");
-		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
-	}
 
 	@ApiOperation(value = "getAllRecords", nickname = "getAllRecords")
 	@RequestMapping(value = "/AARService/getAllRecords", method = RequestMethod.GET)
@@ -376,14 +395,27 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
+		
+		query += " ORDER BY i.id DESC";
 
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		if (this.actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		}
+		if (this.actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
+		
 		// use the filtering here
-		if (page != null && size != null) {
+		if (page != null) {
+			page--;
+			if (size == null) {
+				size = 20;
+			}
 			typedQuery.setFirstResult(page * size);
 			typedQuery.setMaxResults(size);
 			
-			this.currentPageSize = size;
+			this.currentPageSize = Double.valueOf(size);
 			this.currentPage = page;
 		}
 		List<Record> records = typedQuery.getResultList();
@@ -413,16 +445,33 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
 			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
-	public ResponseEntity<Long> getPageCount() {
-		log.info("-->getAllRecords");
-		Long recCount = recordRepo.count();
-		Long pageCount = 1L;
-		if (recCount > 0 && this.currentPageSize > 0) {
-			pageCount = recCount/this.currentPageSize;
+	public ResponseEntity<Double> getPageCount() {
+		log.info("-->getPageCount");
+		String query = "SELECT NEW Record(i.id) FROM Record i";
+
+		// create the query using the active Filter
+		if (this.actualFilter.isFilterEnabled()) {
+			query += this.createFilterQuery();
 		}
 
-		log.info("getAllRecords-->");
-		return new ResponseEntity<Long>(pageCount, HttpStatus.OK);
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		if (this.actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		}
+		if (this.actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
+		List<Record> records = typedQuery.getResultList();
+		
+		Double recCount = Double.valueOf(records.size());
+		
+		Double pageCount = 1D;
+		if (recCount > 0 && this.currentPageSize > 0) {
+			pageCount = Math.ceil(recCount/this.currentPageSize);
+		}
+
+		log.info("getPageCount-->");
+		return new ResponseEntity<Double>(pageCount, HttpStatus.OK);
 	}
 
 	@ApiOperation(value = "getActualTrial", nickname = "getActualTrial")
@@ -434,15 +483,6 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<Trial> getActualTrial() {
 		log.info("-->getActualTrial");
 		Trial trial = trialRepo.findActualTrial();
-		
-		if (trial == null) {
-			trial = new Trial();
-			trial.setActual(true);
-			trial.setStartDate(new Date());
-			trial.setEndDate(new Date());
-			trial.setTrialId("1");
-			trial.setTrialName("TMP Trial");
-		}
 
 		log.info("getActualTrial-->");
 		return new ResponseEntity<Trial>(trial, HttpStatus.OK);
@@ -603,6 +643,12 @@ public class RecordRESTController implements IAdaptorCallback {
 		}
 
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		if (this.actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		}
+		if (this.actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
 		List<Record> records = typedQuery.getResultList();
 
 		log.info("getAllTimelineRecords-->");
@@ -723,6 +769,12 @@ public class RecordRESTController implements IAdaptorCallback {
 			query += this.createFilterQuery();
 		}
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		if (this.actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		}
+		if (this.actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
 		List<Record> records = typedQuery.getResultList();
 		if (records != null && records.size() > 0) {
 			List<TopicReceiver> receivers = topicReceiverRepo.findAll();
@@ -777,6 +829,12 @@ public class RecordRESTController implements IAdaptorCallback {
 		Long recCount = recordRepo.count();
 		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i WHERE i.recordType != 'Log'";
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		if (this.actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		}
+		if (this.actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
 		//typedQuery.setFirstResult(recCount.intValue()-20);
 		typedQuery.setMaxResults(20);
 		List<Record> records = typedQuery.getResultList();
@@ -925,7 +983,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			} else {
 				query += " AND ";
 			}
-			query += "i.createDate>=" + this.actualFilter.getFromDate();
+			query += "i.createDate>:fromDate";
 		}
 
 		if (this.actualFilter.getToDate() != null) {
@@ -935,7 +993,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			} else {
 				query += " AND ";
 			}
-			query += "i.createDate<=" + this.actualFilter.getToDate();
+			query += "i.createDate<:toDate";
 		}
 
 		return query;

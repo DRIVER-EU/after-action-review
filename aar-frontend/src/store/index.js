@@ -2,10 +2,13 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import {Record} from '../objects/record';
 import {heartbeatController} from '../heartbeatController';
-import {createFilterOptions} from '../helper';
 import {parseDate} from '../helper';
 import {environment} from '../service/EnvironmentService';
+import EventName from '../constants/EventName';
 import FilterOption from '../constants/FilterOption';
+import Settings from '../constants/Settings';
+import RecordType from '../constants/RecordType';
+import LogLevel from '../constants/LogLevel';
 
 Vue.use(Vuex);
 
@@ -20,6 +23,14 @@ function createRecord(record) {
   return newRecord;
 }
 
+function isErrorLog(record) {
+  if (record.recordType === RecordType.LOG) {
+    return record.recordData && record.recordData.level === LogLevel.ERROR;
+  } else {
+    return false;
+  }
+}
+
 export const store = new Vuex.Store({
   state: {
     socket: {
@@ -31,7 +42,8 @@ export const store = new Vuex.Store({
       messageAccepted: false
     },
     records: [],
-    timelineRecords: null,
+    recordsPageCount: 1,
+    timelineRecords: [],
     record: null,
     trial: null,
     filterOptions: {
@@ -74,18 +86,24 @@ export const store = new Vuex.Store({
       state.socket.messageAccepted = true;
     },
     RECORD_NOTIFICATION (state, record) {
-      console.log("Received record notification", record);
+      // console.log("Received record notification", record);
       let newRecord = createRecord(record);
-      state.records.push(newRecord);
-      // createFilterOptions(newRecord, state.filterOptions);
+      state.timelineRecords.push(record);
+      this.eventBus.$emit(EventName.RECORD_NOTIFICATION, newRecord);
+      if (isErrorLog(newRecord)) {
+        this.eventBus.$emit(EventName.LOG_ERROR_RECEIVED);
+      }
     },
     GET_RECORDS (state, records) {
       state.records = [];
       records.forEach(function (record) {
         const newRecord = createRecord(record);
         state.records.push(newRecord);
-        // createFilterOptions(newRecord, state.filterOptions);
       });
+    },
+    GET_RECORDS_PAGE_COUNT (state, count) {
+      // console.log("Received records page count", count);
+      state.recordsPageCount = count;
     },
     GET_RECORD_TYPES (state, recordTypes) {
       recordTypes.forEach(recordType => {
@@ -138,8 +156,15 @@ export const store = new Vuex.Store({
         context.commit('GET_RECORD', (response.data));
       }).catch(ex => console.log(ex));
     },
-    getRecords (context) {
-      this.axios.get('getAllRecords').then(response => {
+    getPageCount (context) {
+      this.axios.get('getPageCount').then(response => {
+        context.commit('GET_RECORDS_PAGE_COUNT', (response.data));
+      }).catch(ex => console.log(ex));
+    },
+    getRecords (context, payload) {
+      const page = payload ? payload.page : null;
+      const url = page ? 'getAllRecords?size=' + Settings.PAGE_SIZE + "&page=" + page : 'getAllRecords';
+      this.axios.get(url).then(response => {
         console.log('/getAllRecords returned count', response.data.length);
         context.commit('GET_RECORDS', (response.data));
       }).catch(ex => console.log(ex));

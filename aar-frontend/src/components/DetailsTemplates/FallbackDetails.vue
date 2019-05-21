@@ -13,20 +13,10 @@
     <li>
       <v-layout row>
         <v-flex xs4>
-          <v-subheader style="align-items: normal;">Sender:</v-subheader>
+          <v-subheader style="align-items: normal;">Client ID:</v-subheader>
         </v-flex>
         <v-flex xs8>
-          {{record.recordData.sender}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Date/Time:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{record.createDate}} {{record.createTime}}
+          {{record.recordData.id}}
         </v-flex>
       </v-layout>
     </li>
@@ -47,7 +37,7 @@
 
 <script>
   export default {
-    name: 'AlertDetails',
+    name: 'FallbackDetails',
     props: ['recordID', 'record']
   };
 </script>
