@@ -154,6 +154,7 @@
       },
       reloadData() {
         this.additionalRecords = [];
+        this.$store.dispatch('getPageCount');
         this.$store.dispatch('getRecords', {page: this.pagination.page});
       }
     },
