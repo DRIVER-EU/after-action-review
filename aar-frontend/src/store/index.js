@@ -86,7 +86,7 @@ export const store = new Vuex.Store({
       state.socket.messageAccepted = true;
     },
     RECORD_NOTIFICATION (state, record) {
-      // console.log("Received record notification", record);
+      console.log("Received record notification", record);
       let newRecord = createRecord(record);
       state.timelineRecords.push(record);
       this.eventBus.$emit(EventName.RECORD_NOTIFICATION, newRecord);
