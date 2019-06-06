@@ -52,6 +52,9 @@ public class AARServiceApplication {
 	@PostConstruct
 	public void init() {
 		Boolean connectTB = Boolean.parseBoolean(ClientProperties.getInstance().getProperty("connect.testbed", "true"));
+		if (System.getenv().get("TESTBED_CONNECTION") != null) {
+			connectTB = Boolean.parseBoolean(System.getenv().get("TESTBED_CONNECTION"));
+		}
 		if (connectTB) {
 			cisAdapter = CISAdapter.getInstance(false);
 			

@@ -64,10 +64,14 @@ import eu.driver.aar.service.repository.TrialRepository;
 import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
+import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.adapter.core.CISAdapter;
 import eu.driver.adapter.properties.ClientProperties;
 import eu.driver.api.IAdaptorCallback;
+import eu.driver.model.core.ObserverToolAnswer;
+import eu.driver.model.core.Question;
 import eu.driver.model.core.State;
+import eu.driver.model.core.TypeOfQuestion;
 import eu.driver.model.geojson.photo.Feature;
 import eu.driver.model.geojson.photo.properties;
 import eu.driver.model.geojson.photo.files.files;
@@ -410,7 +414,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			query += this.createFilterQuery();
 		}
 		
-		query += " ORDER BY i.id DESC";
+		query += " ORDER BY i.createDate DESC";
 
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
 		if (this.actualFilter.getFromDate() != null) {
@@ -664,6 +668,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
+		query += " ORDER BY i.createDate DESC";
 
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
 		if (this.actualFilter.getFromDate() != null) {
@@ -791,6 +796,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
+		query += " ORDER BY i.createDate DESC";
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
 		if (this.actualFilter.getFromDate() != null) {
 			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
@@ -798,6 +804,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (this.actualFilter.getToDate() != null) {
 			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
 		}
+		
 		List<Record> records = typedQuery.getResultList();
 		if (records != null && records.size() > 0) {
 			List<TopicReceiver> receivers = topicReceiverRepo.findAll();
@@ -851,14 +858,9 @@ public class RecordRESTController implements IAdaptorCallback {
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
 		Long recCount = recordRepo.count();
 		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i WHERE i.recordType != 'Log'";
+		query += " ORDER BY i.createDate DESC";
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
-		if (this.actualFilter.getFromDate() != null) {
-			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
-		}
-		if (this.actualFilter.getToDate() != null) {
-			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
-		}
-		//typedQuery.setFirstResult(recCount.intValue()-20);
+		typedQuery.setFirstResult(recCount.intValue()-20);
 		typedQuery.setMaxResults(20);
 		List<Record> records = typedQuery.getResultList();
 		if (records != null && records.size() > 0) {
@@ -949,6 +951,108 @@ public class RecordRESTController implements IAdaptorCallback {
 	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
 	    log.info("exportData-->");
 	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "uploadOSTRecords", nickname = "uploadOSTRecords")
+	@RequestMapping(value = "/AARService/uploadOSTRecords", method = RequestMethod.POST)
+	@ApiImplicitParams({ @ApiImplicitParam(name = "ostCSVRecords", value = "the ostCSVRecords that should imported", required = true, dataType = "string", paramType = "body") })
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
+			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
+	public ResponseEntity<Boolean> uploadOSTRecords(@RequestBody String ostCSVRecords) {
+		log.info("-->uploadOSTRecords");
+		SimpleDateFormat ostFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		try {
+			String[] lines = null;
+			if (ostCSVRecords.indexOf("\r\n") > -1) {
+				lines = ostCSVRecords.split("\r\n");
+			} else {
+				lines = ostCSVRecords.split("\n");
+			}
+			
+			if (lines != null) {
+				// TrialID;TrialName;TrialSession_ID;SentTime;User;Role;ObservationType_ID;ObservationType;When;TrialTime;Question;Answer;Comment;Location;Attachment_URI;Attachment_Comment;Delete_Comment;Comment;Removal_reason;Overall_comment
+				for (String line : lines) {
+					String[] records = line.split(";");
+					if (records != null && records.length >= 11) {
+						try {
+							ObserverToolAnswer answerMsg = new ObserverToolAnswer();
+							answerMsg.setTrialId(Integer.parseInt(records[0]));
+							answerMsg.setSessionId(Integer.parseInt(records[2]));
+							answerMsg.setAnswerId(1);
+							answerMsg.setTimeSendUTC(ostFormat.parse(records[3]).getTime()+(2*60*60*1000));
+							answerMsg.setTimeWhen(ostFormat.parse(records[8]).getTime()+(2*60*60*1000));
+							answerMsg.setObservervationTypeId(Integer.parseInt(records[6]));
+							answerMsg.setObservationTypeName(records[7]);
+							answerMsg.setObservationTypeDescription(records[7]);
+							answerMsg.setDescription(records[7]);
+							answerMsg.setMultiplicity(false);
+							
+							Question question = new Question();
+							question.setId(1);
+							question.setName(records[10]);
+							question.setDescription(records[10]);
+							question.setAnswer(records[11]);
+							if (records.length >= 20) {
+								question.setComment(records[19]);	
+							} else {
+								question.setComment("");
+							}
+							question.setTypeOfQuestion(TypeOfQuestion.text);
+
+							List<Question> questions = new ArrayList<Question>();
+							questions.add(question);
+							answerMsg.setQuestions(questions);
+							
+							Record record = new Record();
+							record.setCreateDate(new Date(answerMsg.getTimeSendUTC()));
+							record.setTrialDate(new Date(answerMsg.getTimeSendUTC()));
+							record.setRecordType(answerMsg.getSchema().getName());
+							
+							record.setClientId("TB-Ost");
+							record.setTopic(TopicConstants.OST_ANSWER_TOPIC);
+
+							record.setTrialDate(new Date(answerMsg.getTimeSendUTC()));
+							record.setRecordJson(answerMsg.toString());
+							
+							if (record != null) {
+								try {
+									record = recordRepo.saveAndFlush(record);
+									// check if the record needs to be send via the websocket
+									boolean sendRecord = true;
+									// ToDo: check if record meets filter criteras, if yes, push it to the client
+									if (this.actualFilter != null && this.actualFilter.isFilterEnabled()) {
+										// check if record meets filter criteria
+										sendRecord = this.actualFilter.meetsRecordFilter(record);
+									}
+									
+									if (sendRecord) {
+										WSRecordNotification notification = new WSRecordNotification(
+												record.getId(), record.getClientId(),
+												record.getTopic(), record.getCreateDate(),
+												record.getRecordType(), null, null);
+										
+										WSController.getInstance().sendMessage(
+												mapper.objectToJSONString(notification));	
+									}
+								} catch (Exception e) {
+									log.error("Error processing the message!", e);
+								}
+							}
+						} catch (Exception e) {
+							log.error("Error creating OST Answer Record!", e);
+						}
+					}
+				}
+			}
+		} catch (Exception ex) {
+			log.error("Error importing OST Answers!", ex);
+		}
+		
+		log.info("uploadOSTRecords-->");
+		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
 	}
 	
 	private String createFilterQuery() {
