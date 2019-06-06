@@ -30,6 +30,8 @@ import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.QueryParam;
 
+import net.sourceforge.plantuml.FileFormat;
+import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
 
 import org.apache.avro.generic.IndexedRecord;
@@ -822,7 +824,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		    // Write the first image to "png"
 			String desc = null;
 		    try {
-				desc = reader.generateImage(bous);
+				desc = reader.generateImage(bous, new FileFormatOption(FileFormat.SVG));
 			} catch (IOException e) {
 				log.error("Error creating the sequence diagram!");
 			}
@@ -830,7 +832,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		    byte[] media = bous.toByteArray();
 		    
 		    try {
-		    	FileOutputStream fos = new FileOutputStream(fileName + ".png");
+		    	FileOutputStream fos = new FileOutputStream(fileName + ".svg");
 		    	fos.write(media);
 		    	fos.close();
 		    } catch (Exception e) {
@@ -838,7 +840,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	    	}
 			
 			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.IMAGE_PNG);
+			headers.setContentType(MediaType.valueOf("image/svg+xml"));
 		    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
 		    log.info("createSequenceDiagram-->");
 		    return new ResponseEntity<byte[]>(media, headers, HttpStatus.OK);
@@ -870,7 +872,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		    // Write the first image to "png"
 			String desc = null;
 		    try {
-				desc = reader.generateImage(bous);
+				desc = reader.generateImage(bous, new FileFormatOption(FileFormat.SVG));
 			} catch (IOException e) {
 				log.error("Error creating the sequence diagram!");
 			}
@@ -878,7 +880,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		    byte[] media = bous.toByteArray();
 			
 			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.IMAGE_PNG);
+			headers.setContentType(MediaType.valueOf("image/svg+xml"));
 		    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
 		    log.info("createSequenceDiagram-->");
 		    return new ResponseEntity<byte[]>(media, headers, HttpStatus.OK);
