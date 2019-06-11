@@ -29,6 +29,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
+import javax.transaction.Transactional;
 import javax.ws.rs.QueryParam;
 
 import net.sourceforge.plantuml.FileFormat;
@@ -1066,11 +1067,12 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	@ApiOperation(value = "importData", nickname = "importData")
 	@RequestMapping(value = "/AARService/importData", method = RequestMethod.POST)
-	@ApiImplicitParams({ @ApiImplicitParam(name = "ostCSVRecords", value = "the records that should imported", required = true, dataType = "string", paramType = "body") })
+	@ApiImplicitParams({ @ApiImplicitParam(name = "importData", value = "the records that should imported", required = true, dataType = "string", paramType = "body") })
 	@ApiResponses(value = {
 			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
 			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
+	@Transactional
 	public ResponseEntity<Boolean> importData(@RequestBody String importData) {
 		log.info("-->importData");
 		
@@ -1084,11 +1086,12 @@ public class RecordRESTController implements IAdaptorCallback {
 			
 			if (lines != null) {
 				for (String line : lines) {
+					log.info(line);
 					try {
 						Query query = entityManager.createNativeQuery(line);
 						query.executeUpdate();	
 					} catch (Exception e) {
-						log.error("Error inserting record into DB!", e);
+						log.error("Error inserting record into DB!");
 					}
 				}
 			}
