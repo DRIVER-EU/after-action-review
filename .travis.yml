@@ -4,7 +4,7 @@ jdk:
 
 env:
   matrix:
-  - VERSION=1.2.13
+  - VERSION=1.2.14
 
 install: mvn install
 

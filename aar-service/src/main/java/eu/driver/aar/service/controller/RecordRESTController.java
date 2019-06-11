@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.QueryParam;
@@ -37,6 +38,7 @@ import net.sourceforge.plantuml.SourceStringReader;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.specific.SpecificData;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -452,10 +454,10 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
 			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
 	public ResponseEntity<Record> getRecord(@PathVariable Long id) {
-		log.info("-->getAllRecords");
+		log.info("-->getRecord");
 		Record record = recordRepo.findObjectById(id);
 
-		log.info("getAllRecords-->");
+		log.info("getRecord-->");
 		return new ResponseEntity<Record>(record, HttpStatus.OK);
 	}
 	
@@ -669,7 +671,12 @@ public class RecordRESTController implements IAdaptorCallback {
 		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate) FROM Record i";
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
+			query += "	AND";
+		} else {
+			query += "	WHERE";
 		}
+		query += " i.recordType != 'ObserverToolAnswer' and i.recordType != 'SessionMgmt'";
+		
 		query += " ORDER BY i.createDate DESC";
 
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
@@ -1057,6 +1064,101 @@ public class RecordRESTController implements IAdaptorCallback {
 		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
 	}
 	
+	@ApiOperation(value = "importData", nickname = "importData")
+	@RequestMapping(value = "/AARService/importData", method = RequestMethod.POST)
+	@ApiImplicitParams({ @ApiImplicitParam(name = "ostCSVRecords", value = "the records that should imported", required = true, dataType = "string", paramType = "body") })
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
+			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
+	public ResponseEntity<Boolean> importData(@RequestBody String importData) {
+		log.info("-->importData");
+		
+		try {
+			String[] lines = null;
+			if (importData.indexOf("\r\n") > -1) {
+				lines = importData.split("\r\n");
+			} else {
+				lines = importData.split("\n");
+			}
+			
+			if (lines != null) {
+				for (String line : lines) {
+					try {
+						Query query = entityManager.createNativeQuery(line);
+						query.executeUpdate();	
+					} catch (Exception e) {
+						log.error("Error inserting record into DB!", e);
+					}
+				}
+			}
+		} catch (Exception ex) {
+			log.error("Error importing records to DB!", ex);
+		}
+		
+		log.info("importData-->");
+		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "analyseRecords", nickname = "analyseRecords")
+	@RequestMapping(value = "/AARService/analyseRecords", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
+			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
+	public ResponseEntity<Boolean> analyseRecords() {
+		log.info("-->analyseRecords");
+		
+		List<Record> records = recordRepo.findAll();
+		
+		for (Record record : records) {
+			if (record.getClientId().equalsIgnoreCase("TB-TrialMgmt") || 
+					record.getClientId().equalsIgnoreCase("TB-AARTool")	||
+					record.getClientId().equalsIgnoreCase("TB-Ost") ||
+					record.getClientId().equalsIgnoreCase("TB-TimeService")) {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				recordRepo.saveAndFlush(record);
+			} else if (record.getRecordType().equalsIgnoreCase("Alert")) {
+				try {
+					JSONObject jsonObj = new JSONObject(record.getRecordJson());
+					if (jsonObj.getString("msgType").equalsIgnoreCase("Ack")) {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_ACK);
+						record.setHeadline(jsonObj.getString("sender") + " + " + jsonObj.getString("references"));
+					} else if (jsonObj.getString("msgType").equalsIgnoreCase("Error")) {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+						record.setHeadline(jsonObj.getString("sender") + " + " + jsonObj.getString("note"));
+					} else {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					}
+					recordRepo.saveAndFlush(record);
+				} catch (Exception e) {
+					// ignore
+				}
+			} else if (record.getRecordType().equalsIgnoreCase("Log")){
+				try {
+					JSONObject jsonObj = new JSONObject(record.getRecordJson());
+					if (jsonObj.getString("level").equalsIgnoreCase("ERROR")) {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+					} else if (jsonObj.getString("level").equalsIgnoreCase("Warn")) {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_WARN);
+					} else {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					}
+					record.setHeadline(jsonObj.getString("log"));
+					recordRepo.saveAndFlush(record);
+				} catch (Exception e) {
+					// ignore
+				}
+			} else {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				recordRepo.saveAndFlush(record);
+			}
+		}
+		
+		log.info("analyseRecords-->");
+		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
+	}
+	
 	private String createFilterQuery() {
 		String query = "";
 		Boolean firstParam = true;
@@ -1097,6 +1199,16 @@ public class RecordRESTController implements IAdaptorCallback {
 				query += " AND ";
 			}
 			query += "i.clientId='" + this.actualFilter.getSenderClientId() + "'";;
+		}
+		
+		if (this.actualFilter.getMsgType() != null) {
+			if (firstParam) {
+				query += " WHERE ";
+				firstParam = false;
+			} else {
+				query += " AND ";
+			}
+			query += "i.msgType='" + this.actualFilter.getMsgType() + "'";;
 		}
 
 		/*
@@ -1155,31 +1267,45 @@ public class RecordRESTController implements IAdaptorCallback {
 				sender = sender.replaceAll("-", "_");
 				sender = sender.replaceAll("\\.", "_");
 				sender = sender.replaceAll(":", "_");
-						
-				String topic = record.getTopic();
-				String msg = this.getMessageFromRecord(record);
-				data += "group " + sender + " - " + record.getRecordType() + "\n"; 
-				data += sender + " -[#green]-> " + cis + " : " + msg + "\n";
-				data += "activate " + sender + "\n";
-				List<TopicReceiver> topicReceiver = receiverMap.get(topic);
-				if (topicReceiver != null) {
-					for (TopicReceiver receiver : topicReceiver) {
-						if (!receiver.getClientId().equals(record.getClientId())) {
-							String client = receiver.getClientId();
-							idx = client.indexOf("--");
-							if (idx > -1) {
-								client = client.substring(0, idx);
+				
+				if (record.getRecordType().equalsIgnoreCase("ObserverToolAnswer")) {
+					data += "note right\n";
+					data += "ObserverToolAnswer\n";
+					data += "end note\n";
+				} else if (record.getRecordType().equalsIgnoreCase("RolePlayerMessage")) {
+					data += "rnote over TB-TrialMgmt\n";
+					data += "RolePlayerMessage:\n";
+					data += "endrnote\n";
+				} else if (record.getRecordType().equalsIgnoreCase("PhaseMessage")) {
+					data += "== PhaseMessage ==\n";
+				} else if (record.getRecordType().equalsIgnoreCase("SessionMgmt")) {
+					data += "== SessionMessage ==\n";
+				} else {
+					String topic = record.getTopic();
+					String msg = this.getMessageFromRecord(record);
+					data += "group " + sender + " - " + record.getRecordType() + "\n"; 
+					data += sender + " -[#green]-> " + cis + " : " + msg + "\n";
+					data += "activate " + sender + "\n";
+					List<TopicReceiver> topicReceiver = receiverMap.get(topic);
+					if (topicReceiver != null) {
+						for (TopicReceiver receiver : topicReceiver) {
+							if (!receiver.getClientId().equals(record.getClientId())) {
+								String client = receiver.getClientId();
+								idx = client.indexOf("--");
+								if (idx > -1) {
+									client = client.substring(0, idx);
+								}
+								client = client.replaceAll(" ", "_");
+								client = client.replaceAll("-", "_");
+								client = client.replaceAll("\\.", "_");
+								client = client.replaceAll(":", "_");
+								data += cis + " -[#blue]-> " + client  + " : " + msg + "\n";
 							}
-							client = client.replaceAll(" ", "_");
-							client = client.replaceAll("-", "_");
-							client = client.replaceAll("\\.", "_");
-							client = client.replaceAll(":", "_");
-							data += cis + " -[#blue]-> " + client  + " : " + msg + "\n";
 						}
 					}
+					data += "deactivate  " + sender + "\n";;
+					data += "end\n";
 				}
-				data += "deactivate  " + sender + "\n";;
-				data += "end\n";
 			}
 		}
 		data += "@enduml\n";

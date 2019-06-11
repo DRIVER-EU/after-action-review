@@ -65,6 +65,9 @@ public class Record {
 	@Column(name="headline", columnDefinition = "TEXT")
 	private String headline;
 	
+	@Column(name="msgType")
+	private String msgType;
+	
 	@JsonManagedReference
 	@OneToMany( mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Attachement> fileList = new ArrayList<Attachement>();
@@ -174,6 +177,14 @@ public class Record {
 	public void setHeadline(String headline) {
 		this.headline = headline;
 	}
+	
+	public String getMsgType() {
+		return msgType;
+	}
+
+	public void setMsgType(String msgType) {
+		this.msgType = msgType;
+	}
 
 	public List<Attachement> getFileList() {
 		return fileList;
@@ -199,12 +210,14 @@ public class Record {
     		backupBuffer.append("\"").append(this.trialDate).append("\"").append(";");
     		backupBuffer.append("\"").append(this.topic).append("\"").append(";");
     		backupBuffer.append("\"").append(this.recordType).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.headline).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.msgType).append("\"").append(";");
     		backupBuffer.append("\"").append(this.recordJson).append("\"").append(";");
     		backupBuffer.append("\"").append(this.recordData).append("\"").append("\n");
     		
     	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
     		// create the SQL insert commands
-    		backupBuffer.append("inseret into trial (id, clientId, sessionId, createDate, trialDate, topic, recordType, recordJson, recordData) values (");
+    		backupBuffer.append("insert into aar_service.record (id, clientId, sessionId, createDate, trialDate, topic, recordType, headline, msgType, recordJson, recordData) values (");
     		
     		backupBuffer.append(this.id).append(",");
     		backupBuffer.append("'").append(this.clientId).append("'").append(",");
@@ -213,7 +226,11 @@ public class Record {
     		backupBuffer.append("'").append(this.trialDate).append("'").append(",");
     		backupBuffer.append("'").append(this.topic).append("'").append(",");
     		backupBuffer.append("'").append(this.recordType).append("'").append(",");
-    		backupBuffer.append("'").append(this.recordJson).append("'").append(",");
+    		backupBuffer.append("'").append(this.headline).append("'").append(",");
+    		backupBuffer.append("'").append(this.msgType).append("'").append(",");
+    		String json = this.recordJson.replaceAll("'", "\\'");
+    		json = json.replaceAll("'", "\\'");
+    		backupBuffer.append("'").append(json).append("'").append(",");
     		backupBuffer.append("'").append(this.recordData).append("'").append(");").append("\n");
     	}
     	
