@@ -46,6 +46,14 @@
         const records = this.$store.state.timelineRecords;
         return records != null ? records : null; // .slice(0, Math.min(1000, records.length - 1))
       },
+      extendOpenEnd: function() {
+        const updates = [];
+        for (let i = 0; i < this.openItems.length; i++) {
+          const item = this.openItems[i];
+          updates.push({id: item.id, end: new Date()});
+        }
+        this.timeline.itemsData.update(updates);
+      },
       updateTimeline: function () {
         console.log('Updating timeline');
         const trial = this.$store.state.trial;
@@ -54,10 +62,16 @@
         if (items.length > 0) {
           console.log('Rendering items', items, this.isInitialized);
           const data = new DataSet(items);
+          this.openItems = data.get({
+            filter: function (item) {
+              return item.openEnd === true;
+            }
+          });
           if (!this.isInitialized) {
             const timeStart = new Date().getTime();
             this.timeline = new Timeline(this.$refs.container, data, timeline.getGroups(), timeline.getOptions());
             this.timeline.on('click', this.handleClick);
+            this.timeline.on('currentTimeTick', this.extendOpenEnd);
             console.log('Rendered in ' + (new Date().getTime() - timeStart) + ' ms');
             this.isInitialized = true;
           } else {

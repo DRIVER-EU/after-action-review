@@ -86,6 +86,7 @@ class TimelineService {
       group: TimelineService.GROUP_TRIALS,
       start: new Date(trial.startDate),
       end: new Date(trial.endDate),
+      openEnd: trial.endDate === null,
       content: trial.trialName,
       className: 'trial'
     };
@@ -96,6 +97,7 @@ class TimelineService {
       group: TimelineService.GROUP_SCENARIOS,
       start: new Date(scenario.startDate),
       end: new Date(scenario.endDate),
+      openEnd: scenario.endDate === null,
       content: scenario.szenarioName,
       className: 'scenario'
     };
@@ -106,6 +108,7 @@ class TimelineService {
       group: TimelineService.GROUP_SESSIONS,
       start: new Date(session.startDate),
       end: new Date(session.endDate),
+      openEnd: session.endDate === null,
       content: session.sessionName,
       className: 'session'
     };
