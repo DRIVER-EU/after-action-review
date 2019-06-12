@@ -115,7 +115,7 @@ public class Session {
     		
     	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
     		// create the SQL insert commands
-    		backupBuffer.append("inseret into trial (id, sessionId, sessionName, startDate, endDate, szenario_id) values (");
+    		backupBuffer.append("insert into aar_service.session (id, sessionId, sessionName, startDate, endDate, szenario_id) values (");
     		
     		backupBuffer.append(this.id).append(",");
     		backupBuffer.append("'").append(this.sessionId).append("'").append(",");

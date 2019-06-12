@@ -141,17 +141,18 @@ public class Trial {
     		
     	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
     		// create the SQL insert commands
-    		for (Szenario szenario : this.szenarioList) {
-    			backupBuffer.append(szenario.createBackupString(backupType));
-    		}
     		
-    		backupBuffer.append("inseret into trial (id, trialId, trialName, startDate, endDate, actual) values (");
+    		backupBuffer.append("insert into aar_service.trial (id, trialId, trialName, startDate, endDate, actual) values (");
     		backupBuffer.append(this.id).append(",");
     		backupBuffer.append("'").append(this.trialId).append("'").append(",");
     		backupBuffer.append("'").append(this.trialName).append("'").append(",");
     		backupBuffer.append("'").append(this.startDate).append("'").append(",");
     		backupBuffer.append("'").append(this.endDate).append("'").append(",");
     		backupBuffer.append(this.actual).append(");").append("\n");
+    		
+    		for (Szenario szenario : this.szenarioList) {
+    			backupBuffer.append(szenario.createBackupString(backupType));
+    		}
     	}
     	
     	return backupBuffer.toString();

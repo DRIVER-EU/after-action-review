@@ -11,6 +11,7 @@ public class RecordFilter {
 	private String topicName;
 	private String senderClientId;
 	private String receiverClientId;
+	private String msgType;
 	
 	public RecordFilter() {
 		
@@ -72,6 +73,14 @@ public class RecordFilter {
 		this.receiverClientId = receiverClientId;
 	}
 	
+	public String getMsgType() {
+		return msgType;
+	}
+
+	public void setMsgType(String msgType) {
+		this.msgType = msgType;
+	}
+
 	public boolean isFilterEnabled() {
 		boolean enabled = false;
 		
@@ -89,7 +98,9 @@ public class RecordFilter {
 			enabled = true;
 		} else if (this.receiverClientId != null) {
 			enabled = true;
-		} 
+		} else if (this.msgType != null) {
+			enabled = true;
+		}
 		
 		return enabled;
 	}

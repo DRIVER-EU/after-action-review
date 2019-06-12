@@ -80,7 +80,7 @@ public class TopicReceiver {
     		
     	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
     		// create the SQL insert commands
-    		backupBuffer.append("inseret into trial (Id, trialId, topicName, clientId) values (");
+    		backupBuffer.append("insert into aar_service.topicreceiver (Id, trialId, topicName, clientId) values (");
     		backupBuffer.append(this.Id).append(",");
     		backupBuffer.append("'").append(this.trialId).append("'").append(",");
     		backupBuffer.append("'").append(this.topicName).append("'").append(",");
