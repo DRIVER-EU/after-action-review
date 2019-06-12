@@ -1,9 +1,13 @@
 <template>
   <v-app>
     <toolbar>
-      <v-btn @click.prevent="openDiagramPage()" class="diagramButton">
+      <v-btn @click.prevent="openSequenceDiagramPage()" class="diagramButton">
         <v-icon left>bar_chart</v-icon>
-        Create sequence diagram
+        Sequence diagram
+      </v-btn>
+      <v-btn @click.prevent="openOverviewSequenceDiagramPage()" class="diagramButton">
+        <v-icon left>insert_chart_outlined</v-icon>
+        Overview sequence diagram
       </v-btn>
       <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition">
         <v-btn slot="activator">
@@ -67,8 +71,12 @@
       openDiagramPopup () {
         eventBus.$emit(EventName.DIAGRAM_POPUP, true);
       },
-      openDiagramPage () {
-        let routeData = this.$router.resolve({name: 'diagram'});
+      openSequenceDiagramPage () {
+        let routeData = this.$router.resolve({name: 'sequenceDiagram'});
+        window.open(routeData.href, '_blank');
+      },
+      openOverviewSequenceDiagramPage () {
+        let routeData = this.$router.resolve({name: 'overviewSequenceDiagram'});
         window.open(routeData.href, '_blank');
       },
       exportData (exportType) {

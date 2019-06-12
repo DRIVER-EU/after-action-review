@@ -12,7 +12,7 @@
           <v-card style="padding: 30px 0px;">
             <div class="diagramImage">
               <img v-show="loading" :src="loadingSpinner"/>
-              <img v-show="!loading" :src="imageUrl"/>
+              <img v-show="!loading" :src="imageUrl" style="max-width: 100%;"/>
             </div>
           </v-card>
         </v-flex>
@@ -29,6 +29,18 @@
   import {fetchService} from '../service/FetchService';
 
   export default {
+    name: 'DiagramPage',
+    props: {
+      'relativeImageUrl': {
+        type: String
+      },
+      'downloadFileName': {
+        type: String
+      },
+      'reloadOnRecordNotification': {
+        type: Boolean
+      }
+    },
     data () {
       return {
         loading: false,
@@ -41,12 +53,12 @@
     methods: {
       download: function () {
         if (this.imageBlob) {
-          saveAs(this.imageBlob, 'sequenceDiagram.svg');
+          saveAs(this.imageBlob, this.downloadFileName);
         }
       },
       reloadImage: function() {
         const vm = this;
-        const imageUrl = Urls.HTTP_BASE + '/createSequenceDiagram?t=' + new Date().getTime() + '&v=' + this.imageVersion; // http://localhost:8095/AARService/createSequenceDiagram
+        const imageUrl = Urls.HTTP_BASE + this.relativeImageUrl + '?t=' + new Date().getTime() + '&v=' + this.imageVersion;
         vm.imageVersion += 1;
         vm.loading = true;
         fetchService.performGet(imageUrl).then(response => {
@@ -58,7 +70,11 @@
       }
     },
     created () {
+      const vm = this;
       eventBus.$on(EventName.RECORD_NOTIFICATION, function (value) {
+        if (vm.reloadOnRecordNotification) {
+          vm.reloadImage();
+        }
       });
       this.reloadImage();
     }
