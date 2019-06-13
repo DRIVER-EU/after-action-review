@@ -83,7 +83,6 @@
     },
     created () {
       eventBus.$on(EventName.RECORD_SELECTED, (recordID, recordData) => {
-        const newSelectedItem = this.timeline.itemsData.get(recordID);
         const updates = [];
         if (this.selectedId) {
           const previousSelectedItem = this.timeline.itemsData.get(this.selectedId);
@@ -91,7 +90,9 @@
             updates.push({id: previousSelectedItem.id, className: previousSelectedItem.baseClassName});
           }
         }
+        const newSelectedItem = this.timeline.itemsData.get(recordID);
         if (newSelectedItem) {
+          this.timeline.focus(recordID);
           updates.push({id: newSelectedItem.id, className: newSelectedItem.baseClassName + " selected"});
         }
         this.timeline.itemsData.update(updates);
