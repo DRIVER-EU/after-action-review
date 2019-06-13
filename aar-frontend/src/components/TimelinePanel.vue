@@ -58,7 +58,8 @@
         console.log('Updating timeline');
         const trial = this.$store.state.trial;
         const records = this.getRecords();
-        const items = timeline.getItems(trial, records, this.isLogIncluded);
+        this.selectedId = this.$store.state.record ? this.$store.state.record.id : null;
+        const items = timeline.getItems(trial, records, this.isLogIncluded, this.selectedId);
         if (items.length > 0) {
           console.log('Rendering items', items, this.isInitialized);
           const data = new DataSet(items);
@@ -82,6 +83,19 @@
     },
     created () {
       eventBus.$on(EventName.RECORD_SELECTED, (recordID, recordData) => {
+        const newSelectedItem = this.timeline.itemsData.get(recordID);
+        const updates = [];
+        if (this.selectedId) {
+          const previousSelectedItem = this.timeline.itemsData.get(this.selectedId);
+          if (previousSelectedItem) {
+            updates.push({id: previousSelectedItem.id, className: previousSelectedItem.baseClassName});
+          }
+        }
+        if (newSelectedItem) {
+          updates.push({id: newSelectedItem.id, className: newSelectedItem.baseClassName + " selected"});
+        }
+        this.timeline.itemsData.update(updates);
+        this.selectedId = recordID;
       });
     },
     mounted () {
