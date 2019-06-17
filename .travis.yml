@@ -9,8 +9,8 @@ env:
 install: mvn install
 
 script: 
-  - docker build -t drivereu/after-action-review:latest -t drivereu/after-action-review:$VERSION .
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -t drivereu/after-action-review:latest -t drivereu/after-action-review:$VERSION .
   - docker push drivereu/after-action-review
 
 cache:
