@@ -145,7 +145,9 @@
         recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType, this.currentlySelectedTopicId, this.currentlySelectedFromDate, this.currentlySelectedToDate);
       },
       getRowClass: function(item) {
-        if (item.recordType === RecordType.LOG) {
+        if (item && this.$store.state.record && item.id === this.$store.state.record.id) {
+          return "selected";
+        } else if (item.recordType === RecordType.LOG) {
           const level = item.recordData ? item.recordData.level : "unknown";
           return "log-" + level;
         } else {

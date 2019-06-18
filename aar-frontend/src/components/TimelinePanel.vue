@@ -46,18 +46,33 @@
         const records = this.$store.state.timelineRecords;
         return records != null ? records : null; // .slice(0, Math.min(1000, records.length - 1))
       },
+      extendOpenEnd: function() {
+        const updates = [];
+        for (let i = 0; i < this.openItems.length; i++) {
+          const item = this.openItems[i];
+          updates.push({id: item.id, end: new Date()});
+        }
+        this.timeline.itemsData.update(updates);
+      },
       updateTimeline: function () {
         console.log('Updating timeline');
         const trial = this.$store.state.trial;
         const records = this.getRecords();
-        const items = timeline.getItems(trial, records, this.isLogIncluded);
+        this.selectedId = this.$store.state.record ? this.$store.state.record.id : null;
+        const items = timeline.getItems(trial, records, this.isLogIncluded, this.selectedId);
         if (items.length > 0) {
           console.log('Rendering items', items, this.isInitialized);
           const data = new DataSet(items);
+          this.openItems = data.get({
+            filter: function (item) {
+              return item.openEnd === true;
+            }
+          });
           if (!this.isInitialized) {
             const timeStart = new Date().getTime();
             this.timeline = new Timeline(this.$refs.container, data, timeline.getGroups(), timeline.getOptions());
             this.timeline.on('click', this.handleClick);
+            this.timeline.on('currentTimeTick', this.extendOpenEnd);
             console.log('Rendered in ' + (new Date().getTime() - timeStart) + ' ms');
             this.isInitialized = true;
           } else {
@@ -68,6 +83,20 @@
     },
     created () {
       eventBus.$on(EventName.RECORD_SELECTED, (recordID, recordData) => {
+        const updates = [];
+        if (this.selectedId) {
+          const previousSelectedItem = this.timeline.itemsData.get(this.selectedId);
+          if (previousSelectedItem) {
+            updates.push({id: previousSelectedItem.id, className: previousSelectedItem.baseClassName});
+          }
+        }
+        const newSelectedItem = this.timeline.itemsData.get(recordID);
+        if (newSelectedItem) {
+          this.timeline.focus(recordID);
+          updates.push({id: newSelectedItem.id, className: newSelectedItem.baseClassName + " selected"});
+        }
+        this.timeline.itemsData.update(updates);
+        this.selectedId = recordID;
       });
     },
     mounted () {

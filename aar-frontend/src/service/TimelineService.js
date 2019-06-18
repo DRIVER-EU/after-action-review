@@ -56,7 +56,7 @@ class TimelineService {
 
   // for clustering see: https://codepen.io/anon/pen/OZYwQN (as well as https://github.com/almende/vis/issues/3859)
   // for performance see http://visjs.org/examples/timeline/other/groupsPerformance.html?count=10000
-  getItems (trial, records, isLogIncluded) {
+  getItems (trial, records, isLogIncluded, selectedId) {
     const items = [];
     if (trial != null && records != null) {
       items.push(this.createTrialItem(trial));
@@ -73,8 +73,9 @@ class TimelineService {
       for (let i = 0; i < records.length; i++) {
         const record = records[i];
         const isLogRecord = record.recordType === RecordType.LOG;
+        const isSelected = selectedId && selectedId === record.id;
         if (!isLogRecord || isLogIncluded) {
-          items.push(this.createRecordItem(record));
+          items.push(this.createRecordItem(record, isSelected));
         }
       }
     }
@@ -86,6 +87,7 @@ class TimelineService {
       group: TimelineService.GROUP_TRIALS,
       start: new Date(trial.startDate),
       end: new Date(trial.endDate),
+      openEnd: trial.endDate === null,
       content: trial.trialName,
       className: 'trial'
     };
@@ -96,6 +98,7 @@ class TimelineService {
       group: TimelineService.GROUP_SCENARIOS,
       start: new Date(scenario.startDate),
       end: new Date(scenario.endDate),
+      openEnd: scenario.endDate === null,
       content: scenario.szenarioName,
       className: 'scenario'
     };
@@ -106,18 +109,20 @@ class TimelineService {
       group: TimelineService.GROUP_SESSIONS,
       start: new Date(session.startDate),
       end: new Date(session.endDate),
+      openEnd: session.endDate === null,
       content: session.sessionName,
       className: 'session'
     };
   }
 
-  createRecordItem (record) {
+  createRecordItem (record, isSelected) {
     return {
       id: record.id,
       group: TimelineService.GROUP_RECORDS,
       start: new Date(record.createDate),
       content: '' + record.id,
-      className: record.recordType,
+      baseClassName: record.recordType,
+      className: record.recordType + (isSelected ? " selected" : ""),
       record: record,
       title: record.recordType
     };

@@ -19,6 +19,7 @@ import VueLoadImage from 'vue-load-image';
 import DatetimePicker from 'vuetify-datetime-picker';
 import 'vuetify-datetime-picker/src/stylus/main.styl';
 import 'vuetify-stylus-fixed-table-header/index.styl';
+import DiagramPage from './pages/DiagramPage';
 
 export const eventBus = new Vue();
 store.eventBus = eventBus;
@@ -56,6 +57,7 @@ Vue.component('diagram-popup', DiagramPopup);
 Vue.component('vue-load-image', VueLoadImage);
 Vue.component('toolbar', Toolbar);
 Vue.component('timeline-panel', TimelinePanel);
+Vue.component('diagram-page', DiagramPage);
 
 /* eslint-disable no-new */
 new Vue({

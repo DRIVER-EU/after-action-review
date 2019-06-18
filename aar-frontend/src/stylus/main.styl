@@ -84,6 +84,14 @@ html {
   fixed-table-header-absolute();
 }
 
+.recordsTable tr.selected {
+}
+
+.recordsTable tr.selected td {
+  background-color: #0d47a1;
+  color: white;
+}
+
 .detailsPanel {
   box-shadow: none;
   height: 100%;
@@ -136,6 +144,12 @@ html {
   .vis-item.Log {
     background-color: #d5ddf6;
     border-color: #97b0f8;
+  }
+
+  .vis-item.selected {
+    border-color: #0d47a1;
+    background-color: #0d47a1;
+    color: white;
   }
 
   .vis-item.LargeDataUpdate {
