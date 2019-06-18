@@ -806,7 +806,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
-		query += " ORDER BY i.createDate DESC";
+		query += " ORDER BY i.createDate ASC";
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
 		if (this.actualFilter.getFromDate() != null) {
 			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
@@ -1276,13 +1276,17 @@ public class RecordRESTController implements IAdaptorCallback {
 					data += "ObserverToolAnswer\n";
 					data += "end note\n";
 				} else if (record.getRecordType().equalsIgnoreCase("RolePlayerMessage")) {
-					data += "rnote over TB-TrialMgmt\n";
+					data += "rnote over TB_TrialMgmt\n";
 					data += "RolePlayerMessage:\n";
 					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("PhaseMessage")) {
-					data += "== PhaseMessage ==\n";
+					data += "note left\n";
+					data += "PhaseMessage\n";
+					data += "end note\n";
 				} else if (record.getRecordType().equalsIgnoreCase("SessionMgmt")) {
-					data += "== SessionMessage ==\n";
+					data += "note left\n";
+					data += "SessionMgmt\n";
+					data += "end note\n";
 				} else {
 					String topic = record.getTopic();
 					String msg = this.getMessageFromRecord(record);
