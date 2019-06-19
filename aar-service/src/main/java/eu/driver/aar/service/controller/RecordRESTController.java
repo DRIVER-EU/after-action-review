@@ -429,6 +429,24 @@ public class RecordRESTController implements IAdaptorCallback {
 			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
 		}
 		
+		if (this.actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
+			if (szenario.getEndDate() != null) {
+				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
+		} else if (this.actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
+			if (session.getEndDate() != null) {
+				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
+		}
+		
 		// use the filtering here
 		if (page != null) {
 			page--;
@@ -687,6 +705,25 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (this.actualFilter.getToDate() != null) {
 			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
 		}
+		
+		if (this.actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
+			if (szenario.getEndDate() != null) {
+				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
+		} else if (this.actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
+			if (session.getEndDate() != null) {
+				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
+		}
+		
 		List<Record> records = typedQuery.getResultList();
 
 		log.info("getAllTimelineRecords-->");
@@ -813,6 +850,24 @@ public class RecordRESTController implements IAdaptorCallback {
 		}
 		if (this.actualFilter.getToDate() != null) {
 			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
+		
+		if (this.actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
+			if (szenario.getEndDate() != null) {
+				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
+		} else if (this.actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
+			if (session.getEndDate() != null) {
+				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
 		}
 		
 		List<Record> records = typedQuery.getResultList();
@@ -1238,6 +1293,26 @@ public class RecordRESTController implements IAdaptorCallback {
 				query += " AND ";
 			}
 			query += "i.createDate<:toDate";
+		}
+		
+		if (this.actualFilter.getScenarioId() != null) {
+			if (firstParam) {
+				query += " WHERE ";
+				firstParam = false;
+			} else {
+				query += " AND ";
+			}
+			query += "i.createDate>:fromDate AND i.createDate<:toDate";
+		}
+		
+		if (this.actualFilter.getSessionId() != null) {
+			if (firstParam) {
+				query += " WHERE ";
+				firstParam = false;
+			} else {
+				query += " AND ";
+			}
+			query += "i.createDate>:fromDate AND i.createDate<:toDate";
 		}
 
 		return query;

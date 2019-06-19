@@ -13,6 +13,9 @@ public class RecordFilter {
 	private String receiverClientId;
 	private String msgType;
 	
+	private String scenarioId;
+	private String sessionId;
+	
 	public RecordFilter() {
 		
 	}
@@ -80,6 +83,22 @@ public class RecordFilter {
 	public void setMsgType(String msgType) {
 		this.msgType = msgType;
 	}
+	
+	public String getScenarioId() {
+		return scenarioId;
+	}
+
+	public void setScenarioId(String scenarioId) {
+		this.scenarioId = scenarioId;
+	}
+
+	public String getSessionId() {
+		return sessionId;
+	}
+
+	public void setSessionId(String sessionId) {
+		this.sessionId = sessionId;
+	}
 
 	public boolean isFilterEnabled() {
 		boolean enabled = false;
@@ -100,6 +119,10 @@ public class RecordFilter {
 			enabled = true;
 		} else if (this.msgType != null) {
 			enabled = true;
+		} else if (this.scenarioId != null) {
+			enabled = true;
+		} else if (this.sessionId != null) {
+			enabled = true;
 		}
 		
 		return enabled;
@@ -119,7 +142,9 @@ public class RecordFilter {
 		} else if (this.topicName != null && this.topicName != record.getTopic()) {
 			enabled = false;
 		} else if (this.senderClientId != null && this.senderClientId != record.getClientId()) {
-			enabled = true;
+			enabled = false;
+		} else if (this.msgType != null && this.msgType != record.getMsgType()) {
+			enabled = false;
 		}
 		
 		return enabled; 
