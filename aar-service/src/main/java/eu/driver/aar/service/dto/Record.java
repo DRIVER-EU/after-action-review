@@ -70,7 +70,7 @@ public class Record {
 	
 	@JsonManagedReference
 	@OneToMany( mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Attachement> fileList = new ArrayList<Attachement>();
+	private List<Attachement> attachements = new ArrayList<Attachement>();
 	
 	public Record() {
 		
@@ -186,16 +186,16 @@ public class Record {
 		this.msgType = msgType;
 	}
 
-	public List<Attachement> getFileList() {
-		return fileList;
+	public List<Attachement> getAttachements() {
+		return attachements;
 	}
 
-	public void setFileList(List<Attachement> fileList) {
-		this.fileList = fileList;
+	public void setAttachements(List<Attachement> attachements) {
+		this.attachements = attachements;
 	}
 	
-	public void addFile(Attachement file) {
-		this.fileList.add(file);
+	public void addAttachement(Attachement file) {
+		this.attachements.add(file);
 	}
 
 	public String createBackupString(String backupType) {

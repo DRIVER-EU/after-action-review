@@ -218,7 +218,7 @@ public class RecordRESTController implements IAdaptorCallback {
 									Attachement attachement = new Attachement();
 									attachement.setRecord(record);
 									attachement.setName("record/attachements/" + storeName);
-									record.addFile(attachement);
+									record.addAttachement(attachement);
 								}
 							}
 						} catch (Exception ex) {
@@ -252,7 +252,7 @@ public class RecordRESTController implements IAdaptorCallback {
 						Attachement attachement = new Attachement();
 						attachement.setRecord(record);
 						attachement.setName("record/attachements/" + storeName);
-						record.addFile(attachement);
+						record.addAttachement(attachement);
 					}
 				}
 			} catch (Exception ex) {
