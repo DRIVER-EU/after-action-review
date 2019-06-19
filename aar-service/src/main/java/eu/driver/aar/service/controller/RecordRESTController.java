@@ -669,7 +669,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<List<Record>> getAllTimelineRecords() {
 		log.info("-->getAllTimelineRecords");
 
-		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate) FROM Record i";
+		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate, i.headline) FROM Record i";
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 			query += "	AND";

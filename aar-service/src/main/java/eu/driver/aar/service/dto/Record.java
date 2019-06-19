@@ -99,11 +99,12 @@ public class Record {
 		this.createDate = createDate;
 	}
 	
-	public Record(Long id, String topic, String recordType, Date createDate) {
+	public Record(Long id, String topic, String recordType, Date createDate, String headline) {
 		this.id = id;
 		this.topic = topic;
 		this.recordType = recordType;
 		this.createDate = createDate;
+		this.headline = headline;
 	}
 
 	public Long getId() {
