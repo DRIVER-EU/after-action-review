@@ -1,54 +1,20 @@
 <template>
   <ul style="list-style-type: none;">
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Record ID:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{recordID}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Sender:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{record.recordData.sender}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Date/Time:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{record.createDate}} {{record.createTime}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs12>
-          <v-subheader style="align-items: normal; height: 24px;">Message:</v-subheader>
-        </v-flex>
-      </v-layout>
-      <v-layout row>
-        <v-flex xs12>
-          <json-tree :json="record.recordJson"></json-tree>
-        </v-flex>
-      </v-layout>
-    </li>
+    <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
+    <DetailsRow title="Sender" :value="record.recordData.sender"></DetailsRow>
+    <DetailsRow title="Date/Time" :value="record.createDate + ' ' + record.createTime"></DetailsRow>
+    <DetailsJsonTree title="Message" :value="record.recordJson"></DetailsJsonTree>
   </ul>
 </template>
 
 <script>
+  import DetailsRow from './DetailsRow';
+  import DetailsJsonTree from './DetailsJsonTree';
+
   export default {
     name: 'AlertDetails',
-    props: ['recordID', 'record']
+    props: ['recordID', 'record'],
+    components: {DetailsRow, DetailsJsonTree},
   };
 </script>
 

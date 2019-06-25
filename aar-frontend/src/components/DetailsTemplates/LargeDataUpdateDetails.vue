@@ -1,62 +1,21 @@
 <template>
   <ul style="list-style-type: none;">
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Record ID:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{recordID}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Url:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{recordData.url}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">DataType:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{recordData.dataType}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Title:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{recordData.title}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Description:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{recordData.description}}
-        </v-flex>
-      </v-layout>
-    </li>
+    <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
+    <DetailsRow title="URL" :value="record.recordData.url"></DetailsRow>
+    <DetailsRow title="Data Type" :value="record.recordData.dataType"></DetailsRow>
+    <DetailsRow title="Title" :value="record.recordData.title"></DetailsRow>
+    <DetailsRow title="Description" :value="record.recordData.description"></DetailsRow>
   </ul>
 </template>
 
 <script>
+  import DetailsRow from './DetailsRow';
+  import DetailsJsonTree from './DetailsJsonTree';
+
   export default {
     name: 'LargeDataUpdateDetails',
-    props: ['recordID', 'recordData']
+    props: ['recordID', 'record'],
+    components: {DetailsRow, DetailsJsonTree},
   };
 </script>
 

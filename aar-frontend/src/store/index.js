@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import {Record} from '../objects/record';
 import {heartbeatController} from '../heartbeatController';
-import {parseDate} from '../helper';
+import {formatDate} from '../helper';
 import {environment} from '../service/EnvironmentService';
 import EventName from '../constants/EventName';
 import FilterOption from '../constants/FilterOption';
@@ -14,11 +14,11 @@ Vue.use(Vuex);
 
 function createRecord(record) {
   let newRecord = new Record(record);
-  newRecord.createDate = parseDate(record.createDate, 'YYYY-MM-DD');
-  newRecord.createTime = parseDate(record.createDate, 'HH:mm:ss.SSS');
+  newRecord.createDate = formatDate(record.createDate, 'YYYY-MM-DD');
+  newRecord.createTime = formatDate(record.createDate, 'HH:mm:ss.SSS');
   newRecord.recordData = JSON.parse(record.recordJson);
   if (newRecord.recordJson && newRecord.recordJson.hasOwnProperty('dateTimeSent')) {
-    newRecord.recordJson.dateTimeSent = parseDate(newRecord.recordJson.dateTimeSent);
+    newRecord.recordJson.dateTimeSent = formatDate(newRecord.recordJson.dateTimeSent);
   }
   return newRecord;
 }

@@ -1,9 +1,8 @@
 <template>
   <ul style="list-style-type: none;">
     <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
-    <DetailsRow title="Client ID" :value="record.clientId"></DetailsRow>
-    <DetailsRow title="Date/Time" :value="record.createDate + ' ' + record.createTime"></DetailsRow>
-    <DetailsRow title="Level" :value="record.level"></DetailsRow>
+    <DetailsRow title="Phase" :value="record.recordData.phase"></DetailsRow>
+    <DetailsRow title="Is Starting" :value="getBooleanDisplayValue(record.recordData.isStarting)"></DetailsRow>
     <DetailsJsonTree title="Message" :value="record.recordJson"></DetailsJsonTree>
   </ul>
 </template>
@@ -11,11 +10,17 @@
 <script>
   import DetailsRow from './DetailsRow';
   import DetailsJsonTree from './DetailsJsonTree';
+  import {formatDate} from '../../helper';
 
   export default {
-    name: 'GeoJsonEnvelopeDetails',
+    name: 'PhaseMessageDetails',
     props: ['recordID', 'record'],
     components: {DetailsRow, DetailsJsonTree},
+    methods: {
+      getBooleanDisplayValue: function(value) {
+        return value ? "Yes" : "No";
+      }
+    }
   };
 </script>
 
