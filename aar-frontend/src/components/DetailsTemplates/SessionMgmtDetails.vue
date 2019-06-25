@@ -1,6 +1,7 @@
 <template>
   <ul style="list-style-type: none;">
     <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
+    <DetailsRow title="Headline" :value="record.headline"></DetailsRow>
     <DetailsRow title="Trial" :value="record.recordData.trialName"></DetailsRow>
     <DetailsRow title="Scenario" :value="record.recordData.scenarioName"></DetailsRow>
     <DetailsRow title="Session" :value="record.recordData.sessionName"></DetailsRow>

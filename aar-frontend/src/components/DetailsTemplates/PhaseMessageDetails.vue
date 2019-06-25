@@ -1,6 +1,7 @@
 <template>
   <ul style="list-style-type: none;">
     <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
+    <DetailsRow title="Headline" :value="record.headline"></DetailsRow>
     <DetailsRow title="Phase" :value="record.recordData.phase"></DetailsRow>
     <DetailsRow title="Is Starting" :value="getBooleanDisplayValue(record.recordData.isStarting)"></DetailsRow>
     <DetailsJsonTree title="Message" :value="record.recordJson"></DetailsJsonTree>

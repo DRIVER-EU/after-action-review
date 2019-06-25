@@ -1,6 +1,7 @@
 <template>
   <ul style="list-style-type: none;">
     <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
+    <DetailsRow title="Headline" :value="record.headline"></DetailsRow>
     <DetailsRow title="Date/Time" :value="formatDateTime(record.recordData.timeSendUTC)"></DetailsRow>
     <DetailsRow title="Type" :value="record.recordData.observationTypeName"></DetailsRow>
     <span v-for="question in record.recordData.questions">

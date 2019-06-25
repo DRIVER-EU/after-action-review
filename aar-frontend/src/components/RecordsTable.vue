@@ -4,14 +4,8 @@
       <v-data-table :items=filteredRecords hide-actions class="recordsTable" style="height:100%">
         <template slot="headers" slot-scope="props">
           <tr>
-            <th>
-              <div class="primary--text" style="padding: 16px;">RecordID</div>
-              <v-select
-                :items="filterOptions.id"
-                label="All"
-                single-line
-                v-model="currentlySelectedId"
-              ></v-select>
+            <th style="vertical-align: top;">
+              <div class="primary--text" style="padding: 16px;">Headline</div>
             </th>
             <th>
               <div class="primary--text" style="padding: 16px;">ClientID</div>
@@ -62,7 +56,7 @@
         </template>
         <template slot="items" slot-scope="props" style="height: 93vh; overflow: auto;">
           <tr @click="recordSelected(props.item.id, props.item.recordType)" v-bind:class="getRowClass(props.item)">
-            <td>{{props.item.id}}</td>
+            <td style="white-space: nowrap;text-overflow: ellipsis;max-width: 200px;overflow: hidden;" :title="props.item.headline">{{props.item.headline}}</td>
             <td>{{props.item.clientId}}</td>
             <td>{{props.item.topic}}</td>
             <td>{{props.item.recordType}}</td>

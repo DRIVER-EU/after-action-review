@@ -1,6 +1,7 @@
 <template>
   <ul style="list-style-type: none;">
     <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
+    <DetailsRow title="Headline" :value="record.headline"></DetailsRow>
     <DetailsRow title="URL" :value="record.recordData.url"></DetailsRow>
     <DetailsRow title="Data Type" :value="record.recordData.dataType"></DetailsRow>
     <DetailsRow title="Title" :value="record.recordData.title"></DetailsRow>
