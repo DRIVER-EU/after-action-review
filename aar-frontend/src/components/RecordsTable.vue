@@ -32,12 +32,21 @@
               ></v-select>
             </th>
             <th>
-              <div class="primary--text" style="padding: 16px;">Type</div>
+              <div class="primary--text" style="padding: 16px;">Record Type</div>
               <v-select
                 :items="filterOptions.recordType"
                 label="All"
                 single-line
                 v-model="currentlySelectedRecordType"
+              ></v-select>
+            </th>
+            <th>
+              <div class="primary--text" style="padding: 16px;">Message Type</div>
+              <v-select
+                :items="filterOptions.msgType"
+                label="All"
+                single-line
+                v-model="currentlySelectedMsgType"
               ></v-select>
             </th>
             <th>
@@ -57,6 +66,7 @@
             <td>{{props.item.clientId}}</td>
             <td>{{props.item.topic}}</td>
             <td>{{props.item.recordType}}</td>
+            <td>{{props.item.msgType}}</td>
             <td class="text-xs-center">{{props.item.createDate}}&nbsp;{{props.item.createTime}}</td>
           </tr>
         </template>
@@ -85,6 +95,7 @@
         currentlySelectedClientId: 'All',
         currentlySelectedTopicId: 'All',
         currentlySelectedRecordType: 'All',
+        currentlySelectedMsgType: 'All',
         currentlySelectedFromDate: null,
         currentlySelectedToDate: null,
         additionalRecords: [],
@@ -104,6 +115,9 @@
         this.updateFilter();
       },
       currentlySelectedRecordType: function () {
+        this.updateFilter();
+      },
+      currentlySelectedMsgType: function () {
         this.updateFilter();
       },
       currentlySelectedFromDate: function () {
@@ -142,7 +156,8 @@
         eventBus.$emit(EventName.RECORD_SELECTED, recordID, recordType);
       },
       updateFilter: function () {
-        recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType, this.currentlySelectedTopicId, this.currentlySelectedFromDate, this.currentlySelectedToDate);
+        recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType,
+          this.currentlySelectedTopicId, this.currentlySelectedMsgType, this.currentlySelectedFromDate, this.currentlySelectedToDate);
       },
       getRowClass: function(item) {
         if (item && this.$store.state.record && item.id === this.$store.state.record.id) {

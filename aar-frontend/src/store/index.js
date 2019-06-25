@@ -50,6 +50,7 @@ export const store = new Vuex.Store({
       id: [FilterOption.ALL],
       clientId: [FilterOption.ALL],
       topic: [FilterOption.ALL],
+      msgType: [FilterOption.ALL],
       recordType: [FilterOption.ALL]
     }
   },
@@ -112,6 +113,13 @@ export const store = new Vuex.Store({
         }
       });
     },
+    GET_MSG_TYPES (state, msgTypes) {
+      msgTypes.forEach(msgType => {
+        if (state.filterOptions.msgType.indexOf(msgType) === -1) {
+          state.filterOptions.msgType.push(msgType)
+        }
+      });
+    },
     GET_TOPIC_NAMES (state, topics) {
       topics.forEach(topic => {
         if (state.filterOptions.topic.indexOf(topic) === -1) {
@@ -150,6 +158,7 @@ export const store = new Vuex.Store({
       this.axios.get('getReceiverClientIds').then(response => {
         context.commit('GET_CLIENT_IDS', (response.data));
       }).catch(ex => console.log(ex));
+      context.commit('GET_MSG_TYPES', ["Info", "Warn", "Error", "Ack"]);
     },
     getRecord (context, payload) {
       this.axios.get('getRecord/' + payload.id).then(response => {
