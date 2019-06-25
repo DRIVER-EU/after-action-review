@@ -156,9 +156,8 @@
       getRowClass: function(item) {
         if (item && this.$store.state.record && item.id === this.$store.state.record.id) {
           return "selected";
-        } else if (item.recordType === RecordType.LOG) {
-          const level = item.recordData ? item.recordData.level : "unknown";
-          return "log-" + level;
+        } else if (item.msgType) {
+          return item.msgType.toLowerCase() + "Msg";
         } else {
           return null;
         }
