@@ -398,6 +398,33 @@ public class RecordRESTController implements IAdaptorCallback {
 			}
 		}
 	}
+	
+	@ApiOperation(value = "checkCredentials", nickname = "checkCredentials")
+	@RequestMapping(value = "/AARService/checkCredentials", method = RequestMethod.GET)
+	@ApiImplicitParams({
+			@ApiImplicitParam(name = "username", value = "the username to be checked", required = true, dataType = "string", paramType = "query"),
+			@ApiImplicitParam(name = "password", value = "the passord to be checked", required = true, dataType = "string", paramType = "query") })
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 401, message = "Unauthorized", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
+	public ResponseEntity<Boolean> checkCredentials(
+			@RequestParam(value="username", required=true) String username,
+			@RequestParam(value="password", required=true) String password) {
+		log.info("-->checkCredentials");
+		
+		Boolean login = false;
+		
+		if (username.equals("AARAdmin") && password.equals("admin")) {
+			login = true;
+		}
+		
+		log.info("checkCredentials-->");
+		if (login) {
+			return new ResponseEntity<Boolean>(login, HttpStatus.OK);
+		}
+		return new ResponseEntity<Boolean>(false, HttpStatus.UNAUTHORIZED);
+	}
 
 	@ApiOperation(value = "getAllRecords", nickname = "getAllRecords")
 	@RequestMapping(value = "/AARService/getAllRecords", method = RequestMethod.GET)
