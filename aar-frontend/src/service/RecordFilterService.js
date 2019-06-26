@@ -15,7 +15,8 @@ class RecordFilterService {
     this.updateFilter(null, null, null, null);
   }
 
-  updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId, currentlySelectedFromDate, currentlySelectedToDate) {
+  updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId,
+               currentlySelectedMsgType, currentlySelectedFromDate, currentlySelectedToDate) {
     const filter = {
       filterEnabled: true,
       fromDate: currentlySelectedFromDate ? currentlySelectedFromDate.getTime() : null,
@@ -24,6 +25,7 @@ class RecordFilterService {
       id: currentlySelectedId === FilterOption.ALL ? null : currentlySelectedId,
       senderClientId: currentlySelectedClientId === FilterOption.ALL ? null : currentlySelectedClientId,
       recordType: currentlySelectedRecordType === FilterOption.ALL ? null : currentlySelectedRecordType,
+      msgType: currentlySelectedMsgType === FilterOption.ALL ? null : currentlySelectedMsgType,
       topicName: currentlySelectedTopicId === FilterOption.ALL ? null : currentlySelectedTopicId,
     };
     console.log('/setActualFilter invoked with', filter);

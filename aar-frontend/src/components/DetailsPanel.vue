@@ -20,9 +20,14 @@
   import FallbackDetails from './DetailsTemplates/FallbackDetails';
   import EventName from '../constants/EventName';
   import RecordType from '../constants/RecordType';
+  import RolePlayerMessageDetails from './DetailsTemplates/RolePlayerMessageDetails';
+  import ObserverToolAnswerDetails from './DetailsTemplates/ObserverToolAnswerDetails';
+  import SessionMgmtDetails from './DetailsTemplates/SessionMgmtDetails';
+  import PhaseMessageDetails from './DetailsTemplates/PhaseMessageDetails';
 
   export default {
-    components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FallbackDetails},
+    components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FallbackDetails, RolePlayerMessageDetails,
+      ObserverToolAnswerDetails, SessionMgmtDetails, PhaseMessageDetails},
     name: 'DetailsPanel',
     data: function () {
       return {};
@@ -45,21 +50,20 @@
             return GeoJsonEnvelopeDetails.name;
           case RecordType.LARGE_DATA_UPDATE:
             return LargeDataUpdateDetails.name;
+          case RecordType.ROLE_PLAYER_MESSAGE:
+            return RolePlayerMessageDetails.name;
+          case RecordType.OBSERVER_TOOL_ANSWER:
+            return ObserverToolAnswerDetails.name;
+          case RecordType.SESSION_MGMT:
+            return SessionMgmtDetails.name;
+          case RecordType.PHASE_MESSAGE:
+            return PhaseMessageDetails.name;
           default:
             return FallbackDetails.name;
         }
       },
       currentProperties() {
-        switch (this.record.recordType) {
-          case RecordType.INVITE:
-          case RecordType.LARGE_DATA_UPDATE:
-            return { recordID: this.record.id, recordData: this.record.recordData };
-          case RecordType.LOG:
-          case RecordType.ALERT:
-          case RecordType.GEO_JSON:
-          default:
-            return { recordID: this.record.id, record: this.record };
-        }
+        return { recordID: this.record.id, record: this.record };
       }
     },
     created: function () {

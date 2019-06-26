@@ -124,7 +124,7 @@ class TimelineService {
       baseClassName: record.recordType,
       className: record.recordType + (isSelected ? " selected" : ""),
       record: record,
-      title: record.recordType
+      title: record.headline ? record.recordType + ": " + record.headline : record.recordType
     };
   }
 

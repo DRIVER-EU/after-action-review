@@ -1,64 +1,22 @@
 <template>
   <ul style="list-style-type: none;">
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Record ID:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{recordID}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Client ID:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{record.clientId}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Date/Time:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{record.createDate}} {{record.createTime}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs4>
-          <v-subheader style="align-items: normal;">Level:</v-subheader>
-        </v-flex>
-        <v-flex xs8>
-          {{record.level}}
-        </v-flex>
-      </v-layout>
-    </li>
-    <li>
-      <v-layout row>
-        <v-flex xs12>
-          <v-subheader style="align-items: normal;height: 24px;">Message:</v-subheader>
-        </v-flex>
-      </v-layout>
-      <v-layout row>
-        <v-flex xs12>
-          <json-tree :json="record.recordJson"></json-tree>
-        </v-flex>
-      </v-layout>
-    </li>
+    <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
+    <DetailsRow title="Headline" :value="record.headline"></DetailsRow>
+    <DetailsRow title="Client ID" :value="record.clientId"></DetailsRow>
+    <DetailsRow title="Date/Time" :value="record.createDate + ' ' + record.createTime"></DetailsRow>
+    <DetailsRow title="Level" :value="record.level"></DetailsRow>
+    <DetailsJsonTree title="Message" :value="record.recordJson"></DetailsJsonTree>
   </ul>
 </template>
 
 <script>
+  import DetailsRow from './DetailsRow';
+  import DetailsJsonTree from './DetailsJsonTree';
+
   export default {
     name: 'GeoJsonEnvelopeDetails',
-    props: ['recordID', 'record']
+    props: ['recordID', 'record'],
+    components: {DetailsRow, DetailsJsonTree},
   };
 </script>
 

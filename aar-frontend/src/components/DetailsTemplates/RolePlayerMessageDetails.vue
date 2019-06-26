@@ -2,7 +2,11 @@
   <ul style="list-style-type: none;">
     <DetailsRow title="Record ID" :value="recordID"></DetailsRow>
     <DetailsRow title="Headline" :value="record.headline"></DetailsRow>
-    <DetailsRow title="Client ID" :value="record.recordData.id"></DetailsRow>
+    <DetailsRow title="Type" :value="record.recordData.type"></DetailsRow>
+    <DetailsRow title="Title" :value="record.recordData.title"></DetailsRow>
+    <DetailsRow title="Headline" :value="record.recordData.headline"></DetailsRow>
+    <DetailsRow title="Description" :value="record.recordData.description"></DetailsRow>
+    <DetailsRow title="Role player" :value="record.recordData.rolePlayerName"></DetailsRow>
     <DetailsJsonTree title="Message" :value="record.recordJson"></DetailsJsonTree>
   </ul>
 </template>
@@ -12,7 +16,7 @@
   import DetailsJsonTree from './DetailsJsonTree';
 
   export default {
-    name: 'FallbackDetails',
+    name: 'RolePlayerMessageDetails',
     props: ['recordID', 'record'],
     components: {DetailsRow, DetailsJsonTree},
   };
