@@ -17,6 +17,7 @@
     "lodash.uniqueid": "^4.0.1",
     "material-icons": "^0.1.0",
     "moment": "^2.21.0",
+    "ol": "^5.3.3",
     "vis": "^4.21.0",
     "vue": "^2.5.18",
     "vue-axios": "^2.0.2",

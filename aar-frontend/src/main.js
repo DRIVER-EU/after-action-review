@@ -20,6 +20,7 @@ import DatetimePicker from 'vuetify-datetime-picker';
 import 'vuetify-datetime-picker/src/stylus/main.styl';
 import 'vuetify-stylus-fixed-table-header/index.styl';
 import DiagramPage from './pages/DiagramPage';
+import MapPanel from './components/MapPanel';
 
 export const eventBus = new Vue();
 store.eventBus = eventBus;
@@ -53,6 +54,7 @@ Vue.config.productionTip = false;
 Vue.component('records-table', RecordsTable);
 Vue.component('details-panel', DetailsPanel);
 Vue.component('json-tree', JsonTree);
+Vue.component('map-panel', MapPanel);
 Vue.component('diagram-popup', DiagramPopup);
 Vue.component('vue-load-image', VueLoadImage);
 Vue.component('toolbar', Toolbar);
