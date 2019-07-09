@@ -1,13 +1,27 @@
 <template>
   <v-app>
     <toolbar>
-      <v-btn @click.prevent="openSequenceDiagramPage()" class="diagramButton">
-        <v-icon left>bar_chart</v-icon>
-        Sequence diagram
-      </v-btn>
-      <v-btn @click.prevent="openOverviewSequenceDiagramPage()" class="diagramButton">
-        <v-icon left>insert_chart_outlined</v-icon>
-        Overview sequence diagram
+      <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition">
+        <v-btn slot="activator">
+          <v-icon left>bar_chart</v-icon> <!-- insert_chart_outlined -->
+          Sequence diagram
+        </v-btn>
+        <v-card>
+          <v-list>
+            <v-list-tile @click="openOverviewSequenceDiagramPage()">
+              <v-icon left>insert_chart_outlined</v-icon>
+              Overview
+            </v-list-tile>
+            <v-list-tile @click="openSequenceDiagramPage()">
+              <v-icon left>bar_chart</v-icon>
+              Details
+            </v-list-tile>
+          </v-list>
+        </v-card>
+      </v-menu>
+      <v-btn @click.prevent="analyseRecords()" class="diagramButton">
+        <v-icon left>rotate_right</v-icon>
+        Post-Process
       </v-btn>
       <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition">
         <v-btn slot="activator">
@@ -17,6 +31,7 @@
         <v-card>
           <v-list>
             <v-list-tile v-for="(item, index) in exportDataItems" :key="index" @click="exportData(item.exportType)">
+              <v-icon left>save_alt</v-icon> <!-- arrow_downward -->
               <v-list-tile-title v-text="item.title"/>
             </v-list-tile>
           </v-list>
@@ -54,6 +69,7 @@
   import {eventBus} from '../main';
   import EventName from '../constants/EventName';
   import {fetchService} from '../service/FetchService';
+  import Urls from '../constants/Urls';
 
   export default {
     name: 'MainPage',
@@ -68,6 +84,9 @@
       }
     }),
     methods: {
+      analyseRecords() {
+        fetchService.performGet(Urls.HTTP_BASE + "/analyseRecords");
+      },
       openDiagramPopup () {
         eventBus.$emit(EventName.DIAGRAM_POPUP, true);
       },
