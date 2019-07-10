@@ -92,6 +92,8 @@
         currentlySelectedMsgType: 'All',
         currentlySelectedFromDate: null,
         currentlySelectedToDate: null,
+        currentlySelectedSessionId: null,
+        currentlySelectedScenarioId: null,
         additionalRecords: [],
         pagination: {
           page: 1,
@@ -151,7 +153,8 @@
       },
       updateFilter: function () {
         recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType,
-          this.currentlySelectedTopicId, this.currentlySelectedMsgType, this.currentlySelectedFromDate, this.currentlySelectedToDate);
+          this.currentlySelectedTopicId, this.currentlySelectedMsgType, this.currentlySelectedFromDate, this.currentlySelectedToDate,
+          this.currentlySelectedSessionId, this.currentlySelectedScenarioId);
       },
       getRowClass: function(item) {
         if (item && this.$store.state.record && item.id === this.$store.state.record.id) {
@@ -166,15 +169,33 @@
         this.additionalRecords = [];
         this.$store.dispatch('getPageCount');
         this.$store.dispatch('getRecords', {page: this.pagination.page});
+      },
+      setSelectedSessionId(id) {
+        console.log("Selected session ID", id);
+        this.currentlySelectedSessionId = id;
+        this.currentlySelectedScenarioId = null;
+        this.updateFilter();
+      },
+      setSelectedScenarioId(id) {
+        console.log("Selected scenario ID", id);
+        this.currentlySelectedSessionId = null;
+        this.currentlySelectedScenarioId = id;
+        this.updateFilter();
+      },
+      clearSelectedSessionAndScenario() {
+        this.currentlySelectedSessionId = null;
+        this.currentlySelectedScenarioId = null;
+        this.updateFilter();
       }
     },
     created () {
       const vm = this;
       this.$store.dispatch('getRecords', {page: vm.pagination.page});
       eventBus.$on(EventName.FILTER_CHANGED, this.reloadData);
-      eventBus.$on(EventName.RECORD_NOTIFICATION, (newRecord) => {
-        vm.additionalRecords.unshift(newRecord);
-      });
+      eventBus.$on(EventName.RECORD_NOTIFICATION, newRecord => vm.additionalRecords.unshift(newRecord));
+      eventBus.$on(EventName.SESSION_SELECTED, this.setSelectedSessionId);
+      eventBus.$on(EventName.SCENARIO_SELECTED, this.setSelectedScenarioId);
+      eventBus.$on(EventName.CLEAR_SESSION_SCENARIO_FILTER, this.clearSelectedSessionAndScenario);
     }
   };
 </script>

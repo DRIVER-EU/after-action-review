@@ -56,18 +56,26 @@ class TimelineService {
 
   // for clustering see: https://codepen.io/anon/pen/OZYwQN (as well as https://github.com/almende/vis/issues/3859)
   // for performance see http://visjs.org/examples/timeline/other/groupsPerformance.html?count=10000
-  getItems (trial, records, isLogIncluded, selectedId) {
+  getItems (trial, records, isLogIncluded, selectedId, filter) {
     const items = [];
     if (trial != null && records != null) {
-      items.push(this.createTrialItem(trial));
+      if (!filter.scenarioId && !filter.sessionId) {
+        items.push(this.createTrialItem(trial));
+      }
       const scenarios = trial.szenarioList || [];
       for (let i = 0; i < scenarios.length; i++) {
         const scenario = scenarios[i];
-        items.push(this.createScenarioItem(scenario));
-        const sessions = scenario.sessionList || [];
-        for (let j = 0; j < sessions.length; j++) {
-          const session = sessions[j];
-          items.push(this.createSessionItem(session));
+        if (this.isScenarioPassingFilter(scenario, filter)) {
+          if (!filter.sessionId) {
+            items.push(this.createScenarioItem(scenario));
+          }
+          const sessions = scenario.sessionList || [];
+          for (let j = 0; j < sessions.length; j++) {
+            const session = sessions[j];
+            if (this.isSessionPassingFilter(session, filter)) {
+              items.push(this.createSessionItem(session));
+            }
+          }
         }
       }
       for (let i = 0; i < records.length; i++) {
@@ -80,6 +88,14 @@ class TimelineService {
       }
     }
     return items;
+  }
+
+  isScenarioPassingFilter(scenario, filter) {
+    return !filter.scenarioId || scenario.szenarioId === filter.scenarioId;
+  }
+
+  isSessionPassingFilter(scenario, filter) {
+    return !filter.sessionId || scenario.sessionId === filter.sessionId;
   }
 
   createTrialItem (trial) {
@@ -100,7 +116,8 @@ class TimelineService {
       end: new Date(scenario.endDate),
       openEnd: scenario.endDate === null,
       content: scenario.szenarioName,
-      className: 'scenario'
+      className: 'scenario',
+      dataId: scenario.szenarioId,
     };
   }
 
@@ -111,7 +128,8 @@ class TimelineService {
       end: new Date(session.endDate),
       openEnd: session.endDate === null,
       content: session.sessionName,
-      className: 'session'
+      className: 'session',
+      dataId: session.sessionId,
     };
   }
 
@@ -130,6 +148,14 @@ class TimelineService {
 
   isRecordGroup (groupId) {
     return groupId === TimelineService.GROUP_RECORDS;
+  }
+
+  isSessionGroup (groupId) {
+    return groupId === TimelineService.GROUP_SESSIONS;
+  }
+
+  isScenarioGroup (groupId) {
+    return groupId === TimelineService.GROUP_SCENARIOS;
   }
 }
 

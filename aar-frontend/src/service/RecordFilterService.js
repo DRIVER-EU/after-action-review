@@ -11,25 +11,36 @@ class RecordFilterService {
     return RecordFilterService.INSTANCE;
   }
 
+  constructor() {
+    this.currentFilter = {};
+  }
+
+  getCurrentFilter() {
+    return this.currentFilter;
+  }
+
   resetFilter() {
     this.updateFilter(null, null, null, null);
   }
 
   updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId,
-               currentlySelectedMsgType, currentlySelectedFromDate, currentlySelectedToDate) {
+               currentlySelectedMsgType, currentlySelectedFromDate, currentlySelectedToDate, currentlySelectedSessionId, currentlySelectedScenarioId) {
     const filter = {
       filterEnabled: true,
       fromDate: currentlySelectedFromDate ? currentlySelectedFromDate.getTime() : null,
-      toDate: currentlySelectedToDate? currentlySelectedToDate.getTime() : null,
+      toDate: currentlySelectedToDate ? currentlySelectedToDate.getTime() : null,
       receiverClientId: null,
       id: currentlySelectedId === FilterOption.ALL ? null : currentlySelectedId,
       senderClientId: currentlySelectedClientId === FilterOption.ALL ? null : currentlySelectedClientId,
       recordType: currentlySelectedRecordType === FilterOption.ALL ? null : currentlySelectedRecordType,
       msgType: currentlySelectedMsgType === FilterOption.ALL ? null : currentlySelectedMsgType,
       topicName: currentlySelectedTopicId === FilterOption.ALL ? null : currentlySelectedTopicId,
+      scenarioId: currentlySelectedScenarioId,
+      sessionId: currentlySelectedSessionId
     };
     console.log('/setActualFilter invoked with', filter);
     fetchService.performPost('setActualFilter', filter).then(() => {
+      this.currentFilter = filter;
       eventBus.$emit(EventName.FILTER_CHANGED);
       store.dispatch('getAllTimelineRecords');
       /**

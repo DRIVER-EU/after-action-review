@@ -121,7 +121,7 @@ html {
   border-top: 1px solid #999999 !important;
 
   .includeLogs {
-    width: 150px;
+    width: 400px;
     text-align: right;
     position: absolute;
     right: 0px;
@@ -140,37 +140,43 @@ html {
   .vis-item.scenario {
     border-color: lighten(#ffbb33, 10);
     background-color: lighten(#ffeebb, 6);
+    cursor: pointer;
   }
 
   .vis-item.session {
     border-color: lighten(#ffbb33, 15);
     background-color: lighten(#ffeebb, 12);
+    cursor: pointer;
   }
 
   .vis-item.Alert {
     background-color: #ffeedd;
     border-color: #ffbb99;
+    cursor: pointer;
   }
 
   .vis-item.Log {
     background-color: #d5ddf6;
     border-color: #97b0f8;
+    cursor: pointer;
+  }
+
+  .vis-item.LargeDataUpdate {
+    background-color: #eeeeee;
+    border-color: #aaaaaa;
+    cursor: pointer;
+  }
+
+  .vis-item.GeoJSONEnvelope {
+    background-color: #ddffdd;
+    border-color: #99ff99;
+    cursor: pointer;
   }
 
   .vis-item.selected {
     border-color: #0d47a1;
     background-color: #0d47a1;
     color: white;
-  }
-
-  .vis-item.LargeDataUpdate {
-    background-color: #eeeeee;
-    border-color: #aaaaaa;
-  }
-
-  .vis-item.GeoJSONEnvelope {
-    background-color: #ddffdd;
-    border-color: #99ff99;
   }
 
   /*

@@ -4,10 +4,11 @@
       <v-card-title class="justify-center primary--text">
         <span>Timeline</span>
         <div class="includeLogs">
-          <v-checkbox
-            v-model="isLogIncluded"
-            :label="`Include Logs`"
-          ></v-checkbox>
+          <v-checkbox v-model="isLogIncluded" :label="`Include Logs`" style="display: inline-flex"></v-checkbox>
+          <v-btn @click.prevent="clearSessionAndScenarioFilters()" :disabled="!clearSessinAndScenarioFiltersEnabled" style="margin-top:-10px;">
+            <v-icon left>clear</v-icon>
+            Clear filter
+          </v-btn>
         </div>
       </v-card-title>
       <div ref="container"></div>
@@ -20,6 +21,7 @@
   import {Timeline, DataSet} from 'vis';
   import {timeline} from '../service/TimelineService';
   import EventName from '../constants/EventName';
+  import {recordFilter} from '../service/RecordFilterService';
 
   export default {
     name: 'TimelinePanel',
@@ -27,6 +29,7 @@
     data: function() {
       return {
         isLogIncluded: false,
+        clearSessinAndScenarioFiltersEnabled: false,
       };
     },
     watch: {
@@ -36,10 +39,27 @@
     },
     computed: {},
     methods: {
+      setClearSessinAndScenarioFiltersEnabled(enabled) {
+          this.clearSessinAndScenarioFiltersEnabled = enabled;
+      },
+      clearSessionAndScenarioFilters() {
+        eventBus.$emit(EventName.CLEAR_SESSION_SCENARIO_FILTER);
+        this.setClearSessinAndScenarioFiltersEnabled(false);
+      },
       handleClick: function (data) {
-        const recordId = data.item;
-        if (recordId && timeline.isRecordGroup(data.group)) {
-          eventBus.$emit(EventName.RECORD_SELECTED, recordId, null);
+        const itemId = data.item;
+        if (itemId) {
+          if (timeline.isRecordGroup(data.group)) {
+            eventBus.$emit(EventName.RECORD_SELECTED, itemId, null);
+          } else if (timeline.isSessionGroup(data.group)) {
+            const sessionId = this.timeline.itemsData.get(itemId).dataId;
+            eventBus.$emit(EventName.SESSION_SELECTED, sessionId, null);
+            this.setClearSessinAndScenarioFiltersEnabled(true);
+          } else if (timeline.isScenarioGroup(data.group)) {
+            const scenarioId = this.timeline.itemsData.get(itemId).dataId;
+            eventBus.$emit(EventName.SCENARIO_SELECTED, scenarioId, null);
+            this.setClearSessinAndScenarioFiltersEnabled(true);
+          }
         }
       },
       getRecords: function () {
@@ -58,8 +78,9 @@
         console.log('Updating timeline');
         const trial = this.$store.state.trial;
         const records = this.getRecords();
+        const filter = recordFilter.getCurrentFilter();
         this.selectedId = this.$store.state.record ? this.$store.state.record.id : null;
-        const items = timeline.getItems(trial, records, this.isLogIncluded, this.selectedId);
+        const items = timeline.getItems(trial, records, this.isLogIncluded, this.selectedId, filter);
         if (items.length > 0) {
           console.log('Rendering items', items, this.isInitialized);
           const data = new DataSet(items);
