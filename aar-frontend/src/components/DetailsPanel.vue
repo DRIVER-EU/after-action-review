@@ -12,18 +12,18 @@
 
 <script>
   import {eventBus} from '../main';
-  import LogDetails from './DetailsTemplates/LogDetails';
-  import InviteDetails from './DetailsTemplates/InviteDetails';
-  import AlertDetails from './DetailsTemplates/AlertDetails';
-  import GeoJsonEnvelopeDetails from './DetailsTemplates/GeoJsonEnvelopeDetails';
-  import LargeDataUpdateDetails from './DetailsTemplates/LargeDataUpdateDetails';
-  import FallbackDetails from './DetailsTemplates/FallbackDetails';
+  import LogDetails from './details/templates/LogDetails';
+  import InviteDetails from './details/templates/InviteDetails';
+  import AlertDetails from './details/templates/AlertDetails';
+  import GeoJsonEnvelopeDetails from './details/templates/GeoJsonEnvelopeDetails';
+  import LargeDataUpdateDetails from './details/templates/LargeDataUpdateDetails';
+  import FallbackDetails from './details/templates/FallbackDetails';
   import EventName from '../constants/EventName';
   import RecordType from '../constants/RecordType';
-  import RolePlayerMessageDetails from './DetailsTemplates/RolePlayerMessageDetails';
-  import ObserverToolAnswerDetails from './DetailsTemplates/ObserverToolAnswerDetails';
-  import SessionMgmtDetails from './DetailsTemplates/SessionMgmtDetails';
-  import PhaseMessageDetails from './DetailsTemplates/PhaseMessageDetails';
+  import RolePlayerMessageDetails from './details/templates/RolePlayerMessageDetails';
+  import ObserverToolAnswerDetails from './details/templates/ObserverToolAnswerDetails';
+  import SessionMgmtDetails from './details/templates/SessionMgmtDetails';
+  import PhaseMessageDetails from './details/templates/PhaseMessageDetails';
 
   export default {
     components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FallbackDetails, RolePlayerMessageDetails,
