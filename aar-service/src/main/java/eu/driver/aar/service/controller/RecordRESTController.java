@@ -967,7 +967,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<byte[]> createOverviewSequenceDiagram() {
 		log.info("-->createOverviewSequenceDiagram");
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
-		Long recCount = recordRepo.count();
+		Long recCount = recordRepo.countRecordsWithoutLog();
 		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate, i.headline, i.msgType) FROM Record i WHERE i.recordType != 'Log'";
 		query += " ORDER BY i.createDate DESC";
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
