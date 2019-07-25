@@ -1417,7 +1417,7 @@ public class RecordRESTController implements IAdaptorCallback {
 					String topic = record.getTopic();
 					String msg = this.getMessageFromRecord(record);
 					data += "group " + sender + " - " + record.getRecordType() + "\n"; 
-					data += sender + " -[#green]-> " + cis + " : " + msg + "\n";
+					data += sender + " -[#green]-> " + cis + " : [[/details.html?recordId=" + record.getId() + " " + msg + "]]" + "\n";
 					data += "activate " + sender + "\n";
 					List<TopicReceiver> topicReceiver = receiverMap.get(topic);
 					if (topicReceiver != null) {
