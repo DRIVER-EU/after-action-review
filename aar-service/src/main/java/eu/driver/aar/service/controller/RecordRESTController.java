@@ -39,6 +39,7 @@ import net.sourceforge.plantuml.SourceStringReader;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.specific.SpecificData;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -54,7 +55,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.driver.aar.service.constants.AARConstants;
-import eu.driver.aar.service.dto.Attachement;
+import eu.driver.aar.service.dto.Attachment;
 import eu.driver.aar.service.dto.Record;
 import eu.driver.aar.service.dto.RecordFilter;
 import eu.driver.aar.service.dto.Session;
@@ -215,10 +216,10 @@ public class RecordRESTController implements IAdaptorCallback {
 									InputStream in = new java.net.URL(url).openStream();
 									Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
 									
-									Attachement attachement = new Attachement();
+									Attachment attachement = new Attachment();
 									attachement.setRecord(record);
 									attachement.setName("record/attachements/" + storeName);
-									record.addAttachement(attachement);
+									record.addAttachment(attachement);
 								}
 							}
 						} catch (Exception ex) {
@@ -249,10 +250,10 @@ public class RecordRESTController implements IAdaptorCallback {
 						InputStream in = new java.net.URL(url).openStream();
 						Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
 						
-						Attachement attachement = new Attachement();
+						Attachment attachement = new Attachment();
 						attachement.setRecord(record);
 						attachement.setName("record/attachements/" + storeName);
-						record.addAttachement(attachement);
+						record.addAttachment(attachement);
 					}
 				}
 			} catch (Exception ex) {
@@ -439,7 +440,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			@RequestParam(value="page", required=false) Integer page,
 			@RequestParam(value="size", required=false) Integer size) {
 		log.info("-->getAllRecords");
-		String query = "SELECT NEW Record(i.id, i.clientId, i.sessionId, i.topic, i.recordType, i.createDate, i.trialDate) FROM Record i";
+		String query = "SELECT NEW Record(i.id, i.clientId, i.sessionId, i.topic, i.recordType, i.createDate, i.trialDate, i.headline, i.msgType) FROM Record i";
 
 		// create the query using the active Filter
 		if (this.actualFilter.isFilterEnabled()) {
@@ -528,6 +529,24 @@ public class RecordRESTController implements IAdaptorCallback {
 		}
 		if (this.actualFilter.getToDate() != null) {
 			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
+		
+		if (this.actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
+			if (szenario.getEndDate() != null) {
+				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
+		} else if (this.actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
+			if (session.getEndDate() != null) {
+				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
+			} else {
+				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
+			}
 		}
 		List<Record> records = typedQuery.getResultList();
 		
@@ -714,7 +733,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<List<Record>> getAllTimelineRecords() {
 		log.info("-->getAllTimelineRecords");
 
-		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate, i.headline) FROM Record i";
+		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate, i.headline, i.msgType) FROM Record i";
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 			query += "	AND";
@@ -866,7 +885,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<byte[]> createSequenceDiagram() {
 		log.info("-->createSequenceDiagram");
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
-		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i";
+		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate, i.headline, i.msgType) FROM Record i";
 		if (this.actualFilter.isFilterEnabled()) {
 			query += this.createFilterQuery();
 		}
@@ -949,7 +968,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		log.info("-->createOverviewSequenceDiagram");
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
 		Long recCount = recordRepo.count();
-		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate) FROM Record i WHERE i.recordType != 'Log'";
+		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate, i.headline, i.msgType) FROM Record i WHERE i.recordType != 'Log'";
 		query += " ORDER BY i.createDate DESC";
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
 		typedQuery.setFirstResult(recCount.intValue()-20);
@@ -1214,6 +1233,11 @@ public class RecordRESTController implements IAdaptorCallback {
 						record.setHeadline(jsonObj.getString("sender") + " + " + jsonObj.getString("note"));
 					} else {
 						record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+						if (jsonObj.get("info") instanceof JSONArray) {
+							record.setHeadline(jsonObj.getJSONArray("info").getJSONObject(0).getString("headline"));
+						} else {
+							record.setHeadline(jsonObj.getJSONObject("info").getString("headline"));
+						}
 					}
 					recordRepo.saveAndFlush(record);
 				} catch (Exception e) {
@@ -1425,6 +1449,10 @@ public class RecordRESTController implements IAdaptorCallback {
 	private String getMessageFromRecord(Record record) {
 		String msg = "";
 		msg += record.getCreateDate() + " - " + record.getRecordType();
+		
+		if (record.getHeadline() != null) {
+			msg += ": " + record.getHeadline();
+		}
 		
 		return msg;
 	}

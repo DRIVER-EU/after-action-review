@@ -17,8 +17,8 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @Table(name="file", schema = "aar_service", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
-@NamedQuery(name="File.findAll", query="SELECT u FROM Attachement u")
-public class Attachement {
+@NamedQuery(name="File.findAll", query="SELECT u FROM Attachment u")
+public class Attachment {
 	
 	@Id
 	@SequenceGenerator(sequenceName = "aar_service.file_seq", name = "FileIdSequence", allocationSize=1)
@@ -37,7 +37,7 @@ public class Attachement {
     @JoinColumn(name = "record_id")
 	private Record record;
 	
-	public Attachement() {
+	public Attachment() {
 		
 	}
 

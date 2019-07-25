@@ -70,7 +70,7 @@ public class Record {
 	
 	@JsonManagedReference
 	@OneToMany( mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Attachement> attachements = new ArrayList<Attachement>();
+	private List<Attachment> attachments = new ArrayList<Attachment>();
 	
 	public Record() {
 		
@@ -80,7 +80,7 @@ public class Record {
 		this.id = id;
 	}
 	
-	public Record(Long id, String clientId, String sessionId, String topic, String recordType, Date createDate, Date trialDate) {
+	public Record(Long id, String clientId, String sessionId, String topic, String recordType, Date createDate, Date trialDate, String headline, String msgType) {
 		this.id = id;
 		this.clientId = clientId;
 		this.sessionId = sessionId;
@@ -88,18 +88,22 @@ public class Record {
 		this.trialDate = trialDate;
 		this.topic = topic;
 		this.recordType = recordType;
+		this.headline = headline;
+		this.msgType = msgType;
 		
 	}
 	
-	public Record(Long id, String clientId, String topic, String recordType, Date createDate) {
+	public Record(Long id, String clientId, String topic, String recordType, Date createDate, String headline, String msgType) {
 		this.id = id;
 		this.clientId = clientId;
 		this.topic = topic;
 		this.recordType = recordType;
 		this.createDate = createDate;
+		this.headline = headline;
+		this.msgType = msgType;
 	}
 	
-	public Record(Long id, String topic, String recordType, Date createDate, String headline) {
+	public Record(Long id, String topic, String recordType, Date createDate, String headline, String msgType) {
 		this.id = id;
 		this.topic = topic;
 		this.recordType = recordType;
@@ -187,16 +191,16 @@ public class Record {
 		this.msgType = msgType;
 	}
 
-	public List<Attachement> getAttachements() {
-		return attachements;
+	public List<Attachment> getAttachments() {
+		return attachments;
 	}
 
-	public void setAttachements(List<Attachement> attachements) {
-		this.attachements = attachements;
+	public void setAttachments(List<Attachment> attachments) {
+		this.attachments = attachments;
 	}
 	
-	public void addAttachement(Attachement file) {
-		this.attachements.add(file);
+	public void addAttachment(Attachment file) {
+		this.attachments.add(file);
 	}
 
 	public String createBackupString(String backupType) {
