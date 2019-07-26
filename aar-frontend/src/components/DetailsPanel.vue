@@ -1,12 +1,15 @@
 <template>
   <v-flex>
-    <v-card class="detailsPanel">
+    <v-card v-show="!hideTitle" class="detailsPanel">
       <v-card-title class="justify-center primary--text">Details</v-card-title>
       <v-card-text v-if="!record.recordData" class="text-xs-center">Choose an entry from the list to show it's details.</v-card-text>
       <v-card-text v-else>
         <component :is="currentComponent" v-bind="currentProperties"></component>
       </v-card-text>
     </v-card>
+    <v-flex v-show="hideTitle" class="detailsPanel" style="padding-right:20px;">
+      <component :is="currentComponent" v-bind="currentProperties"></component>
+    </v-flex>
   </v-flex>
 </template>
 
@@ -29,6 +32,7 @@
     components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FallbackDetails, RolePlayerMessageDetails,
       ObserverToolAnswerDetails, SessionMgmtDetails, PhaseMessageDetails},
     name: 'DetailsPanel',
+    props: ['hideTitle'],
     data: function () {
       return {};
     },

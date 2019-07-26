@@ -1,5 +1,6 @@
 export default {
   DIAGRAM_POPUP: "diagramPopup",
+  RECORD_DETAILS_POPUP: "recordDetailsPopup",
   RECORD_NOTIFICATION: "recordNotification",
   RECORD_SELECTED: "recordSelected",
   SESSION_SELECTED: "sessionSelected",

@@ -21,9 +21,11 @@ import 'vuetify-datetime-picker/src/stylus/main.styl';
 import 'vuetify-stylus-fixed-table-header/index.styl';
 import DiagramPage from './pages/DiagramPage';
 import MapPanel from './components/MapPanel';
+import RecordDetailsPopup from './components/RecordDetailsPopup';
 
 export const eventBus = new Vue();
 store.eventBus = eventBus;
+window.eventBus = eventBus;
 
 Vue.use(VueAxios, axios.create({
   baseURL: Urls.HTTP_BASE
@@ -56,6 +58,7 @@ Vue.component('details-panel', DetailsPanel);
 Vue.component('json-tree', JsonTree);
 Vue.component('map-panel', MapPanel);
 Vue.component('diagram-popup', DiagramPopup);
+Vue.component('record-details-popup', RecordDetailsPopup);
 Vue.component('vue-load-image', VueLoadImage);
 Vue.component('toolbar', Toolbar);
 Vue.component('timeline-panel', TimelinePanel);

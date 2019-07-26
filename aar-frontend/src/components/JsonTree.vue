@@ -12,18 +12,22 @@
     watch: {
       json: function() {
         console.log("Updating view", this.json);
-        const data = JSON.parse(this.json);
-        this.view.value = data;
-        this.view.refresh();
+        if (this.json && this.json.length > 0) {
+          const data = JSON.parse(this.json);
+          this.view.value = data;
+          this.view.refresh();
+        }
       }
     },
     mounted () {
       console.log('Mounted, starting JSON view', this.$refs.container, this.json);
-      const data = JSON.parse(this.json);
-      this.view = new JSONTreeView('', data);
-      this.view.expand(true);
-      this.view.readonly = true;
-      this.$refs.container.append(this.view.dom);
+      if (this.json && this.json.length > 0) {
+        const data = JSON.parse(this.json);
+        this.view = new JSONTreeView('', data);
+        this.view.expand(true);
+        this.view.readonly = true;
+        this.$refs.container.append(this.view.dom);
+      }
     }
   };
 </script>

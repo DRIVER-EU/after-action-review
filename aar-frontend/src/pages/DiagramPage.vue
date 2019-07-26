@@ -12,12 +12,14 @@
           <v-card style="padding: 30px 0px;">
             <div class="diagramImage">
               <img v-show="loading" :src="loadingSpinner"/>
-              <img v-show="!loading" :src="imageUrl" style="max-width: 100%;"/>
+              <object type="image/svg+xml" v-show="!loading" :data="imageUrl" style="max-width: 100%;"></object>
+              <!--<div v-show="!loading" v-html="imageSvg" style="max-width: 100%;"></div>-->
             </div>
           </v-card>
         </v-flex>
       </div>
     </main>
+    <record-details-popup></record-details-popup>
   </v-app>
 </template>
 <script>
@@ -62,12 +64,13 @@
         vm.imageVersion += 1;
         vm.loading = true;
         fetchService.performGet(imageUrl).then(response => {
-          const svg = response.data;
+          const svg = response.data.replace(/\/details.html\?recordId=(\d*)/g, "javascript:window.parent.showRecordDetails($1);");
           vm.imageBlob = new Blob([svg], {type: 'image/svg+xml'});
           vm.imageUrl = URL.createObjectURL(vm.imageBlob);
+          vm.imageSvg = svg;
           vm.loading = false;
         }).catch(ex => console.log(ex));
-      }
+      },
     },
     created () {
       const vm = this;
@@ -79,4 +82,8 @@
       this.reloadImage();
     }
   };
+
+  window.showRecordDetails = function(id) {
+    window.eventBus.$emit(EventName.RECORD_DETAILS_POPUP, id);
+  }
 </script>
