@@ -1,11 +1,11 @@
 language: java
 jdk:
-- oraclejdk8
+- openjdk8
 dist: trusty
 
 env:
   matrix:
-  - VERSION=1.2.20
+  - VERSION=1.2.21
 
 install: mvn install
 

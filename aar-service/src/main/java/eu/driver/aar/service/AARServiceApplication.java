@@ -74,7 +74,7 @@ public class AARServiceApplication {
 			}
 			
 			cisAdapter.addCallback(recordController, "photo_geojson");
-			cisAdapter.addCallback(recordController, "assign_info");
+			cisAdapter.addCallback(recordController, "asign_info");
 			cisAdapter.addCallback(recordController, "large_data_update");
 			cisAdapter.addCallback(recordController, "crowd-tasker_info");
 			cisAdapter.addCallback(recordController, "map_layer_update");
