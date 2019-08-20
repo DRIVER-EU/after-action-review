@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
@@ -214,6 +215,16 @@ public class RecordRESTController implements IAdaptorCallback {
 									int lastIdx = url.lastIndexOf("/");
 									storeName += url.substring(lastIdx+1);
 									InputStream in = new java.net.URL(url).openStream();
+									Path recordDir = Paths.get("./record"); 
+								    if (Files.notExists(recordDir)) { 
+								        try { Files.createDirectory(recordDir); }
+								        catch (Exception ex ) { log.error("Error creating the record directory.", ex); }
+								    }
+								    recordDir = Paths.get("./record/attachements"); 
+								    if (Files.notExists(recordDir)) { 
+								        try { Files.createDirectory(recordDir); }
+								        catch (Exception ex ) { log.error("Error creating the record/attachements directory.", ex); }
+								    }
 									Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
 									
 									Attachment attachement = new Attachment();
@@ -249,6 +260,16 @@ public class RecordRESTController implements IAdaptorCallback {
 							int lastIdx = url.lastIndexOf("/");
 							storeName += url.substring(lastIdx+1);
 							InputStream in = new java.net.URL(url).openStream();
+						    Path recordDir = Paths.get("./record"); 
+						    if (Files.notExists(recordDir)) { 
+						        try { Files.createDirectory(recordDir); }
+						        catch (Exception e ) { log.error("Error creating the record directory.", e); }
+						    }
+						    recordDir = Paths.get("./record/attachements"); 
+						    if (Files.notExists(recordDir)) { 
+						        try { Files.createDirectory(recordDir); }
+						        catch (Exception e ) { log.error("Error creating the record/attachements directory.", e); }
+						    }
 							Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
 						} catch (Exception ex) {
 							log.error("Error loading the message attachement: " + msg.getUrl(), ex);
