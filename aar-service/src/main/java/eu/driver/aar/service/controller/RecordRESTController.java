@@ -245,15 +245,23 @@ public class RecordRESTController implements IAdaptorCallback {
 				if (msg.getUrl() != null) {
 					String url = msg.getUrl().toString();
 					if (url.length() > 0) {
-						int lastIdx = url.lastIndexOf("/");
-						storeName += url.substring(lastIdx+1);
-						InputStream in = new java.net.URL(url).openStream();
-						Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
+						try {
+							int lastIdx = url.lastIndexOf("/");
+							storeName += url.substring(lastIdx+1);
+							InputStream in = new java.net.URL(url).openStream();
+							Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
+						} catch (Exception ex) {
+							log.error("Error loading the message attachement: " + msg.getUrl(), ex);
+						}
 						
-						Attachment attachement = new Attachment();
-						attachement.setRecord(record);
-						attachement.setName("record/attachements/" + storeName);
-						record.addAttachment(attachement);
+						try {
+							Attachment attachement = new Attachment();
+							attachement.setRecord(record);
+							attachement.setName("record/attachements/" + storeName);
+							record.addAttachment(attachement);
+						} catch (Exception ex) {
+							log.error("Error loading and storing the message attachement: " + msg.getUrl());
+						}
 					}
 				}
 			} catch (Exception ex) {
@@ -264,6 +272,12 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.geojson.GeoJSONEnvelope msg = (eu.driver.model.geojson.GeoJSONEnvelope) SpecificData
 					.get().deepCopy(
 							eu.driver.model.geojson.GeoJSONEnvelope.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+		}  else if (receivedMessage.getSchema().getName()
+				.equalsIgnoreCase("MapLayerUpdate")) {
+			eu.driver.model.core.MapLayerUpdate msg = (eu.driver.model.core.MapLayerUpdate) SpecificData
+					.get().deepCopy(
+							eu.driver.model.core.MapLayerUpdate.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("SessionMgmt")) {
