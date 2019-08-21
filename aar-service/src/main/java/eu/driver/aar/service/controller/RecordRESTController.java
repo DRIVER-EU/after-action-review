@@ -208,11 +208,15 @@ public class RecordRESTController implements IAdaptorCallback {
 					List<files> files = properties.getFiles();
 					for (files file : files) {
 						try {
-							String storeName = properties.getId() + "/";
+							String storeName = "";
+							String fileName = "";
 							if (file.getUrl() != null) {
 								String url = file.getUrl().toString();
 								if (url.length() > 0) {
 									int lastIdx = url.lastIndexOf("/");
+									fileName = url.substring(lastIdx+1);
+									url = url.substring(0,lastIdx);
+									lastIdx = url.lastIndexOf("/");
 									storeName += url.substring(lastIdx+1);
 									InputStream in = new java.net.URL(url).openStream();
 									Path recordDir = Paths.get("./record"); 
@@ -225,11 +229,16 @@ public class RecordRESTController implements IAdaptorCallback {
 								        try { Files.createDirectory(recordDir); }
 								        catch (Exception ex ) { log.error("Error creating the record/attachements directory.", ex); }
 								    }
-									Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
+								    recordDir = Paths.get("./record/attachements/" + storeName); 
+								    if (Files.notExists(recordDir)) { 
+								        try { Files.createDirectory(recordDir); }
+								        catch (Exception ex ) { log.error("Error creating the record/attachements directory.", ex); }
+								    }
+									Files.copy(in, Paths.get("record","attachements",storeName,fileName), StandardCopyOption.REPLACE_EXISTING);
 									
 									Attachment attachement = new Attachment();
 									attachement.setRecord(record);
-									attachement.setName("record/attachements/" + storeName);
+									attachement.setName("record/attachements/" + storeName + "/" + fileName);
 									record.addAttachment(attachement);
 								}
 							}
@@ -278,6 +287,7 @@ public class RecordRESTController implements IAdaptorCallback {
 						try {
 							Attachment attachement = new Attachment();
 							attachement.setRecord(record);
+							attachement.setMimeType(msg.getDataType().toString());
 							attachement.setName("record/attachements/" + storeName);
 							record.addAttachment(attachement);
 						} catch (Exception ex) {
