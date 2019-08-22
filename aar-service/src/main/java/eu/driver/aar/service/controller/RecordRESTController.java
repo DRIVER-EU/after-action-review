@@ -267,7 +267,7 @@ public class RecordRESTController implements IAdaptorCallback {
 									Attachment attachment = new Attachment();
 									attachment.setRecord(record);
 									attachment.setName("record/attachements/" + storeName + "/" + fileName);
-									attachment.setUrl(url);
+									attachment.setUrl(file.getUrl().toString());
 									record.addAttachment(attachment);
 								}
 							}
