@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -63,6 +64,7 @@ import eu.driver.aar.service.dto.Session;
 import eu.driver.aar.service.dto.Szenario;
 import eu.driver.aar.service.dto.TopicReceiver;
 import eu.driver.aar.service.dto.Trial;
+import eu.driver.aar.service.repository.AttachmentRepository;
 import eu.driver.aar.service.repository.RecordRepository;
 import eu.driver.aar.service.repository.SessionRepository;
 import eu.driver.aar.service.repository.SzenarioRepository;
@@ -120,6 +122,9 @@ public class RecordRESTController implements IAdaptorCallback {
 
 	@Autowired
 	TopicReceiverRepository topicReceiverRepo;
+	
+	@Autowired
+	AttachmentRepository attachmentRecord;
 
 	@PersistenceContext(unitName = "AARService")
 	private EntityManager entityManager;
@@ -196,6 +201,29 @@ public class RecordRESTController implements IAdaptorCallback {
 						.get().deepCopy(
 								eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
+				List<eu.driver.model.geojson.Feature> featureList = msg.getFeatures();
+				for (eu.driver.model.geojson.Feature feature : featureList) {
+					Object properties = feature.getProperties();
+					try {
+						if (properties instanceof JSONObject) {
+							JSONObject prop = (JSONObject)properties;
+							String imageRef = prop.getString("image_ref");
+							if (imageRef != null) {
+								int lastIdx = imageRef.lastIndexOf("/");
+								String fileName = imageRef.substring(lastIdx+1);
+								
+								Attachment attachment = new Attachment();
+								attachment.setRecord(record);
+								attachment.setName("record/attachements/" + fileName);
+								attachment.setUrl(imageRef);
+								record.addAttachment(attachment);
+							}
+						}
+					} catch (Exception e) {
+						log.error("Error evaluating the imageRef");
+					}
+				}
+				
 			} catch(Exception e) {
 				eu.driver.model.geojson.photo.FeatureCollection msg = (eu.driver.model.geojson.photo.FeatureCollection) SpecificData
 						.get().deepCopy(
@@ -218,7 +246,7 @@ public class RecordRESTController implements IAdaptorCallback {
 									url = url.substring(0,lastIdx);
 									lastIdx = url.lastIndexOf("/");
 									storeName += url.substring(lastIdx+1);
-									InputStream in = new java.net.URL(url).openStream();
+									/*InputStream in = new java.net.URL(url).openStream();
 									Path recordDir = Paths.get("./record"); 
 								    if (Files.notExists(recordDir)) { 
 								        try { Files.createDirectory(recordDir); }
@@ -234,12 +262,13 @@ public class RecordRESTController implements IAdaptorCallback {
 								        try { Files.createDirectory(recordDir); }
 								        catch (Exception ex ) { log.error("Error creating the record/attachements directory.", ex); }
 								    }
-									Files.copy(in, Paths.get("record","attachements",storeName,fileName), StandardCopyOption.REPLACE_EXISTING);
+									Files.copy(in, Paths.get("record","attachements",storeName,fileName), StandardCopyOption.REPLACE_EXISTING);*/
 									
-									Attachment attachement = new Attachment();
-									attachement.setRecord(record);
-									attachement.setName("record/attachements/" + storeName + "/" + fileName);
-									record.addAttachment(attachement);
+									Attachment attachment = new Attachment();
+									attachment.setRecord(record);
+									attachment.setName("record/attachements/" + storeName + "/" + fileName);
+									attachment.setUrl(url);
+									record.addAttachment(attachment);
 								}
 							}
 						} catch (Exception ex) {
@@ -261,14 +290,14 @@ public class RecordRESTController implements IAdaptorCallback {
 			
 			record.setRecordJson(msg.toString());
 			try {
-				String storeName = "/";
+				String storeName = "";
 				if (msg.getUrl() != null) {
 					String url = msg.getUrl().toString();
 					if (url.length() > 0) {
 						try {
 							int lastIdx = url.lastIndexOf("/");
 							storeName += url.substring(lastIdx+1);
-							InputStream in = new java.net.URL(url).openStream();
+							/*InputStream in = new java.net.URL(url).openStream();
 						    Path recordDir = Paths.get("./record"); 
 						    if (Files.notExists(recordDir)) { 
 						        try { Files.createDirectory(recordDir); }
@@ -279,17 +308,18 @@ public class RecordRESTController implements IAdaptorCallback {
 						        try { Files.createDirectory(recordDir); }
 						        catch (Exception e ) { log.error("Error creating the record/attachements directory.", e); }
 						    }
-							Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);
+							Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);*/
 						} catch (Exception ex) {
 							log.error("Error loading the message attachement: " + msg.getUrl(), ex);
 						}
 						
 						try {
-							Attachment attachement = new Attachment();
-							attachement.setRecord(record);
-							attachement.setMimeType(msg.getDataType().toString());
-							attachement.setName("record/attachements/" + storeName);
-							record.addAttachment(attachement);
+							Attachment attachment = new Attachment();
+							attachment.setRecord(record);
+							attachment.setMimeType(msg.getDataType().toString());
+							attachment.setName("record/attachements/" + storeName);
+							attachment.setUrl(url);
+							record.addAttachment(attachment);
 						} catch (Exception ex) {
 							log.error("Error loading and storing the message attachement: " + msg.getUrl());
 						}
@@ -445,32 +475,57 @@ public class RecordRESTController implements IAdaptorCallback {
 		}
 	}
 	
-	@ApiOperation(value = "checkCredentials", nickname = "checkCredentials")
-	@RequestMapping(value = "/AARService/checkCredentials", method = RequestMethod.GET)
-	@ApiImplicitParams({
-			@ApiImplicitParam(name = "username", value = "the username to be checked", required = true, dataType = "string", paramType = "query"),
-			@ApiImplicitParam(name = "password", value = "the passord to be checked", required = true, dataType = "string", paramType = "query") })
+	@ApiOperation(value = "finishUpTheTrial", nickname = "finishUpTheTrial")
+	@RequestMapping(value = "/AARService/finishUpTheTrial", method = RequestMethod.GET)
 	@ApiResponses(value = {
-			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
-			@ApiResponse(code = 401, message = "Unauthorized", response = ArrayList.class),
-			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
-	public ResponseEntity<Boolean> checkCredentials(
-			@RequestParam(value="username", required=true) String username,
-			@RequestParam(value="password", required=true) String password) {
-		log.info("-->checkCredentials");
+			@ApiResponse(code = 200, message = "Success", response = Boolean.class),
+			@ApiResponse(code = 401, message = "Unauthorized", response = Boolean.class),
+			@ApiResponse(code = 500, message = "Failure", response = Boolean.class) })
+	public ResponseEntity<Boolean> finishUpTheTrial() {
+		log.info("-->finishUpTheTrial");		
+		Boolean result = false;
 		
-		Boolean login = false;
+		List<Attachment> attachments = attachmentRecord.findAll();
 		
-		if (username.equals("AARAdmin") && password.equals("admin")) {
-			login = true;
+		for (Attachment attachment : attachments) {
+			String url = attachment.getUrl();
+			
+			if (url != null) {
+				String filePath = ".";
+				String storeName = attachment.getName();
+				storeName = storeName.replaceAll("//", "/");
+				
+				try {
+				    Path recordDir = null; 
+				    StringTokenizer tokens = new StringTokenizer(storeName, "/");
+					
+					while (tokens.hasMoreTokens()) {
+						filePath +=  "/" + tokens.nextToken();
+						recordDir = Paths.get(filePath); 
+					    if (tokens.hasMoreTokens()) {
+					    	if (Files.notExists(recordDir)) { 
+						        try { Files.createDirectory(recordDir); }
+						        catch (Exception e ) 
+						        {
+						        	log.error("Error creating the " + filePath + " directory.", e);
+						        	throw e;
+						        }
+						    }
+					    } 
+					}
+				    
+				    InputStream in = new java.net.URL(url).openStream();
+					Files.copy(in, recordDir, StandardCopyOption.REPLACE_EXISTING);
+				} catch (Exception ex) {
+					log.error("Error loading the message attachement: " + url, ex);
+				}
+			}
 		}
 		
-		log.info("checkCredentials-->");
-		if (login) {
-			return new ResponseEntity<Boolean>(login, HttpStatus.OK);
-		}
-		return new ResponseEntity<Boolean>(false, HttpStatus.UNAUTHORIZED);
+		log.info("finishUpTheTrial-->");
+		return new ResponseEntity<Boolean>(result, HttpStatus.OK);
 	}
+	
 
 	@ApiOperation(value = "getAllRecords", nickname = "getAllRecords")
 	@RequestMapping(value = "/AARService/getAllRecords", method = RequestMethod.GET)
@@ -1311,6 +1366,21 @@ public class RecordRESTController implements IAdaptorCallback {
 		
 		log.info("analyseRecords-->");
 		return new ResponseEntity<Boolean>(true, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "downloadAttachment", nickname = "downloadAttachment")
+	@RequestMapping(value = "/AARService/downloadAttachment", method = RequestMethod.GET)
+	@ApiImplicitParams({ @ApiImplicitParam(name = "path", value = "the attachment path", required = true, dataType = "string", paramType = "query") })
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
+			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
+	public ResponseEntity<byte[]> downloadAttachment(@QueryParam("path")String path) {
+		log.info("-->downloadAttachment");
+		
+		log.info("downloadAttachment-->");
+		return new ResponseEntity<byte[]>("".getBytes(), HttpStatus.OK);
+		
 	}
 	
 	private String createFilterQuery() {

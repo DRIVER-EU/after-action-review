@@ -19,6 +19,7 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import eu.driver.aar.service.constants.AARConstants;
@@ -70,6 +71,7 @@ public class Record {
 	
 	@JsonManagedReference
 	@OneToMany( mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
+	@JsonBackReference
 	private List<Attachment> attachments = new ArrayList<Attachment>();
 	
 	public Record() {

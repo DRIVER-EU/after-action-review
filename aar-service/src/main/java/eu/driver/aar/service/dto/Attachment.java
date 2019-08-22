@@ -32,6 +32,10 @@ public class Attachment {
 	@Column(name="mimeType", columnDefinition = "TEXT")
 	private String mimeType;
 	
+	@Column(name="url", columnDefinition = "TEXT")
+	private String url;
+
+	
 	@JsonBackReference	
 	@ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "record_id")
@@ -63,6 +67,14 @@ public class Attachment {
 
 	public void setMimeType(String mimeType) {
 		this.mimeType = mimeType;
+	}
+	
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
 	}
 
 	public Record getRecord() {
