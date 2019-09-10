@@ -222,6 +222,10 @@ public class Record {
     		backupBuffer.append("\"").append(this.recordJson).append("\"").append(";");
     		backupBuffer.append("\"").append(this.recordData).append("\"").append("\n");
     		
+    		for (Attachment attachment : this.attachments) {
+    			backupBuffer.append(attachment.createBackupString(backupType));
+    		}
+    		
     	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
     		// create the SQL insert commands
     		backupBuffer.append("insert into aar_service.record (id, clientId, sessionId, createDate, trialDate, topic, recordType, headline, msgType, recordJson, recordData) values (");
@@ -235,10 +239,13 @@ public class Record {
     		backupBuffer.append("'").append(this.recordType).append("'").append(",");
     		backupBuffer.append("'").append(this.headline).append("'").append(",");
     		backupBuffer.append("'").append(this.msgType).append("'").append(",");
-    		String json = this.recordJson.replaceAll("'", "\\'");
-    		json = json.replaceAll("'", "\\'");
+    		String json = this.recordJson.replaceAll("'", "\\''");
     		backupBuffer.append("'").append(json).append("'").append(",");
     		backupBuffer.append("'").append(this.recordData).append("'").append(");").append("\n");
+    		
+    		for (Attachment attachment : this.attachments) {
+    			backupBuffer.append(attachment.createBackupString(backupType));
+    		}
     	}
     	
     	return backupBuffer.toString();

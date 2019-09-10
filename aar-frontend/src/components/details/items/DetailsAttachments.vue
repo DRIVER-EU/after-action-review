@@ -7,7 +7,7 @@
       <v-flex xs8>
         <ul class="attachments">
           <li v-for="item in value">
-            <a :href="item.name">{{ item.name }}</a>
+            <a :href="'/AARService/downloadAttachment?filename=' + item.name">{{ item.name }}</a>
           </li>
         </ul>
       </v-flex>

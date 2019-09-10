@@ -70,7 +70,7 @@ public class WSNotificationController {
 		logRecord.setLevel(Level.INFO);
 		logRecord.setLog("This is the test log entry!");		
 		
-		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.LOGGING_TOPIC, new Date(), "Log", logRecord.toString(), null);
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.LOGGING_TOPIC, new Date(), "Log", logRecord.getLog().toString(), "Info", logRecord.toString(), null);
 		sendMessage(notification);
 		
 		log.info("sendLogRecordNotification -->");
@@ -105,7 +105,7 @@ public class WSNotificationController {
 		topicInvite.setPublishAllowed(publishAllowed);
 		topicInvite.setSubscribeAllowed(subscribeAllowed);
 		
-		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.TOPIC_INVITE_TOPIC, new Date(), "TopicInvite", topicInvite.toString(), null);
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.TOPIC_INVITE_TOPIC, new Date(), "TopicInvite", "TopicInvite", "Info", topicInvite.toString(), null);
 		sendMessage(notification);
 		
 		log.info("sendTopicinviteRecordNotification -->");

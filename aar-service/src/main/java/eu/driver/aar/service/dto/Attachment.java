@@ -15,6 +15,8 @@ import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import eu.driver.aar.service.constants.AARConstants;
+
 @Entity
 @Table(name="file", schema = "aar_service", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
 @NamedQuery(name="File.findAll", query="SELECT u FROM Attachment u")
@@ -83,6 +85,27 @@ public class Attachment {
 
 	public void setRecord(Record record) {
 		this.record = record;
+	}
+	
+	public String createBackupString(String backupType) {
+    	StringBuffer backupBuffer = new StringBuffer();
+    	
+    	if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
+    		backupBuffer.append("\"").append(this.id).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.name).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.mimeType).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.url).append("\"").append(";");
+    		
+    	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
+    		backupBuffer.append("insert into aar_service.file (id, name, mimeType, url) values (");
+    		backupBuffer.append(this.id).append(",");
+    		backupBuffer.append("'").append(this.name).append("'").append(",");
+    		backupBuffer.append("'").append(this.mimeType).append("'").append(",");
+    		backupBuffer.append("'").append(this.url).append("'").append(");").append("\n");
+    	}
+    	
+    	return backupBuffer.toString();
+    	
 	}
 	
 }

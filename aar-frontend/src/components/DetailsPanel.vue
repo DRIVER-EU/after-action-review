@@ -19,6 +19,7 @@
   import InviteDetails from './details/templates/InviteDetails';
   import AlertDetails from './details/templates/AlertDetails';
   import GeoJsonEnvelopeDetails from './details/templates/GeoJsonEnvelopeDetails';
+  import FeatureCollectionDetails from './details/templates/FeatureCollectionDetails';
   import LargeDataUpdateDetails from './details/templates/LargeDataUpdateDetails';
   import FallbackDetails from './details/templates/FallbackDetails';
   import EventName from '../constants/EventName';
@@ -29,7 +30,7 @@
   import PhaseMessageDetails from './details/templates/PhaseMessageDetails';
 
   export default {
-    components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FallbackDetails, RolePlayerMessageDetails,
+    components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FeatureCollectionDetails, FallbackDetails, RolePlayerMessageDetails,
       ObserverToolAnswerDetails, SessionMgmtDetails, PhaseMessageDetails},
     name: 'DetailsPanel',
     props: ['hideTitle'],
@@ -52,6 +53,8 @@
             return AlertDetails.name;
           case RecordType.GEO_JSON:
             return GeoJsonEnvelopeDetails.name;
+          case RecordType.FEATURE_COLLECTION:
+            return FeatureCollectionDetails.name;
           case RecordType.LARGE_DATA_UPDATE:
             return LargeDataUpdateDetails.name;
           case RecordType.ROLE_PLAYER_MESSAGE:

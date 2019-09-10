@@ -6,8 +6,12 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,12 +24,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
+import javax.activation.MimetypesFileTypeMap;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -34,12 +44,26 @@ import javax.persistence.TypedQuery;
 import javax.transaction.Transactional;
 import javax.ws.rs.QueryParam;
 
+import kafka.serializer.Encoder;
+import kafka.utils.json.JsonObject;
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
 
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.IndexedRecord;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.Decoder;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificData;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.util.Utf8;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,7 +78,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import eu.driver.aar.service.constants.AARConstants;
 import eu.driver.aar.service.dto.Attachment;
@@ -70,17 +96,25 @@ import eu.driver.aar.service.repository.SessionRepository;
 import eu.driver.aar.service.repository.SzenarioRepository;
 import eu.driver.aar.service.repository.TopicReceiverRepository;
 import eu.driver.aar.service.repository.TrialRepository;
+import eu.driver.aar.service.utils.FileStorageService;
+import eu.driver.aar.service.utils.exception.FileStorageException;
 import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
 import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.adapter.core.CISAdapter;
+import eu.driver.adapter.excpetion.CommunicationException;
 import eu.driver.adapter.properties.ClientProperties;
 import eu.driver.api.IAdaptorCallback;
+import eu.driver.model.cap.Info;
+import eu.driver.model.cap.MsgType;
+import eu.driver.model.core.Level;
 import eu.driver.model.core.ObserverToolAnswer;
 import eu.driver.model.core.Question;
+import eu.driver.model.core.SessionMgmt;
 import eu.driver.model.core.State;
 import eu.driver.model.core.TypeOfQuestion;
+import eu.driver.model.geojson.GeoJSONEnvelope;
 import eu.driver.model.geojson.photo.Feature;
 import eu.driver.model.geojson.photo.properties;
 import eu.driver.model.geojson.photo.files.files;
@@ -128,6 +162,9 @@ public class RecordRESTController implements IAdaptorCallback {
 
 	@PersistenceContext(unitName = "AARService")
 	private EntityManager entityManager;
+	
+	@Autowired
+    private FileStorageService fileStorageService;
 
 	public RecordRESTController() {
 		log.info("RecordRESTController");
@@ -143,7 +180,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData
 				.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
 		
-		String clientID = msgKey.getSenderID().toString();
+		//String clientID = msgKey.getSenderID().toString();
 		
 		record.setClientId(msgKey.getSenderID().toString());
 		record.setTopic(topicName);
@@ -154,6 +191,14 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData
 					.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setHeadline(msg.getLog().toString());
+			if (msg.getLevel().equals(Level.ERROR) || msg.getLevel().equals(Level.CRITICAL)) {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+			} else if (msg.getLevel().equals(Level.WARN)) {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_WARN);
+			} else {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			}
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("TopicInvite")) {
 			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData
@@ -164,6 +209,17 @@ public class RecordRESTController implements IAdaptorCallback {
 			String clientId = msg.getId().toString();
 			String receiverTopicName = msg.getTopicName().toString();
 			Boolean subscribeAllowed = msg.getSubscribeAllowed();
+			
+			String headline = "TopicInvite: " + clientId + " for " + receiverTopicName;
+			if (msg.getSubscribeAllowed() && msg.getPublishAllowed()) {
+				headline += " to publish/subscribe";
+			} else if (msg.getSubscribeAllowed()) {
+				headline += " to subscribe";
+			} else if (msg.getPublishAllowed()) {
+				headline += " to publish";
+			}
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline(headline);
 			/*if (ownClientID.equalsIgnoreCase(clientId)) {
 				// add a callback if not done already
 				if (registeredCallbacks.get(msgKey) == null) {
@@ -189,6 +245,21 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData
 					.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			if (msg.getMsgType().equals(MsgType.Ack )) {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_ACK);
+				record.setHeadline(msg.getSender().toString() + " + " + msg.getReferences().toString());
+			} else if (msg.getMsgType().equals(MsgType.Error)) {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+				record.setHeadline(msg.getSender().toString() + " + " + msg.getNote().toString());
+			} else {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				if (msg.getInfo() instanceof Info) {
+					record.setHeadline(((Info)msg.getInfo()).getHeadline().toString());
+				} else {
+					List<Info> infos = (List<Info>)msg.getInfo();
+					record.setHeadline(infos.get(0).getHeadline().toString());
+				}
+			}
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("SlRep")) {
 			eu.driver.model.mlp.SlRep msg = (eu.driver.model.mlp.SlRep) SpecificData
@@ -201,38 +272,57 @@ public class RecordRESTController implements IAdaptorCallback {
 						.get().deepCopy(
 								eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 				List<eu.driver.model.geojson.Feature> featureList = msg.getFeatures();
 				for (eu.driver.model.geojson.Feature feature : featureList) {
 					Object properties = feature.getProperties();
+					Utf8 imageRefUTF8 = new Utf8("image_ref");
+					Utf8 nameUTF8 = new Utf8("name");
 					try {
-						if (properties instanceof JSONObject) {
-							JSONObject prop = (JSONObject)properties;
-							String imageRef = prop.getString("image_ref");
-							if (imageRef != null) {
-								int lastIdx = imageRef.lastIndexOf("/");
-								String fileName = imageRef.substring(lastIdx+1);
-								
-								Attachment attachment = new Attachment();
-								attachment.setRecord(record);
-								attachment.setName("record/attachements/" + fileName);
-								attachment.setUrl(imageRef);
-								record.addAttachment(attachment);
+						if (properties instanceof HashMap) {
+							HashMap<Utf8, Utf8> prop = (HashMap<Utf8, Utf8>)properties;
+							
+							Utf8 tmpUtf8 = prop.get(imageRefUTF8);
+							if (tmpUtf8 != null) {
+								String imageRef = tmpUtf8.toString();
+					    		if (imageRef != null) {
+									int lastIdx = imageRef.lastIndexOf("/");
+									String fileName = imageRef.substring(lastIdx+1);
+									
+									Attachment attachment = new Attachment();
+									attachment.setRecord(record);
+									attachment.setName("record/attachements/" + fileName);
+									attachment.setUrl(imageRef);
+									record.addAttachment(attachment);
+								}
+							}
+							tmpUtf8 = prop.get(nameUTF8);
+							if (tmpUtf8 != null) {
+								String name = tmpUtf8.toString();
+								if (name != null) {
+									if (record.getHeadline() == null) {
+										record.setHeadline(name);
+									}
+								}
 							}
 						}
 					} catch (Exception e) {
 						log.error("Error evaluating the imageRef");
 					}
 				}
-				
 			} catch(Exception e) {
 				eu.driver.model.geojson.photo.FeatureCollection msg = (eu.driver.model.geojson.photo.FeatureCollection) SpecificData
 						.get().deepCopy(
 								eu.driver.model.geojson.photo.FeatureCollection.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 				
 				List<Feature> featureList = msg.getFeatures();
 				for (Feature feature : featureList) {
 					properties properties = feature.getProperties();
+					if (record.getHeadline() == null) {
+						record.setHeadline(properties.getMissionName().toString());
+					}
 					List<files> files = properties.getFiles();
 					for (files file : files) {
 						try {
@@ -246,23 +336,6 @@ public class RecordRESTController implements IAdaptorCallback {
 									url = url.substring(0,lastIdx);
 									lastIdx = url.lastIndexOf("/");
 									storeName += url.substring(lastIdx+1);
-									/*InputStream in = new java.net.URL(url).openStream();
-									Path recordDir = Paths.get("./record"); 
-								    if (Files.notExists(recordDir)) { 
-								        try { Files.createDirectory(recordDir); }
-								        catch (Exception ex ) { log.error("Error creating the record directory.", ex); }
-								    }
-								    recordDir = Paths.get("./record/attachements"); 
-								    if (Files.notExists(recordDir)) { 
-								        try { Files.createDirectory(recordDir); }
-								        catch (Exception ex ) { log.error("Error creating the record/attachements directory.", ex); }
-								    }
-								    recordDir = Paths.get("./record/attachements/" + storeName); 
-								    if (Files.notExists(recordDir)) { 
-								        try { Files.createDirectory(recordDir); }
-								        catch (Exception ex ) { log.error("Error creating the record/attachements directory.", ex); }
-								    }
-									Files.copy(in, Paths.get("record","attachements",storeName,fileName), StandardCopyOption.REPLACE_EXISTING);*/
 									
 									Attachment attachment = new Attachment();
 									attachment.setRecord(record);
@@ -282,6 +355,8 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData
 					.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline(msg.getEVENT().getNAME().toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("LargeDataUpdate")) {
 			eu.driver.model.core.LargeDataUpdate msg = (eu.driver.model.core.LargeDataUpdate) SpecificData
@@ -289,6 +364,8 @@ public class RecordRESTController implements IAdaptorCallback {
 							eu.driver.model.core.LargeDataUpdate.SCHEMA$, receivedMessage);
 			
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline("New LargeFile available: " + msg.getTitle().toString());
 			try {
 				String storeName = "";
 				if (msg.getUrl() != null) {
@@ -297,18 +374,6 @@ public class RecordRESTController implements IAdaptorCallback {
 						try {
 							int lastIdx = url.lastIndexOf("/");
 							storeName += url.substring(lastIdx+1);
-							/*InputStream in = new java.net.URL(url).openStream();
-						    Path recordDir = Paths.get("./record"); 
-						    if (Files.notExists(recordDir)) { 
-						        try { Files.createDirectory(recordDir); }
-						        catch (Exception e ) { log.error("Error creating the record directory.", e); }
-						    }
-						    recordDir = Paths.get("./record/attachements"); 
-						    if (Files.notExists(recordDir)) { 
-						        try { Files.createDirectory(recordDir); }
-						        catch (Exception e ) { log.error("Error creating the record/attachements directory.", e); }
-						    }
-							Files.copy(in, Paths.get("record","attachements",storeName), StandardCopyOption.REPLACE_EXISTING);*/
 						} catch (Exception ex) {
 							log.error("Error loading the message attachement: " + msg.getUrl(), ex);
 						}
@@ -334,17 +399,22 @@ public class RecordRESTController implements IAdaptorCallback {
 					.get().deepCopy(
 							eu.driver.model.geojson.GeoJSONEnvelope.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 		}  else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("MapLayerUpdate")) {
 			eu.driver.model.core.MapLayerUpdate msg = (eu.driver.model.core.MapLayerUpdate) SpecificData
 					.get().deepCopy(
 							eu.driver.model.core.MapLayerUpdate.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline(msg.getTitle().toString() + ", " + msg.getUpdateType().toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("SessionMgmt")) {
 			eu.driver.model.core.SessionMgmt msg = (eu.driver.model.core.SessionMgmt) SpecificData
 					.get().deepCopy(eu.driver.model.core.SessionMgmt.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline(msg.getSessionId().toString() + ", " + msg.getSessionState().toString());
 
 			// check the session
 			String trialId = msg.getTrialId().toString();
@@ -411,11 +481,15 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.core.PhaseMessage msg = (eu.driver.model.core.PhaseMessage) SpecificData
 					.get().deepCopy(eu.driver.model.core.PhaseMessage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline(msg.getPhase().name() + ", state: " + msg.getIsStarting());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("RolePlayerMessage")) {
 			eu.driver.model.core.RolePlayerMessage msg = (eu.driver.model.core.RolePlayerMessage) SpecificData
 					.get().deepCopy(eu.driver.model.core.RolePlayerMessage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline(msg.getHeadline().toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("Timing")) {
 			eu.driver.model.core.Timing msg = (eu.driver.model.core.Timing) SpecificData
@@ -425,6 +499,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				this.currentTimingState = msg.getState();
 				this.currentTrialTimeSpeed = msg.getTrialTimeSpeed();
 				record.setRecordJson(msg.toString());
+				record.setHeadline("New State: " + this.currentTimingState + ", speed: " + this.currentTrialTimeSpeed);
 			} else {
 				// do nothing, no state update
 				record = null;
@@ -436,12 +511,17 @@ public class RecordRESTController implements IAdaptorCallback {
 					.deepCopy(
 							eu.driver.model.core.RequestChangeOfTrialStage.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline("New stage Report for session: "  + msg.getOstTrialSessionId().toString() + ", stage id: " + msg.getOstTrialStageId().toString());
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("ObserverToolAnswer")) {
 			eu.driver.model.core.ObserverToolAnswer msg = (eu.driver.model.core.ObserverToolAnswer) SpecificData
 					.get().deepCopy(
 							eu.driver.model.core.ObserverToolAnswer.SCHEMA$, receivedMessage);
 			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline("A new observation was reported by: " + msg.getObservationTypeName().toString());
+
 		} else {
 			// unknown data
 			record = null;
@@ -464,7 +544,7 @@ public class RecordRESTController implements IAdaptorCallback {
 					WSRecordNotification notification = new WSRecordNotification(
 							record.getId(), record.getClientId(),
 							record.getTopic(), record.getCreateDate(),
-							record.getRecordType(), null, null);
+							record.getRecordType(), record.getHeadline(), record.getMsgType(), null, null);
 					
 					WSController.getInstance().sendMessage(
 							mapper.objectToJSONString(notification));	
@@ -1132,33 +1212,35 @@ public class RecordRESTController implements IAdaptorCallback {
 			PrintStream out = null;
 			
 			if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
-				fileName = "export.sql";
+				fileName = "./record/export.sql";
 			} else if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
-				fileName = "export.csv";
+				fileName = "./record/export.csv";
 			}
 			out = new PrintStream(new FileOutputStream(fileName));
 			
 			out.print(exportBuffer.toString());
 			out.close();
 			
-			File file = new File(fileName);
+		} catch (Exception e) {
+		    log.warn("Could not write the export file!");
+		}
+		
+		try {
+			this.pack("./record",  "export.zip");
+			File file = new File("export.zip");
 			
 			try {
 				fileContent = Files.readAllBytes(file.toPath());
 			} catch (IOException e) {
 				log.error("Error loading the file!", e);
 			}
-		} catch (Exception e) {
-		    log.warn("Could not write the export file!");
+		} catch (IOException ie) {
+			log.error("error creating the zip file");
 		}
 
 		HttpHeaders headers = new HttpHeaders();
-		if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
-			headers.setContentType(MediaType.parseMediaType("application/sql"));
-		} else if (exportType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_CSV)) {
-			headers.setContentType(MediaType.parseMediaType("application/comma-separated-values"));
-		}
-		headers.setContentDispositionFormData("attachment", fileName); 
+		headers.setContentType(MediaType.parseMediaType("application/zip"));
+		headers.setContentDispositionFormData("attachment", "export.zip"); 
 	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
 	    log.info("exportData-->");
 	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
@@ -1243,7 +1325,7 @@ public class RecordRESTController implements IAdaptorCallback {
 										WSRecordNotification notification = new WSRecordNotification(
 												record.getId(), record.getClientId(),
 												record.getTopic(), record.getCreateDate(),
-												record.getRecordType(), null, null);
+												record.getRecordType(), record.getHeadline(), record.getMsgType(), null, null);
 										
 										WSController.getInstance().sendMessage(
 												mapper.objectToJSONString(notification));	
@@ -1322,6 +1404,23 @@ public class RecordRESTController implements IAdaptorCallback {
 					record.getClientId().equalsIgnoreCase("TB-TimeService")) {
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 				recordRepo.saveAndFlush(record);
+				if (record.getClientId().equalsIgnoreCase("TB-TrialMgmt")) {
+					try {
+						InputStream input = new ByteArrayInputStream(record.getRecordJson().getBytes());
+						DataInputStream din = new DataInputStream(input);
+						Schema parsedSchema = SessionMgmt.SCHEMA$;
+						Decoder decoder = DecoderFactory.get().jsonDecoder(parsedSchema, din);
+					    DatumReader<GenericData.Record> reader = new GenericDatumReader(parsedSchema);
+					    GenericRecord genRecord = reader.read(null, decoder);
+					    
+					    SessionMgmt sessMgmt = new SessionMgmt();
+					    //SessionMgmt msg = 
+					} catch (Exception Ex) {
+						log.error("Error sending large data update message!", Ex);
+						return new ResponseEntity<Boolean>(false, HttpStatus.INTERNAL_SERVER_ERROR);
+					}
+				}
+				
 			} else if (record.getRecordType().equalsIgnoreCase("Alert")) {
 				try {
 					JSONObject jsonObj = new JSONObject(record.getRecordJson());
@@ -1370,17 +1469,62 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	@ApiOperation(value = "downloadAttachment", nickname = "downloadAttachment")
 	@RequestMapping(value = "/AARService/downloadAttachment", method = RequestMethod.GET)
-	@ApiImplicitParams({ @ApiImplicitParam(name = "path", value = "the attachment path", required = true, dataType = "string", paramType = "query") })
+	@ApiImplicitParams({ @ApiImplicitParam(name = "filename", value = "the attachment path", required = true, dataType = "string", paramType = "query") })
 	@ApiResponses(value = {
 			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
 			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
-	public ResponseEntity<byte[]> downloadAttachment(@QueryParam("path")String path) {
+	public ResponseEntity<byte[]> downloadAttachment(@QueryParam("filename")String filename) {
 		log.info("-->downloadAttachment");
 		
-		log.info("downloadAttachment-->");
-		return new ResponseEntity<byte[]>("".getBytes(), HttpStatus.OK);
+		byte[] fileContent = null;
+		File file = new File(filename);
 		
+		try {
+			fileContent = Files.readAllBytes(file.toPath());
+		} catch (IOException e) {
+			log.error("Error loading the file!", e);
+		}
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentDispositionFormData("attachment", filename); 
+	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
+	    MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+	    String mime = mimeTypesMap.getContentType(file);
+	    headers.setContentType(MediaType.parseMediaType(mime));
+
+	    log.info("downloadAttachment-->");
+	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
+		
+	}
+	
+	@ApiOperation(value = "uploadBackup", nickname = "uploadBackup")
+	@RequestMapping(value = "/AARService/uploadBackup", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@ApiImplicitParams({
+		@ApiImplicitParam(name = "file", value = "the file to be uploaded", required = true, dataType = "__file")})
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = Boolean.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = Boolean.class),
+			@ApiResponse(code = 500, message = "Failure", response = Boolean.class) })
+	public ResponseEntity<String> uploadBackup(@RequestPart("file") MultipartFile file) {
+		log.info("-->uploadBackup");
+		String fileName = fileStorageService.storeFile("./record", file);
+		
+		if (fileName != null) {
+			try {
+				this.unzip(fileName, "./record");
+				Path filePath = Paths.get("./record/export.sql");
+				if (Files.exists(filePath)) {
+					String content = new String(Files.readAllBytes(filePath));
+					this.importData(content);
+				}
+			} catch (IOException e) {
+				log.error("Error unzipping the backup!", e);
+			}
+		}
+		
+		log.info("uploadBackup-->");
+		return new ResponseEntity<String>(fileName, HttpStatus.OK);
 	}
 	
 	private String createFilterQuery() {
@@ -1487,7 +1631,15 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	private String createSequenceDiagramString(List<Record> records, List<TopicReceiver> receivers) {
 		log.info("-->createSequenceDiagramString");
-		String data = "@startuml\n";
+		String data = this.createDiagramStart();
+		
+		String participants = "";
+		
+		data += "participant \"Testbed\" as Testbed #Thistle\n";
+		data += "participant \"TB_TrialMgmt\" as TB_TrialMgmt #Thistle\n";
+		data += "participant \"TB_Ost\" as TB_Ost #Thistle\n";
+		data += "{participants}\n";
+		
 		Map<String, List<TopicReceiver>> receiverMap = new HashMap<String, List<TopicReceiver>>();
 
 		for (TopicReceiver receiver : receivers) {
@@ -1511,24 +1663,78 @@ public class RecordRESTController implements IAdaptorCallback {
 				sender = sender.replaceAll("-", "_");
 				sender = sender.replaceAll("\\.", "_");
 				sender = sender.replaceAll(":", "_");
-				
+								
 				if (record.getRecordType().equalsIgnoreCase("ObserverToolAnswer")) {
-					data += "note right\n";
-					data += "ObserverToolAnswer\n";
-					data += "end note\n";
+					data += "rnote over TB_Ost\n";
+					try {
+						Record specRecord = recordRepo.findObjectById(record.getId());
+						if (specRecord.getRecordJson() != null) {
+							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+							JSONArray questions = jsonRecord.getJSONArray("questions");
+							int size = questions.length();
+							data += jsonRecord.getString("observationTypeDescription") + "\n";
+							
+							data += "Observer: " + jsonRecord.getString("observationTypeName") + " reported: \n";
+							for (int i = 0; i < size; i++) {
+								JSONObject question = questions.getJSONObject(i);
+								data += question.getString("name") + ": " + question.getString("answer");
+							}
+							data += "\n";
+						}
+					} catch (Exception e) {
+						log.error("Error creating the ObserverToolAnswer note!", e);
+					}
+					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("RolePlayerMessage")) {
 					data += "rnote over TB_TrialMgmt\n";
-					data += "RolePlayerMessage:\n";
+					try {
+						Record specRecord = recordRepo.findObjectById(record.getId());
+						if (specRecord.getRecordJson() != null) {
+							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+							data += "Roleplayer: " + jsonRecord.getString("rolePlayerName") + ", type: " + jsonRecord.getString("type") + "\n";
+							data += "title: " + jsonRecord.getString("title") + "\n";
+							data += "headline: " + jsonRecord.getString("hadline") + "\n";
+							data += "description: " + jsonRecord.getString("description") + "\n";
+						}
+					} catch (Exception e) {
+						log.error("Error creating the RolePlayerMessage note!", e);
+					}
 					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("PhaseMessage")) {
-					data += "note left\n";
-					data += "PhaseMessage\n";
-					data += "end note\n";
+					data += "rnote over TB_TrialMgmt\n";
+					try {
+						Record specRecord = recordRepo.findObjectById(record.getId());
+						if (specRecord.getRecordJson() != null) {
+							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+							data += "Phase: " + jsonRecord.getString("phase") + ": ";
+							if (jsonRecord.getBoolean("isStarting")) {
+								data += "STARTED\n";
+							} else {
+								data += "ENDED\n";
+							}
+						}
+					} catch (Exception e) {
+						log.error("Error creating the RolePlayerMessage note!", e);
+					}
+					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("SessionMgmt")) {
-					data += "note left\n";
-					data += "SessionMgmt\n";
-					data += "end note\n";
+					data += "rnote over TB_TrialMgmt\n";
+					try {
+						Record specRecord = recordRepo.findObjectById(record.getId());
+						if (specRecord.getRecordJson() != null) {
+							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+							data += "Scenario: " + jsonRecord.getString("scenarioName") + "\n";
+							data += "Session: " + jsonRecord.getString("sessionName") + ": " + jsonRecord.getString("sessionState") + "\n";
+						}
+					} catch (Exception e) {
+						log.error("Error creating the SessionMgmt note!", e);
+					}
+					data += "endrnote\n";
 				} else {
+					
+					if (participants.indexOf(sender) < 0) {
+						participants += "participant \"" + sender + "\" as " + sender + " #Snow|Tan\n";
+					}
 					String topic = record.getTopic();
 					String msg = this.getMessageFromRecord(record);
 					data += "group " + sender + " - " + record.getRecordType() + "\n"; 
@@ -1547,7 +1753,7 @@ public class RecordRESTController implements IAdaptorCallback {
 								client = client.replaceAll("-", "_");
 								client = client.replaceAll("\\.", "_");
 								client = client.replaceAll(":", "_");
-								data += cis + " -[#blue]-> " + client  + " : " + msg + "\n";
+								data += cis + " -[#blue]-> " + client/*  + " : " + msg*/ + "\n";
 							}
 						}
 					}
@@ -1556,6 +1762,8 @@ public class RecordRESTController implements IAdaptorCallback {
 				}
 			}
 		}
+		
+		data = data.replace("{participants}", participants);
 		data += "@enduml\n";
 		log.info("createSequenceDiagramString-->");
 		return data;
@@ -1571,5 +1779,112 @@ public class RecordRESTController implements IAdaptorCallback {
 		
 		return msg;
 	}
+	
+	private String createDiagramStart() {
+		String data = "@startuml\n" +
+		"'skinparam ParticipantPadding 20\n" +
+		"skinparam defaultTextAlignment center\n" +
+		"skinparam sequenceMessageAlign center\n" +
+		"skinparam noteTextAlign center\n" +
+		"skinparam shadowing false\n" +
+		"skinparam sequenceLifeLineBorderColor black\n" +
+		"skinparam sequenceLifeLineBorderThickness 0.5\n" +
+		"skinparam sequenceBoxBorderColor black\n" +
+		"skinparam sequenceLifeLineBackgroundColor AntiqueWhite\n" +
+		"skinparam ActivityBorderThickness 0.5\n" +
+		"skinparam SequenceDividerBorderThickness 0.5\n" +
+		"skinparam note {\n" +
+		"BackgroundColor lightyellow\n" +
+		"BorderColor black\n" +
+		"'FontSize 6\n" +
+		"FontSize 10\n" +
+		"BorderThickness 0.5\n" +
+		"}\n" +
+		"skinparam sequenceArrow {\n" +
+		"Thickness 0.5\n" +
+		"'FontSize 6\n" +
+		"FontSize 10\n" +
+		"Color black\n" +
+		"}\n" +
+		"skinparam sequenceParticipant {\n" +
+		"BorderColor black\n" +
+		"BorderThickness 0.5\n" +
+		"FontStyle plain\n" +
+		"'FontSize 6\n" +
+		"FontSize 10\n" +
+		"}\n" +
+		"skinparam sequenceDivider {\n" +
+		"BorderColor black\n" +
+		"BorderThickness 0.5\n" +
+		"FontStyle plain\n" +
+		"'FontSize 6\n" +
+		"FontSize 10\n" +
+		"}\n" +
+		"skinparam sequenceGroup {\n" +
+		"'HeaderFontSize 6\n" +
+		"HeaderFontSize 10\n" +
+		"BorderThickness 0.5\n" +
+		"HeaderFontStyle plain\n" +
+		"BackgroundColor white\n" +
+		"'FontSize 6\n" +
+		"FontSize 10\n" +
+		"}\n" +
+		"hide footbox\n" +
+		"||15|||\n";
+		
+		return data;
+	}
+	
+	private void pack(String sourceDirPath, String zipFilePath) throws IOException {
+	    Path p = Files.createFile(Paths.get(zipFilePath));
+	    try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(p))) {
+	        Path pp = Paths.get(sourceDirPath);
+	        Files.walk(pp)
+	          .filter(path -> !Files.isDirectory(path))
+	          .forEach(path -> {
+	              ZipEntry zipEntry = new ZipEntry(pp.relativize(path).toString());
+	              try {
+	                  zs.putNextEntry(zipEntry);
+	                  Files.copy(path, zs);
+	                  zs.closeEntry();
+	            } catch (IOException e) {
+	                System.err.println(e);
+	            }
+	          });
+	    }
+	}
+	
+	private void unzip(final String zipFilePath, final String unzipLocation) throws IOException {
+
+        if (!(Files.exists(Paths.get(unzipLocation)))) {
+            Files.createDirectories(Paths.get(unzipLocation));
+        }
+        try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(zipFilePath))) {
+            ZipEntry entry = zipInputStream.getNextEntry();
+            while (entry != null) {
+                Path filePath = Paths.get(unzipLocation, entry.getName());
+                if (!entry.isDirectory()) {
+                    unzipFiles(zipInputStream, filePath);
+                } else {
+                    Files.createDirectories(filePath);
+                }
+
+                zipInputStream.closeEntry();
+                entry = zipInputStream.getNextEntry();
+            }
+        }
+    }
+
+	private void unzipFiles(final ZipInputStream zipInputStream, final Path unzipFilePath) throws IOException {
+
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(unzipFilePath.toAbsolutePath().toString()))) {
+            byte[] bytesIn = new byte[1024];
+            int read = 0;
+            while ((read = zipInputStream.read(bytesIn)) != -1) {
+                bos.write(bytesIn, 0, read);
+            }
+        }
+
+    }
 
 }
