@@ -58,7 +58,7 @@ public class AARServiceApplication {
 		if (connectTB) {
 			cisAdapter = CISAdapter.getInstance(false);
 			
-			cisAdapter.addCallback(topicInviteController, TopicConstants.TOPIC_INVITE_TOPIC);
+			cisAdapter.addCallback(recordController, TopicConstants.TOPIC_INVITE_TOPIC);
 			cisAdapter.addCallback(recordController, TopicConstants.TIMING_CONTROL_TOPIC);
 			cisAdapter.addCallback(recordController, TopicConstants.OST_ANSWER_TOPIC);
 			cisAdapter.addCallback(recordController, TopicConstants.SESSION_MGMT_TOPIC);
