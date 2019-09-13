@@ -321,7 +321,9 @@ public class RecordRESTController implements IAdaptorCallback {
 				for (Feature feature : featureList) {
 					properties properties = feature.getProperties();
 					if (record.getHeadline() == null) {
-						record.setHeadline(properties.getMissionName().toString());
+						if (properties.getMissionName() != null) {
+							record.setHeadline(properties.getMissionName().toString());	
+						}
 					}
 					List<files> files = properties.getFiles();
 					for (files file : files) {
