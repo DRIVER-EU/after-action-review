@@ -73,18 +73,15 @@ public class AARServiceApplication {
 				log.error("Error sending the log entry to the topic!", cEx);
 			}
 			
-			cisAdapter.addCallback(recordController, "photo_geojson");
-			cisAdapter.addCallback(recordController, "asign_info");
-			cisAdapter.addCallback(recordController, "large_data_update");
-			cisAdapter.addCallback(recordController, "crowd-tasker_info");
+			/*cisAdapter.addCallback(recordController, "large_data_update");
 			cisAdapter.addCallback(recordController, "map_layer_update");
-			/*cisAdapter.addCallback(recordController, "standard_cap");
-			cisAdapter.addCallback(recordController, "flood_prediction_netcdf");
-			cisAdapter.addCallback(recordController, "flood_prediction_geojson");
-			cisAdapter.addCallback(recordController, "flood_actual");
-			cisAdapter.addCallback(recordController, "lcms_plots");
-			cisAdapter.addCallback(recordController, "crisissuite_htm_plots");
-			cisAdapter.addCallback(recordController, "crisissuite_stedin_plots");*/
+			cisAdapter.addCallback(recordController, "cs_internal");
+			cisAdapter.addCallback(recordController, "staff_map");
+			cisAdapter.addCallback(recordController, "socrates_map");
+			cisAdapter.addCallback(recordController, "frt_map");
+			cisAdapter.addCallback(recordController, "staff_info");
+			cisAdapter.addCallback(recordController, "simulation_entity_post");
+			cisAdapter.addCallback(recordController, "simulation_request_startinject");*/
 		}
 	}
 	

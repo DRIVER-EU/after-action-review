@@ -220,14 +220,14 @@ public class RecordRESTController implements IAdaptorCallback {
 			}
 			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 			record.setHeadline(headline);
-			/*if (ownClientID.equalsIgnoreCase(clientId)) {
+			if (ownClientID.equalsIgnoreCase(clientId)) {
 				// add a callback if not done already
-				if (registeredCallbacks.get(msgKey) == null) {
+				if (registeredCallbacks.get(receiverTopicName) == null) {
 					log.info("Adding a callback receiver for: " + receiverTopicName);
 					CISAdapter.getInstance().addCallback(this, receiverTopicName);
 					registeredCallbacks.put(receiverTopicName, true);
 				}
-			} else */if (subscribeAllowed) {
+			} else if (subscribeAllowed) {
 				String trialId = "unknown";
 				TopicReceiver topicReceiver = topicReceiverRepo
 						.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
@@ -1190,6 +1190,14 @@ public class RecordRESTController implements IAdaptorCallback {
 	public ResponseEntity<byte[]> exportData(@QueryParam("exportType")String exportType) {
 		log.info("-->exportData");
 		
+		if (!(Files.exists(Paths.get("./record")))) {
+            try {
+				Files.createDirectories(Paths.get("./record"));
+			} catch (IOException e) {
+				log.error("Error creating the ./record directory!");
+			}
+        }
+		
 		StringBuffer exportBuffer = new StringBuffer();
 		
 		List<Trial> trials =  trialRepo.findAll();
@@ -1679,9 +1687,8 @@ public class RecordRESTController implements IAdaptorCallback {
 							data += "Observer: " + jsonRecord.getString("observationTypeName") + " reported: \n";
 							for (int i = 0; i < size; i++) {
 								JSONObject question = questions.getJSONObject(i);
-								data += question.getString("name") + ": " + question.getString("answer");
+								data += question.getString("name") + ": " + question.getString("answer") + "\n";
 							}
-							data += "\n";
 						}
 					} catch (Exception e) {
 						log.error("Error creating the ObserverToolAnswer note!", e);
@@ -1693,6 +1700,7 @@ public class RecordRESTController implements IAdaptorCallback {
 						Record specRecord = recordRepo.findObjectById(record.getId());
 						if (specRecord.getRecordJson() != null) {
 							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+							data += "A new Roleplayer message was injected:\n";
 							data += "Roleplayer: " + jsonRecord.getString("rolePlayerName") + ", type: " + jsonRecord.getString("type") + "\n";
 							data += "title: " + jsonRecord.getString("title") + "\n";
 							data += "headline: " + jsonRecord.getString("hadline") + "\n";
@@ -1708,11 +1716,11 @@ public class RecordRESTController implements IAdaptorCallback {
 						Record specRecord = recordRepo.findObjectById(record.getId());
 						if (specRecord.getRecordJson() != null) {
 							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
-							data += "Phase: " + jsonRecord.getString("phase") + ": ";
+							data += "The Phase: " + jsonRecord.getString("phase") + ":  ";
 							if (jsonRecord.getBoolean("isStarting")) {
-								data += "STARTED\n";
+								data += "was STARTED\n";
 							} else {
-								data += "ENDED\n";
+								data += "has ENDED\n";
 							}
 						}
 					} catch (Exception e) {
