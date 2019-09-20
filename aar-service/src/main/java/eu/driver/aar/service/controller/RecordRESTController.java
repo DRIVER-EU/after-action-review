@@ -41,6 +41,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
+import javax.servlet.http.HttpSession;
 import javax.transaction.Transactional;
 import javax.ws.rs.QueryParam;
 
@@ -135,12 +136,14 @@ public class RecordRESTController implements IAdaptorCallback {
 	private SimpleDateFormat filterFormat = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm:ss.SSS");
 
-	private RecordFilter actualFilter = new RecordFilter();
+	//private RecordFilter actualFilter = new RecordFilter();
 	private Double currentPageSize = 20D;
 	private int currentPage = 0;
 	
 	private Map<String, Boolean> registeredCallbacks = new HashMap<String, Boolean>();
 	private String ownClientID = ClientProperties.getInstance().getProperty("client.id");
+	
+	private Map<String, RecordFilter> sessionFilters = new HashMap<String, RecordFilter>();
 
 	@Autowired
 	RecordRepository recordRepo;
@@ -537,10 +540,10 @@ public class RecordRESTController implements IAdaptorCallback {
 				// check if the record needs to be send via the websocket
 				boolean sendRecord = true;
 				// ToDo: check if record meets filter criteras, if yes, push it to the client
-				if (this.actualFilter != null && this.actualFilter.isFilterEnabled()) {
+				/*if (this.actualFilter != null && this.actualFilter.isFilterEnabled()) {
 					// check if record meets filter criteria
 					sendRecord = this.actualFilter.meetsRecordFilter(record);
-				}
+				}*/
 				
 				if (sendRecord) {
 					WSRecordNotification notification = new WSRecordNotification(
@@ -620,35 +623,43 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
 	public ResponseEntity<List<Record>> getAllRecords(
 			@RequestParam(value="page", required=false) Integer page,
-			@RequestParam(value="size", required=false) Integer size) {
+			@RequestParam(value="size", required=false) Integer size, HttpSession httpSession) {
 		log.info("-->getAllRecords");
 		String query = "SELECT NEW Record(i.id, i.clientId, i.sessionId, i.topic, i.recordType, i.createDate, i.trialDate, i.headline, i.msgType) FROM Record i";
 
+		
+		String sessionId = httpSession.getId();
 		// create the query using the active Filter
-		if (this.actualFilter.isFilterEnabled()) {
-			query += this.createFilterQuery();
+		RecordFilter actualFilter = this.sessionFilters.get(sessionId);
+		if (actualFilter == null) {
+			actualFilter = new RecordFilter();
+			this.sessionFilters.put(sessionId, actualFilter);
+		} else {
+			if (actualFilter.isFilterEnabled()) {
+				query += this.createFilterQuery(httpSession);
+			}
 		}
 		
 		query += " ORDER BY i.createDate DESC";
 
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
-		if (this.actualFilter.getFromDate() != null) {
-			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		if (actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", actualFilter.getFromDate(), TemporalType.TIMESTAMP);
 		}
-		if (this.actualFilter.getToDate() != null) {
-			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		if (actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", actualFilter.getToDate(), TemporalType.TIMESTAMP);	
 		}
 		
-		if (this.actualFilter.getScenarioId() != null) {
-			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+		if (actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(actualFilter.getScenarioId());
 			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
 			if (szenario.getEndDate() != null) {
 				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
 			} else {
 				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
 			}
-		} else if (this.actualFilter.getSessionId() != null) {
-			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+		} else if (actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(actualFilter.getSessionId());
 			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
 			if (session.getEndDate() != null) {
 				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
@@ -696,33 +707,40 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
 			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
-	public ResponseEntity<Double> getPageCount() {
+	public ResponseEntity<Double> getPageCount(HttpSession httpSession) {
 		log.info("-->getPageCount");
 		String query = "SELECT NEW Record(i.id) FROM Record i";
 
+		String sessionId = httpSession.getId();
 		// create the query using the active Filter
-		if (this.actualFilter.isFilterEnabled()) {
-			query += this.createFilterQuery();
-		}
-
-		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
-		if (this.actualFilter.getFromDate() != null) {
-			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
-		}
-		if (this.actualFilter.getToDate() != null) {
-			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		RecordFilter actualFilter = this.sessionFilters.get(sessionId);
+		if (actualFilter == null) {
+			actualFilter = new RecordFilter();
+			this.sessionFilters.put(sessionId, actualFilter);
+		} else {
+			if (actualFilter.isFilterEnabled()) {
+				query += this.createFilterQuery(httpSession);
+			}
 		}
 		
-		if (this.actualFilter.getScenarioId() != null) {
-			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		if (actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		}
+		if (actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
+		
+		if (actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(actualFilter.getScenarioId());
 			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
 			if (szenario.getEndDate() != null) {
 				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
 			} else {
 				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
 			}
-		} else if (this.actualFilter.getSessionId() != null) {
-			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+		} else if (actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(actualFilter.getSessionId());
 			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
 			if (session.getEndDate() != null) {
 				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
@@ -912,38 +930,48 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
 			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
-	public ResponseEntity<List<Record>> getAllTimelineRecords() {
+	public ResponseEntity<List<Record>> getAllTimelineRecords(HttpSession httpSession) {
 		log.info("-->getAllTimelineRecords");
 
 		String query = "SELECT NEW Record(i.id, i.topic, i.recordType, i.createDate, i.headline, i.msgType) FROM Record i";
-		if (this.actualFilter.isFilterEnabled()) {
-			query += this.createFilterQuery();
+		
+		String sessionId = httpSession.getId();
+		// create the query using the active Filter
+		RecordFilter actualFilter = this.sessionFilters.get(sessionId);
+		if (actualFilter == null) {
+			actualFilter = new RecordFilter();
+			this.sessionFilters.put(sessionId, actualFilter);
+		} 
+		
+		if (actualFilter.isFilterEnabled()) {
+			query += this.createFilterQuery(httpSession);
 			query += "	AND";
 		} else {
 			query += "	WHERE";
 		}
+		
 		query += " i.recordType != 'ObserverToolAnswer' and i.recordType != 'SessionMgmt'";
 		
 		query += " ORDER BY i.createDate DESC";
 
 		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
-		if (this.actualFilter.getFromDate() != null) {
-			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		if (actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", actualFilter.getFromDate(), TemporalType.TIMESTAMP);
 		}
-		if (this.actualFilter.getToDate() != null) {
-			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		if (actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", actualFilter.getToDate(), TemporalType.TIMESTAMP);	
 		}
 		
-		if (this.actualFilter.getScenarioId() != null) {
-			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+		if (actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(actualFilter.getScenarioId());
 			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
 			if (szenario.getEndDate() != null) {
 				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
 			} else {
 				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
 			}
-		} else if (this.actualFilter.getSessionId() != null) {
-			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+		} else if (actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(actualFilter.getSessionId());
 			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
 			if (session.getEndDate() != null) {
 				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
@@ -964,11 +992,17 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = RecordFilter.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
 			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
-	public ResponseEntity<RecordFilter> getActualFilter() {
+	public ResponseEntity<RecordFilter> getActualFilter(HttpSession httpSession) {
 		log.info("-->getActualFilter");
-
+		String sessionId = httpSession.getId();
+		// create the query using the active Filter
+		RecordFilter actualFilter = this.sessionFilters.get(sessionId);
+		if (actualFilter == null) {
+			actualFilter = new RecordFilter();
+			this.sessionFilters.put(sessionId, actualFilter);
+		}
 		log.info("getActualFilter-->");
-		return new ResponseEntity<RecordFilter>(this.actualFilter,
+		return new ResponseEntity<RecordFilter>(actualFilter,
 				HttpStatus.OK);
 	}
 
@@ -980,13 +1014,14 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 400, message = "Bad Request", response = RecordFilter.class),
 			@ApiResponse(code = 500, message = "Failure", response = RecordFilter.class) })
 	public ResponseEntity<RecordFilter> setActualFilter(
-			@RequestBody RecordFilter filter) {
+			@RequestBody RecordFilter filter, HttpSession httpSession) {
 		log.info("-->setActualFilter");
 
-		this.actualFilter = filter;
+		String sessionId = httpSession.getId();
+		this.sessionFilters.put(sessionId, filter);
 
 		log.info("setActualFilter-->");
-		return new ResponseEntity<RecordFilter>(this.actualFilter,
+		return new ResponseEntity<RecordFilter>(filter,
 				HttpStatus.OK);
 	}
 
@@ -1064,32 +1099,42 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = byte[].class),
 			@ApiResponse(code = 400, message = "Bad Request", response = byte[].class),
 			@ApiResponse(code = 500, message = "Failure", response = byte[].class) })
-	public ResponseEntity<byte[]> createSequenceDiagram() {
+	public ResponseEntity<byte[]> createSequenceDiagram(HttpSession httpSession) {
 		log.info("-->createSequenceDiagram");
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
 		String query = "SELECT NEW Record(i.id, i.clientId, i.topic, i.recordType, i.createDate, i.headline, i.msgType) FROM Record i";
-		if (this.actualFilter.isFilterEnabled()) {
-			query += this.createFilterQuery();
-		}
-		query += " ORDER BY i.createDate ASC";
-		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
-		if (this.actualFilter.getFromDate() != null) {
-			typedQuery.setParameter("fromDate", this.actualFilter.getFromDate(), TemporalType.TIMESTAMP);
-		}
-		if (this.actualFilter.getToDate() != null) {
-			typedQuery.setParameter("toDate", this.actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		
+		String sessionId = httpSession.getId();
+		// create the query using the active Filter
+		RecordFilter actualFilter = this.sessionFilters.get(sessionId);
+		if (actualFilter == null) {
+			actualFilter = new RecordFilter();
+			this.sessionFilters.put(sessionId, actualFilter);
+		} else {
+			if (actualFilter.isFilterEnabled()) {
+				query += this.createFilterQuery(httpSession);
+			}
 		}
 		
-		if (this.actualFilter.getScenarioId() != null) {
-			Szenario szenario = szenarioRepo.findObjectBySzenarioId(this.actualFilter.getScenarioId());
+		query += " ORDER BY i.createDate ASC";
+		TypedQuery<Record> typedQuery = entityManager.createQuery(query, Record.class);
+		if (actualFilter.getFromDate() != null) {
+			typedQuery.setParameter("fromDate", actualFilter.getFromDate(), TemporalType.TIMESTAMP);
+		}
+		if (actualFilter.getToDate() != null) {
+			typedQuery.setParameter("toDate", actualFilter.getToDate(), TemporalType.TIMESTAMP);	
+		}
+		
+		if (actualFilter.getScenarioId() != null) {
+			Szenario szenario = szenarioRepo.findObjectBySzenarioId(actualFilter.getScenarioId());
 			typedQuery.setParameter("fromDate", szenario.getStartDate(), TemporalType.TIMESTAMP);
 			if (szenario.getEndDate() != null) {
 				typedQuery.setParameter("toDate", szenario.getEndDate(), TemporalType.TIMESTAMP);	
 			} else {
 				typedQuery.setParameter("toDate",  new Date(), TemporalType.TIMESTAMP);	
 			}
-		} else if (this.actualFilter.getSessionId() != null) {
-			Session session = sessionRepo.findObjectBySessionId(this.actualFilter.getSessionId());
+		} else if (actualFilter.getSessionId() != null) {
+			Session session = sessionRepo.findObjectBySessionId(actualFilter.getSessionId());
 			typedQuery.setParameter("fromDate", session.getStartDate(), TemporalType.TIMESTAMP);
 			if (session.getEndDate() != null) {
 				typedQuery.setParameter("toDate", session.getEndDate(), TemporalType.TIMESTAMP);	
@@ -1146,7 +1191,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = byte[].class),
 			@ApiResponse(code = 400, message = "Bad Request", response = byte[].class),
 			@ApiResponse(code = 500, message = "Failure", response = byte[].class) })
-	public ResponseEntity<byte[]> createOverviewSequenceDiagram() {
+	public ResponseEntity<byte[]> createOverviewSequenceDiagram(HttpSession httpSession) {
 		log.info("-->createOverviewSequenceDiagram");
 		ByteArrayOutputStream bous = new ByteArrayOutputStream();
 		Long recCount = recordRepo.countRecordsWithoutLog();
@@ -1326,10 +1371,10 @@ public class RecordRESTController implements IAdaptorCallback {
 									// check if the record needs to be send via the websocket
 									boolean sendRecord = true;
 									// ToDo: check if record meets filter criteras, if yes, push it to the client
-									if (this.actualFilter != null && this.actualFilter.isFilterEnabled()) {
+									/*if (this.actualFilter != null && this.actualFilter.isFilterEnabled()) {
 										// check if record meets filter criteria
 										sendRecord = this.actualFilter.meetsRecordFilter(record);
-									}
+									}*/
 									
 									if (sendRecord) {
 										WSRecordNotification notification = new WSRecordNotification(
@@ -1537,56 +1582,63 @@ public class RecordRESTController implements IAdaptorCallback {
 		return new ResponseEntity<String>(fileName, HttpStatus.OK);
 	}
 	
-	private String createFilterQuery() {
+	private String createFilterQuery(HttpSession httpSession) {
 		String query = "";
 		Boolean firstParam = true;
+		
+		String sessionId = httpSession.getId();
+		// create the query using the active Filter
+		RecordFilter actualFilter = this.sessionFilters.get(sessionId);
+		if (actualFilter == null) {
+			return query;
+		}
 
-		if (this.actualFilter.getId() != null) {
+		if (actualFilter.getId() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
 			}
-			query += "i.id=" + this.actualFilter.getId();
+			query += "i.id=" + actualFilter.getId();
 		}
 
-		if (this.actualFilter.getRecordType() != null) {
+		if (actualFilter.getRecordType() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
 			} else {
 				query += " AND ";
 			}
-			query += "i.recordType='" + this.actualFilter.getRecordType() + "'";
+			query += "i.recordType='" + actualFilter.getRecordType() + "'";
 		}
 
-		if (this.actualFilter.getTopicName() != null) {
+		if (actualFilter.getTopicName() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
 			} else {
 				query += " AND ";
 			}
-			query += "i.topic='" + this.actualFilter.getTopicName() + "'";
+			query += "i.topic='" + actualFilter.getTopicName() + "'";
 		}
 
-		if (this.actualFilter.getSenderClientId() != null) {
+		if (actualFilter.getSenderClientId() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
 			} else {
 				query += " AND ";
 			}
-			query += "i.clientId='" + this.actualFilter.getSenderClientId() + "'";;
+			query += "i.clientId='" + actualFilter.getSenderClientId() + "'";;
 		}
 		
-		if (this.actualFilter.getMsgType() != null) {
+		if (actualFilter.getMsgType() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
 			} else {
 				query += " AND ";
 			}
-			query += "i.msgType='" + this.actualFilter.getMsgType() + "'";;
+			query += "i.msgType='" + actualFilter.getMsgType() + "'";;
 		}
 
 		/*
@@ -1595,7 +1647,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		 * }
 		 */
 
-		if (this.actualFilter.getFromDate() != null) {
+		if (actualFilter.getFromDate() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
@@ -1605,7 +1657,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			query += "i.createDate>:fromDate";
 		}
 
-		if (this.actualFilter.getToDate() != null) {
+		if (actualFilter.getToDate() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
@@ -1615,7 +1667,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			query += "i.createDate<:toDate";
 		}
 		
-		if (this.actualFilter.getScenarioId() != null) {
+		if (actualFilter.getScenarioId() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
@@ -1625,7 +1677,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			query += "i.createDate>:fromDate AND i.createDate<:toDate";
 		}
 		
-		if (this.actualFilter.getSessionId() != null) {
+		if (actualFilter.getSessionId() != null) {
 			if (firstParam) {
 				query += " WHERE ";
 				firstParam = false;
