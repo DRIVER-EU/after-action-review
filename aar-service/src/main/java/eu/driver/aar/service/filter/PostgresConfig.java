@@ -34,6 +34,7 @@ public class PostgresConfig {
         dataSource.setUsername(ClientProperties.getInstance().getProperty("spring.datasource.username"));
         dataSource.setPassword(ClientProperties.getInstance().getProperty("spring.datasource.password"));
 
+
         return dataSource;
     }
 
@@ -51,6 +52,7 @@ public class PostgresConfig {
         entityManagerFactoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter() {{
             setDatabase(Database.POSTGRESQL);
         }});
+        
         return entityManagerFactoryBean;
     }
 

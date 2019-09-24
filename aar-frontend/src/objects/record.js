@@ -9,5 +9,6 @@ export function Record (record) {
     this.recordType = record.recordType;
     this.recordJson = record.recordJson;
     this.recordData = record.recordData;
+    this.runType = record.runType;
     this.attachments = record.attachments;
 }

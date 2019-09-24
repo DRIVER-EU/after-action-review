@@ -69,6 +69,9 @@ public class Record {
 	@Column(name="msgType")
 	private String msgType;
 	
+	@Column(name="runType", length=256)
+	private String runType = AARConstants.RECORD_RUN_TYPE_IN;
+	
 	@JsonManagedReference
 	@OneToMany( mappedBy = "record", cascade = CascadeType.ALL, orphanRemoval = true)
 	@JsonBackReference
@@ -82,7 +85,7 @@ public class Record {
 		this.id = id;
 	}
 	
-	public Record(Long id, String clientId, String sessionId, String topic, String recordType, Date createDate, Date trialDate, String headline, String msgType) {
+	public Record(Long id, String clientId, String sessionId, String topic, String recordType, Date createDate, Date trialDate, String headline, String msgType, String runType) {
 		this.id = id;
 		this.clientId = clientId;
 		this.sessionId = sessionId;
@@ -92,6 +95,7 @@ public class Record {
 		this.recordType = recordType;
 		this.headline = headline;
 		this.msgType = msgType;
+		this.runType = runType;
 		
 	}
 	
@@ -193,6 +197,14 @@ public class Record {
 		this.msgType = msgType;
 	}
 
+	public String getRunType() {
+		return runType;
+	}
+
+	public void setRunType(String runType) {
+		this.runType = runType;
+	}
+
 	public List<Attachment> getAttachments() {
 		return attachments;
 	}
@@ -220,6 +232,7 @@ public class Record {
     		backupBuffer.append("\"").append(this.headline).append("\"").append(";");
     		backupBuffer.append("\"").append(this.msgType).append("\"").append(";");
     		backupBuffer.append("\"").append(this.recordJson).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.runType).append("\"").append(";");
     		backupBuffer.append("\"").append(this.recordData).append("\"").append("\n");
     		
     		for (Attachment attachment : this.attachments) {
@@ -228,7 +241,7 @@ public class Record {
     		
     	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
     		// create the SQL insert commands
-    		backupBuffer.append("insert into aar_service.record (id, clientId, sessionId, createDate, trialDate, topic, recordType, headline, msgType, recordJson, recordData) values (");
+    		backupBuffer.append("insert into aar_service.record (id, clientId, sessionId, createDate, trialDate, topic, recordType, headline, msgType, recordJson, recordData, runType) values (");
     		
     		backupBuffer.append(this.id).append(",");
     		backupBuffer.append("'").append(this.clientId).append("'").append(",");
@@ -241,7 +254,8 @@ public class Record {
     		backupBuffer.append("'").append(this.msgType).append("'").append(",");
     		String json = this.recordJson.replaceAll("'", "\\''");
     		backupBuffer.append("'").append(json).append("'").append(",");
-    		backupBuffer.append("'").append(this.recordData).append("'").append(");").append("\n");
+    		backupBuffer.append("'").append(this.recordData).append("'");
+    		backupBuffer.append("'").append(this.runType).append("'").append(");").append("\n");
     		
     		for (Attachment attachment : this.attachments) {
     			backupBuffer.append(attachment.createBackupString(backupType));

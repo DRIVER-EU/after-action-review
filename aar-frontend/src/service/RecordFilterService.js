@@ -24,7 +24,7 @@ class RecordFilterService {
   }
 
   updateFilter(currentlySelectedId, currentlySelectedClientId, currentlySelectedRecordType, currentlySelectedTopicId,
-               currentlySelectedMsgType, currentlySelectedFromDate, currentlySelectedToDate, currentlySelectedSessionId, currentlySelectedScenarioId) {
+               currentlySelectedMsgType, currentlySelectedRunType, currentlySelectedFromDate, currentlySelectedToDate, currentlySelectedSessionId, currentlySelectedScenarioId) {
     const filter = {
       filterEnabled: true,
       fromDate: currentlySelectedFromDate ? currentlySelectedFromDate.getTime() : null,
@@ -34,6 +34,7 @@ class RecordFilterService {
       senderClientId: currentlySelectedClientId === FilterOption.ALL ? null : currentlySelectedClientId,
       recordType: currentlySelectedRecordType === FilterOption.ALL ? null : currentlySelectedRecordType,
       msgType: currentlySelectedMsgType === FilterOption.ALL ? null : currentlySelectedMsgType,
+      runType: currentlySelectedRunType === FilterOption.ALL ? null : currentlySelectedRunType,
       topicName: currentlySelectedTopicId === FilterOption.ALL ? null : currentlySelectedTopicId,
       scenarioId: currentlySelectedScenarioId,
       sessionId: currentlySelectedSessionId

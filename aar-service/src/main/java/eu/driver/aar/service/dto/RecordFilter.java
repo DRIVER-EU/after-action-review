@@ -12,6 +12,7 @@ public class RecordFilter {
 	private String senderClientId;
 	private String receiverClientId;
 	private String msgType;
+	private String runType;
 	
 	private String scenarioId;
 	private String sessionId;
@@ -99,6 +100,14 @@ public class RecordFilter {
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
 	}
+	
+	public String getRunType() {
+		return runType;
+	}
+
+	public void setRunType(String runType) {
+		this.runType = runType;
+	}
 
 	public boolean isFilterEnabled() {
 		boolean enabled = false;
@@ -122,6 +131,8 @@ public class RecordFilter {
 		} else if (this.scenarioId != null) {
 			enabled = true;
 		} else if (this.sessionId != null) {
+			enabled = true;
+		}  else if (this.runType != null) {
 			enabled = true;
 		}
 		

@@ -51,6 +51,7 @@ export const store = new Vuex.Store({
       clientId: [FilterOption.ALL],
       topic: [FilterOption.ALL],
       msgType: [FilterOption.ALL],
+      runType: [FilterOption.ALL],
       recordType: [FilterOption.ALL]
     }
   },
@@ -120,6 +121,13 @@ export const store = new Vuex.Store({
         }
       });
     },
+    GET_RUN_TYPES (state, runTypes) {
+      runTypes.forEach(runType => {
+        if (state.filterOptions.runType.indexOf(runType) === -1) {
+          state.filterOptions.runType.push(runType)
+        }
+      });
+    },
     GET_TOPIC_NAMES (state, topics) {
       topics.forEach(topic => {
         if (state.filterOptions.topic.indexOf(topic) === -1) {
@@ -158,7 +166,13 @@ export const store = new Vuex.Store({
       this.axios.get('getReceiverClientIds').then(response => {
         context.commit('GET_CLIENT_IDS', (response.data));
       }).catch(ex => console.log(ex));
-      context.commit('GET_MSG_TYPES', ["Info", "Warn", "Error", "Ack"]);
+      this.axios.get('getRunTypes').then(response => {
+        context.commit('GET_RUN_TYPES', (response.data));
+      }).catch(ex => console.log(ex));
+      this.axios.get('getMsgTypes').then(response => {
+        context.commit('GET_MSG_TYPES', (response.data));
+      }).catch(ex => console.log(ex));
+      //context.commit('GET_MSG_TYPES', ["Info", "Warn", "Error", "Ack"]);
     },
     getRecord (context, payload) {
       this.axios.get('getRecord/' + payload.id).then(response => {

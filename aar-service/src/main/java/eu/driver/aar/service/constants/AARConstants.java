@@ -11,4 +11,7 @@ public interface AARConstants {
 	public static final String RECORD_MSG_TYPE_ACK = "Ack";
 	public static final String RECORD_MSG_TYPE_EVAL = "EVAL";
 	
+	public static final String RECORD_RUN_TYPE_BL = "Baseline";
+	public static final String RECORD_RUN_TYPE_IN = "Innovation";
+	public static final String RECORD_RUN_TYPE_BOTH = "Both";
 }

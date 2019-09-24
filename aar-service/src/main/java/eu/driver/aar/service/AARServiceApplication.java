@@ -7,6 +7,7 @@ import java.util.Date;
 import javax.annotation.PostConstruct;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -64,6 +65,7 @@ public class AARServiceApplication {
 			cisAdapter.addCallback(recordController, TopicConstants.SESSION_MGMT_TOPIC);
 			cisAdapter.addCallback(recordController, TopicConstants.PHASE_MESSAGE_TOPIC);
 			cisAdapter.addCallback(recordController, TopicConstants.ROLE_PLAYER_TOPIC);
+			cisAdapter.addCallback(recordController, TopicConstants.EVALUATION_LOGGING_TOPIC);
 			cisAdapter.addLogCallback(recordController);
 			
 			Log logMsg = new Log(cisAdapter.getClientID(), (new Date()).getTime(), Level.INFO, "The AARService is up!" );

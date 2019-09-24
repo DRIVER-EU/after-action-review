@@ -8,5 +8,7 @@ export default {
   ROLE_PLAYER_MESSAGE: "RolePlayerMessage",
   OBSERVER_TOOL_ANSWER: "ObserverToolAnswer",
   SESSION_MGMT: "SessionMgmt",
-  PHASE_MESSAGE: "PhaseMessage",
+  REQUEST_CHANGE_OF_TRIAL_STATE: "RequestChangeOfTrialStage",
+  REQUEST_START_INJECT: "RequestStartInject",
+  POST_MESSAGE: "Post"
 }

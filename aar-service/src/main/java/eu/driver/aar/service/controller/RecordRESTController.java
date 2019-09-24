@@ -172,6 +172,8 @@ public class RecordRESTController implements IAdaptorCallback {
 	private final String OST_EXT_PARTICIPANT = "_Participant";
 	private final String OST_EXT_PRACTITIONAR = "_Practitionar";
 	private final String OST_EXT_OBSERVER = "_Observer";
+	
+	private final String POST_BL_EXT = " BL";
 
 	public RecordRESTController() {
 		log.info("RecordRESTController");
@@ -184,10 +186,9 @@ public class RecordRESTController implements IAdaptorCallback {
 		record.setCreateDate(new Date());
 		record.setTrialDate(CISAdapter.getInstance().getTrialTime());
 		record.setRecordType(receivedMessage.getSchema().getName());
+		record.setRunType(AARConstants.RECORD_RUN_TYPE_IN);
 		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData
 				.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
-		
-		//String clientID = msgKey.getSenderID().toString();
 		
 		record.setClientId(msgKey.getSenderID().toString());
 		record.setTopic(topicName);
@@ -200,8 +201,8 @@ public class RecordRESTController implements IAdaptorCallback {
 			
 			record.setRecordJson(msg.toString());
 			String logMsg = msg.getLog().toString();
-			if (logMsg.length() > 300) {
-				record.setHeadline(logMsg.substring(0, 297) + "...");
+			if (logMsg.length() > 100) {
+				record.setHeadline(logMsg.substring(0, 97) + "...");
 			} else {
 				record.setHeadline(msg.getLog().toString());
 			}
@@ -466,6 +467,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				szenario.setSzenarioName(msg.getScenarioName().toString());
 				szenario.setStartDate(new Date());
 				trial.addSzenario(szenario);
+				trial.setEndDate(null);
 			}
 			if (msg.getSessionState() == SessionState.STOP) {
 				szenario.setEndDate(new Date());
@@ -485,6 +487,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				session.setSessionName(msg.getSessionName().toString());
 				session.setStartDate(new Date());
 				szenario.addSession(session);
+				trial.setEndDate(null);
 			}
 			if (msg.getSessionState() == SessionState.STOP) {
 				session.setEndDate(new Date());
@@ -543,6 +546,9 @@ public class RecordRESTController implements IAdaptorCallback {
 			record.setRecordJson(msg.toString());
 			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 			record.setHeadline("A new observation was reported by: " + msg.getObservationTypeName().toString());
+			
+			// check for Baseline/Innovation line run
+			
 
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("RequestStartInject")) {
 			eu.driver.model.sim.request.RequestStartInject msg = (eu.driver.model.sim.request.RequestStartInject) SpecificData
@@ -556,6 +562,29 @@ public class RecordRESTController implements IAdaptorCallback {
 			record.setRecordJson(msg.toString());
 			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 			record.setHeadline("A new observation was reported by: " + msg.getHeader());
+			
+			// check for Baseline/Innovation line run
+     		boolean inRun = false;
+			boolean blRun = false;
+			if (msg.getSenderName().toString().indexOf(POST_BL_EXT) != -1) {
+				blRun = true;
+			}
+			
+			List<CharSequence> recipients = msg.getRecipients();
+			if (recipients != null && recipients.size() > 0) {
+				for (CharSequence recipient: recipients) {
+					if (recipient.toString().indexOf(POST_BL_EXT) != -1) {
+						blRun = true;
+					} else if (!recipient.toString().equalsIgnoreCase("RolePlayer")) {
+						inRun = true;
+					}
+				}
+			}
+			if (inRun && blRun) {
+				record.setRunType(AARConstants.RECORD_RUN_TYPE_BOTH);
+			} else if (blRun) {
+				record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
+			}
 		} else {
 			// unknown data
 			record = null;
@@ -654,7 +683,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			@RequestParam(value="page", required=false) Integer page,
 			@RequestParam(value="size", required=false) Integer size, HttpSession httpSession) {
 		log.info("-->getAllRecords");
-		String query = "SELECT NEW Record(i.id, i.clientId, i.sessionId, i.topic, i.recordType, i.createDate, i.trialDate, i.headline, i.msgType) FROM Record i";
+		String query = "SELECT NEW Record(i.id, i.clientId, i.sessionId, i.topic, i.recordType, i.createDate, i.trialDate, i.headline, i.msgType, i.runType) FROM Record i";
 
 		
 		String sessionId = httpSession.getId();
@@ -1069,6 +1098,44 @@ public class RecordRESTController implements IAdaptorCallback {
 		List<String> records = typedQuery.getResultList();
 
 		log.info("getRecordTypes-->");
+		return new ResponseEntity<List<String>>(records, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "getMsgTypes", nickname = "getMsgTypes")
+	@RequestMapping(value = "/AARService/getMsgTypes", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
+	public ResponseEntity<List<String>> getMsgTypes() {
+		log.info("-->getMsgTypes");
+		List<String> records = new ArrayList<String>();
+		
+		records.add(AARConstants.RECORD_MSG_TYPE_ACK);
+		records.add(AARConstants.RECORD_MSG_TYPE_INFO);
+		records.add(AARConstants.RECORD_MSG_TYPE_WARN);
+		records.add(AARConstants.RECORD_MSG_TYPE_ERROR);
+		records.add(AARConstants.RECORD_MSG_TYPE_EVAL);
+
+		log.info("getMsgTypes-->");
+		return new ResponseEntity<List<String>>(records, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "getRunTypes", nickname = "getRunTypes")
+	@RequestMapping(value = "/AARService/getRunTypes", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = ArrayList.class),
+			@ApiResponse(code = 400, message = "Bad Request", response = ArrayList.class),
+			@ApiResponse(code = 500, message = "Failure", response = ArrayList.class) })
+	public ResponseEntity<List<String>> getRunTypes() {
+		log.info("-->getRunTypes");
+		List<String> records = new ArrayList<String>();
+		
+		records.add(AARConstants.RECORD_RUN_TYPE_BL);
+		records.add(AARConstants.RECORD_RUN_TYPE_IN);
+		records.add(AARConstants.RECORD_RUN_TYPE_BOTH);
+
+		log.info("getRunTypes-->");
 		return new ResponseEntity<List<String>>(records, HttpStatus.OK);
 	}
 
@@ -1669,12 +1736,16 @@ public class RecordRESTController implements IAdaptorCallback {
 			}
 			query += "i.msgType='" + actualFilter.getMsgType() + "'";;
 		}
-
-		/*
-		 * if (this.actualFilter.getReceiverClientId() != null) {
-		 * 
-		 * }
-		 */
+		
+		if (actualFilter.getRunType() != null) {
+			if (firstParam) {
+				query += " WHERE ";
+				firstParam = false;
+			} else {
+				query += " AND ";
+			}
+			query += "i.runType='" + actualFilter.getRunType() + "'";;
+		}
 
 		if (actualFilter.getFromDate() != null) {
 			if (firstParam) {

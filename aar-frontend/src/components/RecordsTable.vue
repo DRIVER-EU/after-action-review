@@ -44,6 +44,15 @@
               ></v-select>
             </th>
             <th>
+              <div class="primary--text" style="padding: 16px;">Run Type</div>
+              <v-select
+                :items="filterOptions.runType"
+                label="All"
+                single-line
+                v-model="currentlySelectedRunType"
+              ></v-select>
+            </th>
+            <th>
               <div class="primary--text" style="padding: 16px">Date</div>
               <table>
                 <tr>
@@ -61,6 +70,7 @@
             <td>{{props.item.topic}}</td>
             <td>{{props.item.recordType}}</td>
             <td>{{props.item.msgType}}</td>
+            <td>{{props.item.runType}}</td>
             <td class="text-xs-center">{{props.item.createDate}}&nbsp;{{props.item.createTime}}</td>
           </tr>
         </template>
@@ -90,6 +100,7 @@
         currentlySelectedTopicId: 'All',
         currentlySelectedRecordType: 'All',
         currentlySelectedMsgType: 'All',
+        currentlySelectedRunType: 'All',
         currentlySelectedFromDate: null,
         currentlySelectedToDate: null,
         currentlySelectedSessionId: null,
@@ -114,6 +125,9 @@
         this.updateFilter();
       },
       currentlySelectedMsgType: function () {
+        this.updateFilter();
+      },
+      currentlySelectedRunType: function () {
         this.updateFilter();
       },
       currentlySelectedFromDate: function () {
@@ -153,7 +167,7 @@
       },
       updateFilter: function () {
         recordFilter.updateFilter(this.currentlySelectedId, this.currentlySelectedClientId, this.currentlySelectedRecordType,
-          this.currentlySelectedTopicId, this.currentlySelectedMsgType, this.currentlySelectedFromDate, this.currentlySelectedToDate,
+          this.currentlySelectedTopicId, this.currentlySelectedMsgType, this.currentlySelectedRunType, this.currentlySelectedFromDate, this.currentlySelectedToDate,
           this.currentlySelectedSessionId, this.currentlySelectedScenarioId);
       },
       getRowClass: function(item) {
