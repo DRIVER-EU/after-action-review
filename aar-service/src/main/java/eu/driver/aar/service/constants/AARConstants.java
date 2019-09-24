@@ -9,5 +9,6 @@ public interface AARConstants {
 	public static final String RECORD_MSG_TYPE_WARN = "Warn";
 	public static final String RECORD_MSG_TYPE_ERROR = "Error";
 	public static final String RECORD_MSG_TYPE_ACK = "Ack";
+	public static final String RECORD_MSG_TYPE_EVAL = "EVAL";
 	
 }

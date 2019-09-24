@@ -168,6 +168,10 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	@Autowired
     private FileStorageService fileStorageService;
+	
+	private final String OST_EXT_PARTICIPANT = "_Participant";
+	private final String OST_EXT_PRACTITIONAR = "_Practitionar";
+	private final String OST_EXT_OBSERVER = "_Observer";
 
 	public RecordRESTController() {
 		log.info("RecordRESTController");
@@ -193,15 +197,28 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
 			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData
 					.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
+			
 			record.setRecordJson(msg.toString());
-			record.setHeadline(msg.getLog().toString());
-			if (msg.getLevel().equals(Level.ERROR) || msg.getLevel().equals(Level.CRITICAL)) {
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
-			} else if (msg.getLevel().equals(Level.WARN)) {
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_WARN);
+			String logMsg = msg.getLog().toString();
+			if (logMsg.length() > 300) {
+				record.setHeadline(logMsg.substring(0, 297) + "...");
 			} else {
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline(msg.getLog().toString());
 			}
+			
+			if (topicName.equalsIgnoreCase(TopicConstants.LOGGING_TOPIC)) {
+				if (msg.getLevel().equals(Level.ERROR) || msg.getLevel().equals(Level.CRITICAL)) {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+				} else if (msg.getLevel().equals(Level.WARN)) {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_WARN);
+				} else {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				}
+			} else {
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_EVAL);
+			}
+			
+			
 		} else if (receivedMessage.getSchema().getName()
 				.equalsIgnoreCase("TopicInvite")) {
 			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData
@@ -527,6 +544,18 @@ public class RecordRESTController implements IAdaptorCallback {
 			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 			record.setHeadline("A new observation was reported by: " + msg.getObservationTypeName().toString());
 
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("RequestStartInject")) {
+			eu.driver.model.sim.request.RequestStartInject msg = (eu.driver.model.sim.request.RequestStartInject) SpecificData
+					.get().deepCopy(eu.driver.model.sim.request.RequestStartInject.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline("A new observation was reported by: " + msg.getInject().toString());
+		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Post")) {
+			eu.driver.model.sim.entity.Post msg = (eu.driver.model.sim.entity.Post) SpecificData
+					.get().deepCopy(eu.driver.model.sim.entity.Post.SCHEMA$, receivedMessage);
+			record.setRecordJson(msg.toString());
+			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			record.setHeadline("A new observation was reported by: " + msg.getHeader());
 		} else {
 			// unknown data
 			record = null;
@@ -1727,19 +1756,31 @@ public class RecordRESTController implements IAdaptorCallback {
 				sender = sender.replaceAll(":", "_");
 								
 				if (record.getRecordType().equalsIgnoreCase("ObserverToolAnswer")) {
-					data += "rnote over TB_Ost\n";
+					
+					
 					try {
 						Record specRecord = recordRepo.findObjectById(record.getId());
 						if (specRecord.getRecordJson() != null) {
 							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
 							JSONArray questions = jsonRecord.getJSONArray("questions");
 							int size = questions.length();
-							data += jsonRecord.getString("observationTypeDescription") + "\n";
+							String observerName = jsonRecord.getString("observationTypeName");
+							if (observerName.indexOf(OST_EXT_PARTICIPANT) != -1) {
+								data += "rnote over TB_Ost #RoyalBlue\n";
+							} else if (observerName.indexOf(OST_EXT_PRACTITIONAR) != -1) {
+								data += "rnote over TB_Ost #RoyalBlue\n";
+							} else if (observerName.indexOf(OST_EXT_OBSERVER) != -1) {
+								data += "rnote over TB_Ost #RoyalBlue\n";
+							} else {
+								data += "rnote over TB_Ost #RoyalBlue\n";
+							}
 							
-							data += "Observer: " + jsonRecord.getString("observationTypeName") + " reported: \n";
+							data += "<color:white><b>" + jsonRecord.getString("observationTypeDescription") + "</b></color>\n";
+							
+							data += "<color:white>Observer: " + jsonRecord.getString("observationTypeName") + " reported: </color>\n";
 							for (int i = 0; i < size; i++) {
 								JSONObject question = questions.getJSONObject(i);
-								data += question.getString("name") + ": " + question.getString("answer") + "\n";
+								data += "<color:white>* " + question.getString("name") + ": " + question.getString("answer") + " </color>\n";
 							}
 						}
 					} catch (Exception e) {
@@ -1747,23 +1788,29 @@ public class RecordRESTController implements IAdaptorCallback {
 					}
 					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("RolePlayerMessage")) {
-					data += "rnote over TB_TrialMgmt\n";
+					data += "rnote over TB_TrialMgmt #LightSeaGreen\n";
 					try {
 						Record specRecord = recordRepo.findObjectById(record.getId());
 						if (specRecord.getRecordJson() != null) {
 							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
 							data += "A new Roleplayer message was injected:\n";
 							data += "Roleplayer: " + jsonRecord.getString("rolePlayerName") + ", type: " + jsonRecord.getString("type") + "\n";
-							data += "title: " + jsonRecord.getString("title") + "\n";
-							data += "headline: " + jsonRecord.getString("hadline") + "\n";
-							data += "description: " + jsonRecord.getString("description") + "\n";
+							try {
+								data += "title: " + jsonRecord.getString("title") + "\n";
+							} catch (Exception e) { }
+							try {
+								data += "headline: " + jsonRecord.getString("hadline") + "\n";
+							} catch (Exception e) { }
+							try {
+								data += "description: " + jsonRecord.getString("description") + "\n";
+							} catch (Exception e) { }
 						}
 					} catch (Exception e) {
 						log.error("Error creating the RolePlayerMessage note!", e);
 					}
 					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("PhaseMessage")) {
-					data += "rnote over TB_TrialMgmt\n";
+					data += "rnote over TB_TrialMgmt #DimGray\n";
 					try {
 						Record specRecord = recordRepo.findObjectById(record.getId());
 						if (specRecord.getRecordJson() != null) {
@@ -1780,7 +1827,22 @@ public class RecordRESTController implements IAdaptorCallback {
 					}
 					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("SessionMgmt")) {
-					data += "rnote over TB_TrialMgmt\n";
+					
+					//data += "== Initialization ==\n";
+					
+					data += "==";
+					try {
+						Record specRecord = recordRepo.findObjectById(record.getId());
+						if (specRecord.getRecordJson() != null) {
+							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+							data += jsonRecord.getString("sessionName") + ": " + jsonRecord.getString("sessionState");
+						}
+					} catch (Exception e) {
+						log.error("Error creating the SessionMgmt note!", e);
+					}
+					data += "==\n";
+					
+					/*data += "rnote over TB_TrialMgmt #aqua\n";
 					try {
 						Record specRecord = recordRepo.findObjectById(record.getId());
 						if (specRecord.getRecordJson() != null) {
@@ -1791,7 +1853,35 @@ public class RecordRESTController implements IAdaptorCallback {
 					} catch (Exception e) {
 						log.error("Error creating the SessionMgmt note!", e);
 					}
-					data += "endrnote\n";
+					data += "endrnote\n";*/
+				} else if (record.getRecordType().equalsIgnoreCase("RequestStartInject")) {
+					if (participants.indexOf(sender) < 0) {
+						participants += "participant \"" + sender + "\" as " + sender + " #Snow|Tan\n";
+					}
+					
+					data += "rnote over " + sender + " #Aqua\n";
+					try {
+						Record specRecord = recordRepo.findObjectById(record.getId());
+						if (specRecord.getRecordJson() != null) {
+							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+						}
+					} catch (Exception e) {
+						log.error("Error creating the StartInject note!", e);
+					}
+				} else if (record.getRecordType().equalsIgnoreCase("Post")) {
+					if (participants.indexOf(sender) < 0) {
+						participants += "participant \"" + sender + "\" as " + sender + " #Snow|Tan\n";
+					}
+					
+					data += "rnote over " + sender + " #AquaMarine\n";
+					try {
+						Record specRecord = recordRepo.findObjectById(record.getId());
+						if (specRecord.getRecordJson() != null) {
+							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+						}
+					} catch (Exception e) {
+						log.error("Error creating the Post Message note!", e);
+					}
 				} else {
 					
 					if (participants.indexOf(sender) < 0) {

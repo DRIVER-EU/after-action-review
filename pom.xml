@@ -5,7 +5,7 @@
 
 	<groupId>driver.eu</groupId>
 	<artifactId>aar-tool</artifactId>
-	<version>1.2.29</version>
+	<version>1.2.30</version>
 	<packaging>pom</packaging>
 	
 	<name>DRIVER+ AARTool</name>
@@ -43,7 +43,6 @@
 		<build-plugin.jacoco.version>0.7.9</build-plugin.jacoco.version>
 		<build-plugin.coveralls.version>4.3.0</build-plugin.coveralls.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<testbed.adaptor.version>1.2.12</testbed.adaptor.version>
 		<maven.shade.version>3.1.0</maven.shade.version>
 		<maven.compiler.version>3.7.0</maven.compiler.version>
 		<docker.image.prefix>springio</docker.image.prefix>
@@ -61,22 +60,6 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>2.5</version>
-		</dependency>
-		<dependency>
-			<groupId>driver.eu</groupId>
-			<artifactId>testbed-adapter</artifactId>
-			<version>${testbed.adaptor.version}</version>
-			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<artifactId>slf4j-api</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>slf4j-log4j12</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
