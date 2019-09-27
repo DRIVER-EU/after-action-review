@@ -11,6 +11,7 @@ public class WSRecordNotification {
 	private String topic = null;
 	private String headline = null;
 	private String msgType = null;
+	private String runType = null;
 	
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	private Date createDate = null;
@@ -19,7 +20,7 @@ public class WSRecordNotification {
 	private String recordJson = null;
 	private String recordData = null;
 
-	public WSRecordNotification(Long id, String clientId, String topic, Date createDate, String recordType, String headline, String msgType, String recordJson, String recordData) {
+	public WSRecordNotification(Long id, String clientId, String topic, Date createDate, String recordType, String headline, String msgType, String runType, String recordJson, String recordData) {
 		this.id = id;
 		this.clientId = clientId;
 		this.topic = topic;
@@ -27,6 +28,7 @@ public class WSRecordNotification {
 		this.recordType = recordType;
 		this.headline = headline;
 		this.msgType = msgType;
+		this.runType = runType;
 		this.recordJson = recordJson;
 		this.recordData = recordData;
 
@@ -110,6 +112,14 @@ public class WSRecordNotification {
 
 	public void setMsgType(String msgType) {
 		this.msgType = msgType;
+	}
+
+	public String getRunType() {
+		return runType;
+	}
+
+	public void setRunType(String runType) {
+		this.runType = runType;
 	}
 		
 }

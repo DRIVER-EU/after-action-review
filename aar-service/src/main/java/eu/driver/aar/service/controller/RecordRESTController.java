@@ -169,10 +169,12 @@ public class RecordRESTController implements IAdaptorCallback {
 	@Autowired
     private FileStorageService fileStorageService;
 	
-	private final String OST_EXT_PARTICIPANT = "_Participant";
-	private final String OST_EXT_PRACTITIONAR = "_Practitionar";
-	private final String OST_EXT_OBSERVER = "_Observer";
+	private final String ANSWER_OBS_IN = "_OBS_IN";
+	private final String ANSWER_OBS_BL = "_OBS_BL";
 	
+	private final String ANSWER_PRACT_FIE = "_PRACT_FIE";
+	private final String ANSWER_ALL_TRIAL = "_ALL_TRIAL";
+		
 	private final String POST_BL_EXT = " BL";
 
 	public RecordRESTController() {
@@ -278,7 +280,12 @@ public class RecordRESTController implements IAdaptorCallback {
 					record.setHeadline(((Info)msg.getInfo()).getHeadline().toString());
 				} else {
 					List<Info> infos = (List<Info>)msg.getInfo();
-					record.setHeadline(infos.get(0).getHeadline().toString());
+					if (infos.get(0).getHeadline() != null) {
+						record.setHeadline(infos.get(0).getHeadline().toString());	
+					} else {
+						record.setHeadline("New CAP was send from: " + record.getClientId());
+					}
+					
 				}
 			}
 		} else if (receivedMessage.getSchema().getName()
@@ -488,6 +495,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				session.setStartDate(new Date());
 				szenario.addSession(session);
 				trial.setEndDate(null);
+				szenario.setEndDate(null);
 			}
 			if (msg.getSessionState() == SessionState.STOP) {
 				session.setEndDate(new Date());
@@ -543,13 +551,21 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.core.ObserverToolAnswer msg = (eu.driver.model.core.ObserverToolAnswer) SpecificData
 					.get().deepCopy(
 							eu.driver.model.core.ObserverToolAnswer.SCHEMA$, receivedMessage);
+			String observer = msg.getObservationTypeName().toString();
 			record.setRecordJson(msg.toString());
 			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline("A new observation was reported by: " + msg.getObservationTypeName().toString());
+			record.setHeadline("A new observation was reported by: " + observer);
 			
 			// check for Baseline/Innovation line run
-			
-
+			if (observer.indexOf(ANSWER_ALL_TRIAL) != -1) {
+				record.setRunType(AARConstants.RECORD_RUN_TYPE_TRIALD);
+			} else if (observer.indexOf(ANSWER_OBS_BL) != -1) {
+				record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
+			} else if (observer.indexOf(ANSWER_PRACT_FIE) != -1) {
+				record.setRunType(AARConstants.RECORD_RUN_TYPE_FIE);
+			} else {
+				record.setRunType(AARConstants.RECORD_RUN_TYPE_IN);
+			}
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("RequestStartInject")) {
 			eu.driver.model.sim.request.RequestStartInject msg = (eu.driver.model.sim.request.RequestStartInject) SpecificData
 					.get().deepCopy(eu.driver.model.sim.request.RequestStartInject.SCHEMA$, receivedMessage);
@@ -595,23 +611,13 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (record != null) {
 			try {
 				record = recordRepo.saveAndFlush(record);
-				// check if the record needs to be send via the websocket
-				boolean sendRecord = true;
-				// ToDo: check if record meets filter criteras, if yes, push it to the client
-				/*if (this.actualFilter != null && this.actualFilter.isFilterEnabled()) {
-					// check if record meets filter criteria
-					sendRecord = this.actualFilter.meetsRecordFilter(record);
-				}*/
+				WSRecordNotification notification = new WSRecordNotification(
+						record.getId(), record.getClientId(),
+						record.getTopic(), record.getCreateDate(),
+						record.getRecordType(), record.getHeadline(), record.getMsgType(), record.getRunType(), null, null);
 				
-				if (sendRecord) {
-					WSRecordNotification notification = new WSRecordNotification(
-							record.getId(), record.getClientId(),
-							record.getTopic(), record.getCreateDate(),
-							record.getRecordType(), record.getHeadline(), record.getMsgType(), null, null);
-					
-					WSController.getInstance().sendMessage(
-							mapper.objectToJSONString(notification));	
-				}
+				WSController.getInstance().sendMessage(
+						mapper.objectToJSONString(notification));
 			} catch (Exception e) {
 				log.error("Error processing the message!", e);
 			}
@@ -641,15 +647,17 @@ public class RecordRESTController implements IAdaptorCallback {
 				try {
 				    Path recordDir = null; 
 				    StringTokenizer tokens = new StringTokenizer(storeName, "/");
+				    boolean fileExisting = true;
 					
 					while (tokens.hasMoreTokens()) {
 						filePath +=  "/" + tokens.nextToken();
 						recordDir = Paths.get(filePath); 
 					    if (tokens.hasMoreTokens()) {
 					    	if (Files.notExists(recordDir)) { 
-						        try { Files.createDirectory(recordDir); }
-						        catch (Exception e ) 
-						        {
+						        try { 
+						        	Files.createDirectory(recordDir);
+						        	fileExisting = false;
+						        } catch (Exception e ) {
 						        	log.error("Error creating the " + filePath + " directory.", e);
 						        	throw e;
 						        }
@@ -657,10 +665,12 @@ public class RecordRESTController implements IAdaptorCallback {
 					    } 
 					}
 				    
-				    InputStream in = new java.net.URL(url).openStream();
-					Files.copy(in, recordDir, StandardCopyOption.REPLACE_EXISTING);
+					if (!fileExisting) {
+						InputStream in = new java.net.URL(url).openStream();
+						Files.copy(in, recordDir, StandardCopyOption.REPLACE_EXISTING);
+					}
 				} catch (Exception ex) {
-					log.error("Error loading the message attachement: " + url, ex);
+					log.error("Error loading the message attachement: " + url);
 				}
 			}
 		}
@@ -1476,7 +1486,7 @@ public class RecordRESTController implements IAdaptorCallback {
 										WSRecordNotification notification = new WSRecordNotification(
 												record.getId(), record.getClientId(),
 												record.getTopic(), record.getCreateDate(),
-												record.getRecordType(), record.getHeadline(), record.getMsgType(), null, null);
+												record.getRecordType(), record.getHeadline(), record.getMsgType(), record.getRunType(), null, null);
 										
 										WSController.getInstance().sendMessage(
 												mapper.objectToJSONString(notification));	
@@ -1549,7 +1559,7 @@ public class RecordRESTController implements IAdaptorCallback {
 		List<Record> records = recordRepo.findAll();
 		
 		for (Record record : records) {
-			if (record.getClientId().equalsIgnoreCase("TB-TrialMgmt") || 
+			/*if (record.getClientId().equalsIgnoreCase("TB-TrialMgmt") || 
 					record.getClientId().equalsIgnoreCase("TB-AARTool")	||
 					record.getClientId().equalsIgnoreCase("TB-Ost") ||
 					record.getClientId().equalsIgnoreCase("TB-TimeService")) {
@@ -1572,28 +1582,118 @@ public class RecordRESTController implements IAdaptorCallback {
 					}
 				}
 				
-			} else if (record.getRecordType().equalsIgnoreCase("Alert")) {
+			} else */if (record.getRecordType().equalsIgnoreCase("Alert")) {
 				try {
 					JSONObject jsonObj = new JSONObject(record.getRecordJson());
-					if (jsonObj.getString("msgType").equalsIgnoreCase("Ack")) {
-						record.setMsgType(AARConstants.RECORD_MSG_TYPE_ACK);
-						record.setHeadline(jsonObj.getString("sender") + " + " + jsonObj.getString("references"));
-					} else if (jsonObj.getString("msgType").equalsIgnoreCase("Error")) {
-						record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
-						record.setHeadline(jsonObj.getString("sender") + " + " + jsonObj.getString("note"));
-					} else {
-						record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-						if (jsonObj.get("info") instanceof JSONArray) {
-							record.setHeadline(jsonObj.getJSONArray("info").getJSONObject(0).getString("headline"));
+					if (record.getHeadline() == null) {
+						if (jsonObj.getString("msgType").equalsIgnoreCase("Ack")) {
+							record.setMsgType(AARConstants.RECORD_MSG_TYPE_ACK);
+							record.setHeadline(jsonObj.getString("sender") + " + " + jsonObj.getString("references"));
+						} else if (jsonObj.getString("msgType").equalsIgnoreCase("Error")) {
+							record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+							record.setHeadline(jsonObj.getString("sender") + " + " + jsonObj.getString("note"));
 						} else {
-							record.setHeadline(jsonObj.getJSONObject("info").getString("headline"));
+							record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+							if (jsonObj.get("info") instanceof JSONArray) {
+								record.setHeadline(jsonObj.getJSONArray("info").getJSONObject(0).getString("headline"));
+							} else {
+								record.setHeadline(jsonObj.getJSONObject("info").getString("headline"));
+							}
+						}
+					}
+					if (jsonObj.get("info") instanceof JSONArray) {
+						JSONArray infos = jsonObj.getJSONArray("info");
+						int count = infos.length();
+						for (int a = 0; a < count; a++)  {
+							JSONObject info = infos.getJSONObject(a);
+							if (info.get("resource") instanceof JSONArray) {
+								JSONArray resources = info.getJSONArray("resource");
+								int rCount = resources.length();
+								for (int i = 0; i < rCount; i++)  {
+									JSONObject resource = resources.getJSONObject(i);
+									if (resource.getString("uri") != null) {
+										Attachment attachment = new Attachment();
+										attachment.setRecord(record);
+										attachment.setUrl(resource.getString("uri"));
+										attachment.setMimeType(resource.getString("mimeType"));
+										if (attachment.getMimeType().equalsIgnoreCase("image/png")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.png");	
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.jpg");
+										}
+										record.addAttachment(attachment);
+									}
+								}
+							} else {
+								try {
+									JSONObject resource = info.getJSONObject("resource");
+									if (resource != null && resource.getString("uri") != null) {
+										Attachment attachment = new Attachment();
+										attachment.setRecord(record);
+										attachment.setUrl(resource.getString("uri"));
+										attachment.setMimeType(resource.getString("mimeType"));
+										if (attachment.getMimeType().equalsIgnoreCase("image/png")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.png");	
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.jpg");
+										}
+										record.addAttachment(attachment);
+									}
+								} catch (Exception e) {
+									
+								}
+							}
+						}
+					} else {
+						try {
+						JSONObject info = jsonObj.getJSONObject("info");
+							if (info != null && info.get("resource") instanceof JSONArray) {
+								JSONArray resources = info.getJSONArray("resource");
+								int rCount = resources.length();
+								for (int i = 0; i < rCount; i++)  {
+									JSONObject resource = resources.getJSONObject(i);
+									if (resource.getString("uri") != null) {
+										Attachment attachment = new Attachment();
+										attachment.setRecord(record);
+										attachment.setUrl(resource.getString("uri"));
+										attachment.setMimeType(resource.getString("mimeType"));
+										if (attachment.getMimeType().equalsIgnoreCase("image/png")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.png");	
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.jpg");
+										}
+										record.addAttachment(attachment);
+									}
+								}
+							} else {
+								try {
+									JSONObject resource = info.getJSONObject("resource");
+									if (resource != null && resource.getString("uri") != null) {
+										Attachment attachment = new Attachment();
+										attachment.setRecord(record);
+										attachment.setUrl(resource.getString("uri"));
+										attachment.setMimeType(resource.getString("mimeType"));
+										if (attachment.getMimeType().equalsIgnoreCase("image/png")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.png");	
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.jpg");
+										}
+										record.addAttachment(attachment);
+									}
+								} catch (Exception e) {
+									
+								}
+							}
+						} catch (Exception e) {
+							
 						}
 					}
 					recordRepo.saveAndFlush(record);
 				} catch (Exception e) {
 					// ignore
+					log.error("Error processing the record!");
 				}
-			} else if (record.getRecordType().equalsIgnoreCase("Log")){
+			}/* else if (record.getRecordType().equalsIgnoreCase("Log")){
 				try {
 					JSONObject jsonObj = new JSONObject(record.getRecordJson());
 					if (jsonObj.getString("level").equalsIgnoreCase("ERROR")) {
@@ -1611,7 +1711,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			} else {
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 				recordRepo.saveAndFlush(record);
-			}
+			}*/
 		}
 		
 		log.info("analyseRecords-->");
@@ -1836,11 +1936,11 @@ public class RecordRESTController implements IAdaptorCallback {
 							JSONArray questions = jsonRecord.getJSONArray("questions");
 							int size = questions.length();
 							String observerName = jsonRecord.getString("observationTypeName");
-							if (observerName.indexOf(OST_EXT_PARTICIPANT) != -1) {
+							if (observerName.indexOf(ANSWER_OBS_IN) != -1) {
 								data += "rnote over TB_Ost #RoyalBlue\n";
-							} else if (observerName.indexOf(OST_EXT_PRACTITIONAR) != -1) {
+							} else if (observerName.indexOf(ANSWER_OBS_BL) != -1) {
 								data += "rnote over TB_Ost #RoyalBlue\n";
-							} else if (observerName.indexOf(OST_EXT_OBSERVER) != -1) {
+							} else if (observerName.indexOf(ANSWER_ALL_TRIAL) != -1) {
 								data += "rnote over TB_Ost #RoyalBlue\n";
 							} else {
 								data += "rnote over TB_Ost #RoyalBlue\n";
@@ -1939,6 +2039,7 @@ public class RecordRESTController implements IAdaptorCallback {
 					} catch (Exception e) {
 						log.error("Error creating the StartInject note!", e);
 					}
+					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("Post")) {
 					if (participants.indexOf(sender) < 0) {
 						participants += "participant \"" + sender + "\" as " + sender + " #Snow|Tan\n";
@@ -1953,6 +2054,7 @@ public class RecordRESTController implements IAdaptorCallback {
 					} catch (Exception e) {
 						log.error("Error creating the Post Message note!", e);
 					}
+					data += "endrnote\n";
 				} else {
 					
 					if (participants.indexOf(sender) < 0) {
