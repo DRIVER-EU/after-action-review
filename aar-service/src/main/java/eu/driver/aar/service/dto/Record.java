@@ -254,7 +254,7 @@ public class Record {
     		backupBuffer.append("'").append(this.msgType).append("'").append(",");
     		String json = this.recordJson.replaceAll("'", "\\''");
     		backupBuffer.append("'").append(json).append("'").append(",");
-    		backupBuffer.append("'").append(this.recordData).append("'");
+    		backupBuffer.append("'").append(this.recordData).append("'").append(",");
     		backupBuffer.append("'").append(this.runType).append("'").append(");").append("\n");
     		
     		for (Attachment attachment : this.attachments) {
