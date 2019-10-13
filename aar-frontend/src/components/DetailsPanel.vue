@@ -63,8 +63,6 @@
             return ObserverToolAnswerDetails.name;
           case RecordType.SESSION_MGMT:
             return SessionMgmtDetails.name;
-          case RecordType.PHASE_MESSAGE:
-            return PhaseMessageDetails.name;
           default:
             return FallbackDetails.name;
         }
