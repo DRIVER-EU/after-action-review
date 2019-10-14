@@ -95,13 +95,15 @@ public class Attachment {
     		backupBuffer.append("\"").append(this.name).append("\"").append(";");
     		backupBuffer.append("\"").append(this.mimeType).append("\"").append(";");
     		backupBuffer.append("\"").append(this.url).append("\"").append(";");
+    		backupBuffer.append("\"").append(this.record.getId()).append("\"").append(";");
     		
     	} else if (backupType.equalsIgnoreCase(AARConstants.BACKUP_TYPE_SQL)) {
-    		backupBuffer.append("insert into aar_service.file (id, name, mimeType, url) values (");
+    		backupBuffer.append("insert into aar_service.file (id, name, mimeType, url, record_id) values (");
     		backupBuffer.append(this.id).append(",");
     		backupBuffer.append("'").append(this.name).append("'").append(",");
     		backupBuffer.append("'").append(this.mimeType).append("'").append(",");
-    		backupBuffer.append("'").append(this.url).append("'").append(");").append("\n");
+    		backupBuffer.append("'").append(this.url).append("'").append(",");
+    		backupBuffer.append(this.record.getId()).append(");").append("\n");
     	}
     	
     	return backupBuffer.toString();

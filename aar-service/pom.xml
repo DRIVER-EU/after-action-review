@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>driver.eu</groupId>
 		<artifactId>aar-tool</artifactId>
-		<version>1.2.32</version>
+		<version>1.2.33</version>
 	</parent>
 
 	<name>DRIVER+ AAR Tool REST Backend</name>
@@ -175,7 +175,24 @@
 			<version>8059</version>
 		</dependency>
 
-
+		<dependency>
+		    <groupId>org.jfree</groupId>
+		    <artifactId>jfreechart</artifactId>
+		    <version>1.5.0</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.jfree</groupId>
+		    <artifactId>jfreesvg</artifactId>
+		    <version>3.4</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.apache.pdfbox</groupId>
+		    <artifactId>pdfbox</artifactId>
+		    <version>2.0.17</version>
+		</dependency>
+		
 	</dependencies>
 
 	<build>

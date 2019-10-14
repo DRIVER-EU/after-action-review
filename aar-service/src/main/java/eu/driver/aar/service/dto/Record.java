@@ -233,7 +233,7 @@ public class Record {
     		backupBuffer.append("\"").append(this.msgType).append("\"").append(";");
     		backupBuffer.append("\"").append(this.recordJson).append("\"").append(";");
     		backupBuffer.append("\"").append(this.runType).append("\"").append(";");
-    		backupBuffer.append("\"").append(this.recordData).append("\"").append("\n");
+    		backupBuffer.append("\"").append(this.recordData).append("\"").append("\r\n");
     		
     		for (Attachment attachment : this.attachments) {
     			backupBuffer.append(attachment.createBackupString(backupType));
@@ -250,12 +250,11 @@ public class Record {
     		backupBuffer.append("'").append(this.trialDate).append("'").append(",");
     		backupBuffer.append("'").append(this.topic).append("'").append(",");
     		backupBuffer.append("'").append(this.recordType).append("'").append(",");
-    		backupBuffer.append("'").append(this.headline).append("'").append(",");
+    		backupBuffer.append("'").append(this.headline.replaceAll("'", "\\''")).append("'").append(",");
     		backupBuffer.append("'").append(this.msgType).append("'").append(",");
-    		String json = this.recordJson.replaceAll("'", "\\''");
-    		backupBuffer.append("'").append(json).append("'").append(",");
+    		backupBuffer.append("'").append(this.recordJson.replaceAll("'", "\\''")).append("'").append(",");
     		backupBuffer.append("'").append(this.recordData).append("'").append(",");
-    		backupBuffer.append("'").append(this.runType).append("'").append(");").append("\n");
+    		backupBuffer.append("'").append(this.runType).append("'").append(");").append("\r\n");
     		
     		for (Attachment attachment : this.attachments) {
     			backupBuffer.append(attachment.createBackupString(backupType));

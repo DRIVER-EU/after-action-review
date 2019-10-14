@@ -7,9 +7,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -24,11 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
@@ -45,25 +40,12 @@ import javax.servlet.http.HttpSession;
 import javax.transaction.Transactional;
 import javax.ws.rs.QueryParam;
 
-import kafka.serializer.Encoder;
-import kafka.utils.json.JsonObject;
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
 
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.generic.GenericDatumWriter;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.IndexedRecord;
-import org.apache.avro.io.BinaryEncoder;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificData;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.util.Utf8;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -98,13 +80,11 @@ import eu.driver.aar.service.repository.SzenarioRepository;
 import eu.driver.aar.service.repository.TopicReceiverRepository;
 import eu.driver.aar.service.repository.TrialRepository;
 import eu.driver.aar.service.utils.FileStorageService;
-import eu.driver.aar.service.utils.exception.FileStorageException;
 import eu.driver.aar.service.ws.WSController;
 import eu.driver.aar.service.ws.mapper.StringJSONMapper;
 import eu.driver.aar.service.ws.object.WSRecordNotification;
 import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.adapter.core.CISAdapter;
-import eu.driver.adapter.excpetion.CommunicationException;
 import eu.driver.adapter.properties.ClientProperties;
 import eu.driver.api.IAdaptorCallback;
 import eu.driver.model.cap.Info;
@@ -112,10 +92,8 @@ import eu.driver.model.cap.MsgType;
 import eu.driver.model.core.Level;
 import eu.driver.model.core.ObserverToolAnswer;
 import eu.driver.model.core.Question;
-import eu.driver.model.core.SessionMgmt;
 import eu.driver.model.core.State;
 import eu.driver.model.core.TypeOfQuestion;
-import eu.driver.model.geojson.GeoJSONEnvelope;
 import eu.driver.model.geojson.photo.Feature;
 import eu.driver.model.geojson.photo.properties;
 import eu.driver.model.geojson.photo.files.files;
@@ -133,12 +111,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	private SimpleDateFormat format = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss'Z'");
 	
-	private SimpleDateFormat filterFormat = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm:ss.SSS");
-
-	//private RecordFilter actualFilter = new RecordFilter();
 	private Double currentPageSize = 20D;
-	private int currentPage = 0;
 	
 	private Map<String, Boolean> registeredCallbacks = new HashMap<String, Boolean>();
 	private String ownClientID = ClientProperties.getInstance().getProperty("client.id");
@@ -174,6 +147,8 @@ public class RecordRESTController implements IAdaptorCallback {
 	
 	private final String ANSWER_PRACT_FIE = "_PRACT_FIE";
 	private final String ANSWER_ALL_TRIAL = "_ALL_TRIAL";
+	
+	private final String ANSWER_PRACT_SOLUTION = "_PRACT_S";
 		
 	private final String POST_BL_EXT = " BL";
 
@@ -746,7 +721,6 @@ public class RecordRESTController implements IAdaptorCallback {
 			typedQuery.setMaxResults(size);
 			
 			this.currentPageSize = Double.valueOf(size);
-			this.currentPage = page;
 		}
 		List<Record> records = typedQuery.getResultList();
 
@@ -1757,9 +1731,10 @@ public class RecordRESTController implements IAdaptorCallback {
 			@ApiResponse(code = 200, message = "Success", response = Boolean.class),
 			@ApiResponse(code = 400, message = "Bad Request", response = Boolean.class),
 			@ApiResponse(code = 500, message = "Failure", response = Boolean.class) })
+	@Transactional
 	public ResponseEntity<String> uploadBackup(@RequestPart("file") MultipartFile file) {
 		log.info("-->uploadBackup");
-		String fileName = fileStorageService.storeFile("./record", file);
+		String fileName = fileStorageService.storeFile("./", file);
 		
 		if (fileName != null) {
 			try {
@@ -1777,6 +1752,8 @@ public class RecordRESTController implements IAdaptorCallback {
 		log.info("uploadBackup-->");
 		return new ResponseEntity<String>(fileName, HttpStatus.OK);
 	}
+	
+	
 	
 	private String createFilterQuery(HttpSession httpSession) {
 		String query = "";
@@ -1915,8 +1892,8 @@ public class RecordRESTController implements IAdaptorCallback {
 		
 		for (Record record : records) {
 			String cis = "Testbed";
+			String sender = record.getClientId();
 			if (!record.getRecordType().equalsIgnoreCase("LOG") && !record.getRecordType().equalsIgnoreCase("TopicInvite")) {
-				String sender = record.getClientId();
 				int idx = sender.indexOf("--");
 				if (idx > -1) {
 					sender = sender.substring(0, idx);
@@ -1927,8 +1904,6 @@ public class RecordRESTController implements IAdaptorCallback {
 				sender = sender.replaceAll(":", "_");
 								
 				if (record.getRecordType().equalsIgnoreCase("ObserverToolAnswer")) {
-					
-					
 					try {
 						Record specRecord = recordRepo.findObjectById(record.getId());
 						if (specRecord.getRecordJson() != null) {
@@ -1952,6 +1927,9 @@ public class RecordRESTController implements IAdaptorCallback {
 							for (int i = 0; i < size; i++) {
 								JSONObject question = questions.getJSONObject(i);
 								data += "<color:white>* " + question.getString("name") + ": " + question.getString("answer") + " </color>\n";
+								if (question.getString("comment") != null && question.getString("comment").length() > 0) {
+									data += "<color:white> //comment: " + question.getString("comment").replaceAll("\n", " - ") + "//\n";	
+								}
 							}
 						}
 					} catch (Exception e) {
@@ -1998,9 +1976,6 @@ public class RecordRESTController implements IAdaptorCallback {
 					}
 					data += "endrnote\n";
 				} else if (record.getRecordType().equalsIgnoreCase("SessionMgmt")) {
-					
-					//data += "== Initialization ==\n";
-					
 					data += "==";
 					try {
 						Record specRecord = recordRepo.findObjectById(record.getId());
@@ -2012,19 +1987,6 @@ public class RecordRESTController implements IAdaptorCallback {
 						log.error("Error creating the SessionMgmt note!", e);
 					}
 					data += "==\n";
-					
-					/*data += "rnote over TB_TrialMgmt #aqua\n";
-					try {
-						Record specRecord = recordRepo.findObjectById(record.getId());
-						if (specRecord.getRecordJson() != null) {
-							JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
-							data += "Scenario: " + jsonRecord.getString("scenarioName") + "\n";
-							data += "Session: " + jsonRecord.getString("sessionName") + ": " + jsonRecord.getString("sessionState") + "\n";
-						}
-					} catch (Exception e) {
-						log.error("Error creating the SessionMgmt note!", e);
-					}
-					data += "endrnote\n";*/
 				} else if (record.getRecordType().equalsIgnoreCase("RequestStartInject")) {
 					if (participants.indexOf(sender) < 0) {
 						participants += "participant \"" + sender + "\" as " + sender + " #Snow|Tan\n";
@@ -2085,6 +2047,18 @@ public class RecordRESTController implements IAdaptorCallback {
 					data += "deactivate  " + sender + "\n";;
 					data += "end\n";
 				}
+			} else if (record.getRecordType().equalsIgnoreCase("LOG") && record.getMsgType().equalsIgnoreCase("EVAL")) {
+				data += "rnote over " + sender + " #DimGray\n";
+				try {
+					Record specRecord = recordRepo.findObjectById(record.getId());
+					if (specRecord.getRecordJson() != null) {
+						JSONObject jsonRecord = new JSONObject(specRecord.getRecordJson());
+						data += jsonRecord.getString("log") + "\n";
+					}
+				} catch (Exception e) {
+					log.error("Error creating the RolePlayerMessage note!", e);
+				}
+				data += "endrnote\n";
 			}
 		}
 		
