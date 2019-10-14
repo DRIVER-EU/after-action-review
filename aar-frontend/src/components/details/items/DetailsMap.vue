@@ -7,7 +7,7 @@
     </v-layout>
     <v-layout row>
       <v-flex xs12 style="padding-left: 16px;padding-bottom: 32px;">
-        <map-panel :geojson="geojson"></map-panel>
+        <map-panel :geojson="geojson" :info-array="infoArray"></map-panel>
       </v-flex>
     </v-layout>
   </li>
@@ -16,7 +16,7 @@
 <script>
   export default {
     name: 'DetailsMap',
-    props: ['title', 'geojson']
+    props: ['title', 'geojson', 'infoArray']
   };
 </script>
 
