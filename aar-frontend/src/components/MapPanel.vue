@@ -14,7 +14,11 @@
   import GeoJSON from 'ol/format/GeoJSON';
   import Circle from 'ol/geom/Circle';
   import Point from 'ol/geom/Point';
-  import {transformExtent, transform} from 'ol/proj.js';
+  import Polygon from 'ol/geom/Polygon';
+  import Style from 'ol/style/Style';
+  import Stroke from 'ol/style/Stroke';
+  import Fill from 'ol/style/Fill';
+  import {transformExtent} from 'ol/proj.js';
   import {mapStyling} from '../service/MapStylingService';
 
   export default {
@@ -38,6 +42,16 @@
         this.updateFeaturesFromInfoArray();
         this.scaleToFeatures();
       },
+      updateFeaturesFromGeoJson () {
+        if (this.geojson) {
+          const features = new GeoJSON().readFeatures(this.geojson);
+          console.log('Displaying GeoJSON features', features);
+          if (features.length > 0) {
+            features.forEach(f => f.getGeometry().transform('EPSG:4326', 'EPSG:3857'));
+            this.vectorSource.addFeatures(features);
+          }
+        }
+      },
       updateFeaturesFromInfoArray () {
         if (this.infoArray) {
           const features = [];
@@ -56,32 +70,46 @@
           }
         }
       },
-      createFeatureFromInfoArea(area) {
+      createGeometryFromInfoArea(area) {
         if (area.circle) {
           const pointAndRadius = area.circle.split(" ");
+          const point = this.createPoint(pointAndRadius[0]);
           const radius = parseFloat(pointAndRadius[1]);
-          const latAndLon = pointAndRadius[0].split(",");
-          const lat = parseFloat(latAndLon[0]);
-          const lon = parseFloat(latAndLon[1]);
           if (radius > 0) {
-            const geometry = new Circle([lon, lat], pointAndRadius[1] );
-            return new Feature(geometry);
+            return new Circle(point, radius );
           } else {
-            const geometry = new Point([lon, lat]);
-            return new Feature(geometry);
+            return new Point(point);
           }
+        } else if (area.polygon) {
+          const points = area.polygon.split(" ").map(this.createPoint);
+          return new Polygon([points]);
         }
         return null;
       },
-      updateFeaturesFromGeoJson () {
-        if (this.geojson) {
-          const features = new GeoJSON().readFeatures(this.geojson);
-          console.log('Displaying GeoJSON features', features);
-          if (features.length > 0) {
-            features.forEach(f => f.getGeometry().transform('EPSG:4326', 'EPSG:3857'));
-            this.vectorSource.addFeatures(features);
-          }
+      createPoint(coordinates) {
+        const latAndLon = coordinates.split(",");
+        const lat = parseFloat(latAndLon[0]);
+        const lon = parseFloat(latAndLon[1]);
+        return [lon, lat];
+      },
+      createFeatureFromInfoArea(area) {
+        // style: var camelCased = myString.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase(); });
+        // new OpenLayers.Style({strokeColor: "blue",          strokeWidth: 2,          strokeOpacity: 0.8      });
+        // feature.setStyle()
+        const geometry = this.createGeometryFromInfoArea(area);
+        if (geometry) {
+          const feature = new Feature(geometry);
+          const style = this.createStyleFromInfoArea(area);
+          feature.setStyle(style);
+          return feature;
+        } else {
+          return null;
         }
+      },
+      createStyleFromInfoArea(area) {
+        const styleValue = (area.geocode || []).filter(g => g.valueName === "style").map(g => g.value).find(a => true);
+        console.log(area, styleValue);
+        return new Style({stroke: new Stroke({color: '#FF8C00', width: 2})});
       },
       scaleToFeatures() {
         const features = this.vectorSource.getFeatures();
