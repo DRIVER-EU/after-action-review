@@ -85,13 +85,83 @@ class MapStylingService {
     return MapStylingService.INSTANCE;
   }
 
-  constructor() {
+  constructor () {
     this.stylingFunction = this.stylingFunction.bind(this);
   }
 
-  stylingFunction(feature) {
+  stylingFunction (feature) {
     return this.styles[feature.getGeometry().getType()];
   };
+
+  /**
+   * Parses CSS string into a map style.
+   * Supported: stroke:#3366FF;stroke-width:3px;stroke-opacity:1.0;fill:#FF0000;fill-opacity:0.4
+   *
+   * @param cssString string to parse
+   * @returns {Style} map style
+   */
+  createStyleFromCssString (cssString) {
+    const styleMap = this.parseCssStringIntoMap(cssString);
+    const strokeColor = this.createColor(styleMap['stroke'], styleMap['stroke-opacity']) || this.strokeColor;
+    const strokeWidth = this.toInt(styleMap['stroke-width']) || this.strokeWidth;
+    const areaFill = this.createColor(styleMap['fill'], styleMap['fill-opacity']);
+    return new Style({
+      stroke: new Stroke({
+        color: strokeColor,
+        width: strokeWidth
+      }),
+      fill: new Fill({
+        color: areaFill
+      })
+    });
+  };
+
+  createColor (colorBaseString, colorOpacity) {
+    const colorBase = this.parseColor(colorBaseString);
+    if (colorBase) {
+      const opacity = colorOpacity !== null && colorOpacity !== undefined ? parseFloat(colorOpacity) : 1.0;
+      return 'rgba(' + colorBase[0] + ',' + colorBase[1] + ',' + colorBase[2] + ',' + opacity + ')';
+    } else {
+      return null;
+    }
+  }
+
+  toInt (string) {
+    if (string) {
+      return parseInt(string);
+    } else {
+      return null;
+    }
+  }
+
+  parseCssStringIntoMap (cssString) {
+    const styleMap = {};
+    for (const keyValueString of cssString.split(';')) {
+      const keyValue = keyValueString.split(':');
+      if (keyValue.length === 2) {
+        styleMap[keyValue[0]] = keyValue[1];
+      }
+    }
+    return styleMap;
+  };
+
+  parseColor (colorString) {
+    if (colorString) {
+      const body = document.getElementsByTagName('body')[0];
+      const div = document.createElement('div');
+      body.appendChild(div);
+      div.style.color = colorString;
+      const m = getComputedStyle(div).color.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
+      body.removeChild(div);
+      if (m) {
+        return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
 }
 
 const mapStyling = MapStylingService.getInstance();

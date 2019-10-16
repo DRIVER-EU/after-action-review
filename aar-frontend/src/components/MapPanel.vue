@@ -108,8 +108,11 @@
       },
       createStyleFromInfoArea(area) {
         const styleValue = (area.geocode || []).filter(g => g.valueName === "style").map(g => g.value).find(a => true);
-        console.log(area, styleValue);
-        return new Style({stroke: new Stroke({color: '#FF8C00', width: 2})});
+        if (styleValue) {
+          return mapStyling.createStyleFromCssString(styleValue);
+        } else {
+          return null;
+        }
       },
       scaleToFeatures() {
         const features = this.vectorSource.getFeatures();
