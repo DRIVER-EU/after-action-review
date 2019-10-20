@@ -1,6 +1,8 @@
-# admin-tool
+# aar-frontend
 
-> A Vue.js project
+## Icons
+
+See https://material.io/resources/icons/?style=outline or https://www.matblazor.com/Icon
 
 ## Build Setup
 

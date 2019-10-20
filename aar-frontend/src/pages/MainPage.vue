@@ -3,6 +3,32 @@
     <toolbar>
       <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition">
         <v-btn slot="activator">
+          <v-icon left>all_inbox</v-icon>
+          Reports
+        </v-btn>
+        <v-card>
+          <v-list>
+            <v-list-tile @click="downloadReport('FIRST_IMPRESSION')">
+              <v-icon left>inbox</v-icon>
+              First Impression Evaluation
+            </v-list-tile>
+            <v-list-tile @click="downloadReport('BASELINE')">
+              <v-icon left>inbox</v-icon>
+              Baseline Observation
+            </v-list-tile>
+            <v-list-tile @click="downloadReport('INNOVATIONLINE')">
+              <v-icon left>inbox</v-icon>
+              Innovationline Observation
+            </v-list-tile>
+            <v-list-tile @click="downloadReport('OBSERVATIONS')">
+              <v-icon left>inbox</v-icon>
+              Observations
+            </v-list-tile>
+          </v-list>
+        </v-card>
+      </v-menu>
+      <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition">
+        <v-btn slot="activator">
           <v-icon left>bar_chart</v-icon> <!-- insert_chart_outlined -->
           Sequence diagram
         </v-btn>
@@ -101,6 +127,11 @@
       },
       exportData (exportType) {
         fetchService.performSimpleDownload('exportData?exportType=' + exportType);
+      },
+      downloadReport (reportType) {
+        const path = (reportType === 'FIRST_IMPRESSION') ? 'createFIEPDFReport' : 'createPDFStatisticReport';
+        console.log("###", reportType, path);
+        fetchService.performSimpleDownload(path);
       }
     },
     created () {
