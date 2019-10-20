@@ -22,6 +22,7 @@ import 'vuetify-stylus-fixed-table-header/index.styl';
 import DiagramPage from './pages/DiagramPage';
 import MapPanel from './components/MapPanel';
 import RecordDetailsPopup from './components/RecordDetailsPopup';
+import AttachmentPopup from './components/AttachmentPopup';
 
 export const eventBus = new Vue();
 store.eventBus = eventBus;
@@ -63,6 +64,7 @@ Vue.component('vue-load-image', VueLoadImage);
 Vue.component('toolbar', Toolbar);
 Vue.component('timeline-panel', TimelinePanel);
 Vue.component('diagram-page', DiagramPage);
+Vue.component('attachment-popup', AttachmentPopup);
 
 /* eslint-disable no-new */
 new Vue({

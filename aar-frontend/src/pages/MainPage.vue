@@ -62,6 +62,7 @@
       </v-snackbar>
     </main>
     <diagram-popup/>
+    <attachment-popup/>
   </v-app>
 </template>
 <script>

@@ -7,7 +7,8 @@
       <v-flex xs8>
         <ul class="attachments">
           <li v-for="item in value">
-            <a :href="'/AARService/downloadAttachment?filename=' + item.name">{{ item.name }}</a>
+            <a v-if="isImage(item.name)" @click="openImagePopup(item.name)">{{ item.name }}</a>
+            <a v-else :href="getDownloadUrl(item.name)">{{ item.name }}</a>
           </li>
         </ul>
       </v-flex>
@@ -16,9 +17,24 @@
 </template>
 
 <script>
+  import EventName from '../../../constants/EventName';
+  import Urls from '../../../constants/Urls';
+
   export default {
     name: 'DetailsAttachments',
-    props: ['title', 'value']
+    props: ['title', 'value'],
+    methods: {
+      isImage(fileName) {
+        const lowerFileName = fileName.toLowerCase();
+        return lowerFileName.endsWith(".png") || lowerFileName.endsWith(".jpg") || lowerFileName.endsWith(".jpeg") || lowerFileName.endsWith(".gif");
+      },
+      openImagePopup (fileName) {
+        eventBus.$emit(EventName.ATTACHMENT_POPUP, {open: true, fileName: fileName});
+      },
+      getDownloadUrl(fileName) {
+        return Urls.HTTP_BASE + '/downloadAttachment?filename=' + fileName;
+      }
+    }
   };
 </script>
 
