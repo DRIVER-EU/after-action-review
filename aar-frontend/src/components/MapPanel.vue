@@ -57,10 +57,13 @@
           const features = [];
           console.log('Displaying info array features');
           for (const info of this.infoArray) {
-            for (const area of info.area) {
-              const feature = this.createFeatureFromInfoArea(area);
-              if (feature) {
-                features.push(feature);
+            if (info.area) {
+              const items = Array.isArray(info.area) ? info.area : [info.area];
+              for (const area of items) {
+                const feature = this.createFeatureFromInfoArea(area);
+                if (feature) {
+                  features.push(feature);
+                }
               }
             }
           }
