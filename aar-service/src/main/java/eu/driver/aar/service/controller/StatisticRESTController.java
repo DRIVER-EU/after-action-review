@@ -8,8 +8,14 @@ import io.swagger.annotations.ApiResponses;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -46,7 +52,9 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.chart.util.ShapeList;
 import org.jfree.chart.util.ShapeUtils;
 import org.jfree.data.category.DefaultCategoryDataset;
@@ -82,6 +90,7 @@ import eu.driver.aar.service.objects.fie.Rating;
 import eu.driver.aar.service.repository.RecordRepository;
 import eu.driver.aar.service.repository.TrialRepository;
 import eu.driver.aar.service.utils.pdf.MultiLine;
+import eu.driver.aar.service.utils.pdf.XYVectorizedRenderer;
 
 @RestController
 public class StatisticRESTController {
@@ -509,7 +518,12 @@ public class StatisticRESTController {
 		Map<Integer, String> questionMap = new HashMap<Integer, String>();
 		Map<String, Integer> obsCountMap = new HashMap<String, Integer>();
 		
-		List<Record> records = recordRepo.findObjectsByRecordType("ObserverToolAnswer");
+		List<Record> records = null;
+		if (runType == null) {
+			records = recordRepo.findObjectsByRecordType("ObserverToolAnswer");	
+		} else {
+			records = recordRepo.findObjectsByRecordTypeAndRunType("ObserverToolAnswer", runType);
+		}
 		
 		for (Record record : records) {
 			try {
@@ -713,7 +727,7 @@ public class StatisticRESTController {
 			List<String> comments,
 			String question,
 			Integer answerId) {
-		PDPage page = new PDPage(new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()));
+		PDPage page = new PDPage(new PDRectangle(PDRectangle.A4.getWidth(), PDRectangle.A4.getHeight()));
 		document.addPage(page);
 		float height = page.getMediaBox().getHeight();
 		float width = page.getMediaBox().getWidth();
@@ -846,27 +860,27 @@ public class StatisticRESTController {
 			    numberaxis1.setLowerBound(0.0);                 
 			    numberaxis1.setUpperBound(10.0);
 		      
-				XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer( );
-				renderer.setSeriesShape(0, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
-				renderer.setSeriesPaint(0, new Color(255, 178, 102) );
-				renderer.setSeriesStroke(0, new BasicStroke( 4.0f ) );
-
+			    XYVectorizedRenderer renderer = new XYVectorizedRenderer( );
 				renderer.setSeriesShape(1, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
+				renderer.setSeriesPaint(1, new Color(255, 178, 102) );
+				renderer.setSeriesStroke(1, new BasicStroke( 4.0f ) );
+
 				renderer.setSeriesShape(2, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
-				renderer.setSeriesShapesVisible(2, false);
-				renderer.setSeriesStroke( 1 , new BasicStroke( 4.0f ) );
-				renderer.setSeriesStroke( 2 , new BasicStroke( 3.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND ) );
+				renderer.setSeriesShape(0, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
+				renderer.setSeriesShapesVisible(0, false);
+				renderer.setSeriesStroke( 2 , new BasicStroke( 4.0f ) );
+				renderer.setSeriesStroke( 0 , new BasicStroke( 3.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND ) );
 				
 				// check the change
 				if ((blEffAvr > ilEffAvr && blResAvr <= ilResAvr) || (blEffAvr >= ilEffAvr && blResAvr < ilResAvr)) {
-					renderer.setSeriesPaint( 1 , new Color(0, 102, 0) );
 					renderer.setSeriesPaint( 2 , new Color(0, 102, 0) );
+					renderer.setSeriesPaint( 0 , new Color(0, 102, 0) );
 				} else if (blEffAvr < ilEffAvr && blResAvr < ilResAvr) {
-					renderer.setSeriesPaint( 1 , new Color(160, 160, 160) );
 					renderer.setSeriesPaint( 2 , new Color(160, 160, 160) );
+					renderer.setSeriesPaint( 0 , new Color(160, 160, 160) );
 				} else {
-					renderer.setSeriesPaint( 1 , new Color(204, 0, 0) );
 					renderer.setSeriesPaint( 2 , new Color(204, 0, 0) );
+					renderer.setSeriesPaint( 0 , new Color(204, 0, 0) );
 				}
 				
 				plot.setRenderer( renderer );
@@ -994,27 +1008,26 @@ public class StatisticRESTController {
 	
 	private PDPage getPage(PDDocument document, PDPage currentPage, float minHeight, float currentY) {
 		if (currentY <= minHeight) {
-			return new PDPage(new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()));
+			return new PDPage(new PDRectangle(PDRectangle.A4.getWidth(), PDRectangle.A4.getHeight()));
 		} 
 		return currentPage;
 	}
 	
 	private XYDataset createCategoryDataset(Category category ) {
-	      final XYSeries base = new XYSeries( "Baseline" );          
-	      base.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );          
-	      
-	      final XYSeries innovation = new XYSeries( "Innovationline" );          
-	      innovation.add( category.getInnovationRating().getEffortAvr() , category.getInnovationRating().getResultAvr());
-	      
-	      final XYSeries change = new XYSeries( "Change" ); 
-	      change.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );    
-	      change.add( category.getInnovationRating().getEffortAvr() , category.getInnovationRating().getResultAvr());
-	      
-	      final XYSeriesCollection dataset = new XYSeriesCollection( );          
-	      dataset.addSeries( base );          
-	      dataset.addSeries( innovation );  
-	      dataset.addSeries( change );    
-	      return dataset;
-	   }
-
+      final XYSeries base = new XYSeries( "Baseline" );          
+      base.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );          
+      
+      final XYSeries innovation = new XYSeries( "Innovationline" );          
+      innovation.add( category.getInnovationRating().getEffortAvr() , category.getInnovationRating().getResultAvr());
+      
+      final XYSeries change = new XYSeries( "Change" ); 
+      change.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );    
+      change.add( category.getInnovationRating().getEffortAvr() , category.getInnovationRating().getResultAvr());
+      
+      final XYSeriesCollection dataset = new XYSeriesCollection( );          
+      dataset.addSeries( change );
+      dataset.addSeries( base );          
+      dataset.addSeries( innovation );  
+      return dataset;
+   }
 }
