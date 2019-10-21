@@ -538,8 +538,8 @@ public class RecordRESTController implements IAdaptorCallback {
 				record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
 			} else if (observer.indexOf(ANSWER_PRACT_FIE) != -1) {
 				record.setRunType(AARConstants.RECORD_RUN_TYPE_FIE);
-			} else {
-				record.setRunType(AARConstants.RECORD_RUN_TYPE_IN);
+			} else if (observer.indexOf(ANSWER_PRACT_SOLUTION) != -1) {
+				record.setRunType(AARConstants.RECORD_RUN_TYPE_SOLUTIOND);
 			}
 		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("RequestStartInject")) {
 			eu.driver.model.sim.request.RequestStartInject msg = (eu.driver.model.sim.request.RequestStartInject) SpecificData
@@ -588,7 +588,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				record = recordRepo.saveAndFlush(record);
 				WSRecordNotification notification = new WSRecordNotification(
 						record.getId(), record.getClientId(),
-						record.getTopic(), record.getCreateDate(),
+						record.getTopic(), /*record.getCreateDate()*/ new Date(),
 						record.getRecordType(), record.getHeadline(), record.getMsgType(), record.getRunType(), null, null);
 				
 				WSController.getInstance().sendMessage(

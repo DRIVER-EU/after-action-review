@@ -15,6 +15,7 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
 	public final static String ID_QUERY = "SELECT u FROM Record u where u.id=:objectId";
 	public final static String COUNT_WITHOUT_LOG = "SELECT COUNT(u) FROM Record u WHERE u.recordType != 'Log'";
 	public final static String QUERY_ALL_BY_RECORD_TYPE = "SELECT u FROM Record u where u.recordType=:recordType";
+	public final static String QUERY_ALL_BY_RECORD_TYPE_RUN_TYPE = "SELECT u FROM Record u where u.recordType=:recordType AND u.runType=:runType";
 	
 	@Query(ID_QUERY)
     public Record findObjectById(@Param("objectId") Long objectId);
@@ -24,4 +25,7 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
 	
 	@Query(QUERY_ALL_BY_RECORD_TYPE)
     public List<Record> findObjectsByRecordType(@Param("recordType") String recordType);
+	
+	@Query(QUERY_ALL_BY_RECORD_TYPE_RUN_TYPE)
+    public List<Record> findObjectsByRecordTypeAndRunType(@Param("recordType") String recordType, @Param("runType") String runType);
 }
