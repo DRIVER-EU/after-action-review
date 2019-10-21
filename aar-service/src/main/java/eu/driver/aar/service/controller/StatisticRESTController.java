@@ -169,7 +169,7 @@ public class StatisticRESTController {
 			@ApiResponse(code = 400, message = "Bad Request", response = byte[].class),
 			@ApiResponse(code = 500, message = "Failure", response = byte[].class) })
 	public ResponseEntity<byte[]> createPDFStatisticReport(@QueryParam("runType")String runType, @QueryParam("pieType")String pieType) {
-		log.info("-->createStatistic");
+		log.info("-->createPDFStatisticReport: " + runType);
 		byte[] fileContent = null;
 		
 		if(Files.exists(Paths.get("./report.pdf"))) {
@@ -180,7 +180,7 @@ public class StatisticRESTController {
 				fileContent = "Could not delete the old report file, new report was not generated!".getBytes();
 				HttpHeaders headers = new HttpHeaders();
 				headers.setContentType(MediaType.TEXT_HTML);
-			    log.info("createStatistic-->");
+			    log.info("createPDFStatisticReport-->");
 			    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		}
@@ -191,7 +191,7 @@ public class StatisticRESTController {
 			fileContent = e.getMessage().getBytes();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.TEXT_HTML);
-		    log.info("createStatistic-->");
+		    log.info("createPDFStatisticReport-->");
 		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
@@ -219,7 +219,7 @@ public class StatisticRESTController {
 			fileContent = "Could not write the report file!".getBytes();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.TEXT_HTML);
-		    log.info("createStatistic-->");
+		    log.info("createPDFStatisticReport-->");
 		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
@@ -231,7 +231,7 @@ public class StatisticRESTController {
 			fileContent = "Report file could not be found!".getBytes();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.TEXT_HTML);
-		    log.info("createStatistic-->");
+		    log.info("createPDFStatisticReport-->");
 		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
@@ -239,7 +239,7 @@ public class StatisticRESTController {
 		headers.setContentType(MediaType.APPLICATION_PDF);
 		headers.setContentDispositionFormData("attachment", "report.pdf"); 
 	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
-	    log.info("createStatistic-->");
+	    log.info("createPDFStatisticReport-->");
 	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
 	}
 	
@@ -283,7 +283,7 @@ public class StatisticRESTController {
 			fileContent = "Could not load the actual trial information!".getBytes();
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.TEXT_HTML);
-		    log.info("createStatistic-->");
+		    log.info("createFIEPDFReport-->");
 		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		

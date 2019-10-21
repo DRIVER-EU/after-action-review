@@ -225,7 +225,7 @@ public class RecordRESTController implements IAdaptorCallback {
 					CISAdapter.getInstance().addCallback(this, receiverTopicName);
 					registeredCallbacks.put(receiverTopicName, true);
 				}
-			} else if (subscribeAllowed) {
+			} else if (subscribeAllowed && !ownClientID.equalsIgnoreCase(clientId + "-Backup")) {
 				String trialId = "unknown";
 				TopicReceiver topicReceiver = topicReceiverRepo
 						.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
