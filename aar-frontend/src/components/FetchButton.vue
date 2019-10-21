@@ -1,5 +1,5 @@
 <template>
-  <v-btn @click.prevent="performDownload()" :class="className">
+  <v-btn @click.prevent="performDownload()" :class="className" :disabled="loading">
     <div v-if="loading" style="display:inline;margin-right:16px;width:24px;height:24px;">
       <v-progress-circular indeterminate="true" size="18" width="2"></v-progress-circular>
     </div>

@@ -45,9 +45,9 @@
           </v-list>
         </v-card>
       </v-menu>
-      <fetch-button url="/analyseRecords" className="diagramButton" icon="rotate_right">
+      <fetch-button-group className="diagramButton" icon="rotate_right" :buttons="[{title:'Analyse records', icon: 'rotate_right', url:'/analyseRecords'}, {title:'Finish trial', icon: 'rotate_right', url:'/finishUpTheTrial'}]">
         Post-Process
-      </fetch-button>
+      </fetch-button-group>
       <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition">
         <v-btn slot="activator">
           <v-icon left>save_alt</v-icon>
@@ -97,10 +97,11 @@
   import {fetchService} from '../service/FetchService';
   import Urls from '../constants/Urls';
   import FetchButton from '../components/FetchButton';
+  import FetchButtonGroup from '../components/FetchButtonGroup';
 
   export default {
     name: 'MainPage',
-    components: {FetchButton},
+    components: {FetchButton, FetchButtonGroup},
     data: () => ({
       exportDataItems: [
         {exportType: 'CSV', title: 'CSV'},
