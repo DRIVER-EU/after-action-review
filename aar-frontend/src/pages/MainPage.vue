@@ -45,10 +45,9 @@
           </v-list>
         </v-card>
       </v-menu>
-      <v-btn @click.prevent="analyseRecords()" class="diagramButton">
-        <v-icon left>rotate_right</v-icon>
+      <fetch-button url="/analyseRecords" className="diagramButton" icon="rotate_right">
         Post-Process
-      </v-btn>
+      </fetch-button>
       <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition">
         <v-btn slot="activator">
           <v-icon left>save_alt</v-icon>
@@ -97,9 +96,11 @@
   import EventName from '../constants/EventName';
   import {fetchService} from '../service/FetchService';
   import Urls from '../constants/Urls';
+  import FetchButton from '../components/FetchButton';
 
   export default {
     name: 'MainPage',
+    components: {FetchButton},
     data: () => ({
       exportDataItems: [
         {exportType: 'CSV', title: 'CSV'},
@@ -130,7 +131,6 @@
       },
       downloadReport (reportType) {
         const path = (reportType === 'FIRST_IMPRESSION') ? 'createFIEPDFReport' : 'createPDFStatisticReport';
-        console.log("###", reportType, path);
         fetchService.performSimpleDownload(path);
       }
     },
