@@ -24,6 +24,14 @@
               <v-icon left>inbox</v-icon>
               Observations
             </v-list-tile>
+            <v-list-tile @click="downloadReport('TRIAL_DIMENSION')">
+              <v-icon left>inbox</v-icon>
+              Trial dimension
+            </v-list-tile>
+            <v-list-tile @click="downloadReport('SOLUTION_DIMENSION')">
+              <v-icon left>inbox</v-icon>
+              Solution dimension
+            </v-list-tile>
           </v-list>
         </v-card>
       </v-menu>
@@ -131,8 +139,27 @@
         fetchService.performSimpleDownload('exportData?exportType=' + exportType);
       },
       downloadReport (reportType) {
-        const path = (reportType === 'FIRST_IMPRESSION') ? 'createFIEPDFReport' : 'createPDFStatisticReport';
+        const path = this.getReportPath(reportType);
+        console.log("Downloading report from " + path);
         fetchService.performSimpleDownload(path);
+      },
+      getReportPath(reportType) {
+        switch (reportType) {
+          case "FIRST_IMPRESSION":
+            return "createFIEPDFReport";
+          case "BASELINE":
+            return "createPDFStatisticReport?runType=Baseline";
+          case "INNOVATIONLINE":
+            return "createPDFStatisticReport?runType=Innovationline";
+          case "OBSERVATIONS":
+            return "createPDFStatisticReport";
+          case "TRIAL_DIMENSION":
+            return "createPDFStatisticReport?runType=TrialDimension";
+          case "SOLUTION_DIMENSION":
+            return "createPDFStatisticReport?runType=SolutionDimension";
+          default:
+            throw "Unsupported report type " + reportType;
+        }
       }
     },
     created () {
