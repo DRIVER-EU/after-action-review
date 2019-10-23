@@ -109,9 +109,11 @@ public class XYVectorizedRenderer extends XYLineAndShapeRenderer {
 		double dyy = (pxy1 - pxy0);
 		
 		double angle = 0.0;
-		if(dxx != 0.0) {
+		if (dxx != 0.0 && dxx < 0 /*&& dyy < 0*/) {
+			angle = - Math.PI / 2.0 - Math.atan(dyy / dxx);
+		} else if(dxx != 0.0) {
 			angle = Math.PI / 2.0 - Math.atan(dyy / dxx);
-		}
+		} 
 		
 		// V2 : Draw arrow shape with fixed size instead of line path
 		int arrowHeight = 12;

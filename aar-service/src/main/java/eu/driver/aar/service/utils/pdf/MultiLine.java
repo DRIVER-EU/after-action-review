@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
@@ -25,7 +26,8 @@ public class MultiLine {
 	 * @throws IOException
 	 */
 	public static float drawMultiLineText(String text, float x, float y, int allowedWidth, PDPage page, PDPageContentStream contentStream, PDFont font, int fontSize, Color fontColor) throws IOException {
-	    List<String> lines = new ArrayList<String>();
+		text = text.replace('\u00A0',' ');
+		List<String> lines = new ArrayList<String>();
 	    String myLine = "";
 	    String[] words = text.split(" ");
 	    for(String word : words) {
