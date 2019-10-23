@@ -7,24 +7,28 @@ class FetchService {
     return FetchService.INSTANCE;
   }
 
-  performPost(url, data) {
-    return this.getAxios().post(url, data);
+  performPost (url, data) {
+    // POST does not work correctly with withCredentials, needs to go via "request" instead, see https://github.com/axios/axios/issues/876
+    return this.getAxios().request({url: url, method: 'post', withCredentials: true, data: data});
   }
 
-  performGet(url) {
-    return this.getAxios().get(url);
+  performGet (url) {
+    return this.getAxios().get(url, {withCredentials: true}); // , {withCredentials: true}
   }
 
-  performGetBase64(url) {
-    return this.getAxios().get(url, {responseType: 'arraybuffer'}).then(response => Buffer.from(response.data, 'binary').toString('base64'))
+  performGetBase64 (url) {
+    return this.getAxios().get(url, {
+      responseType: 'arraybuffer',
+      withCredentials: true
+    }).then(response => Buffer.from(response.data, 'binary').toString('base64'));
   }
 
-  performSimpleDownload(url) {
+  performSimpleDownload (url) {
     const baseUrl = this.getAxios().defaults.baseURL;
-    window.open(baseUrl + "/" + url, '_blank');
+    window.open(baseUrl + '/' + url, '_blank');
   }
 
-  getAxios() {
+  getAxios () {
     return store.axios;
   }
 }

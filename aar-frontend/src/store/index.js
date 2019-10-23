@@ -9,6 +9,7 @@ import FilterOption from '../constants/FilterOption';
 import Settings from '../constants/Settings';
 import RecordType from '../constants/RecordType';
 import LogLevel from '../constants/LogLevel';
+import {fetchService} from '../service/FetchService';
 
 Vue.use(Vuex);
 
@@ -154,46 +155,46 @@ export const store = new Vuex.Store({
   },
   actions: {
     getFilterOptions(context) {
-      this.axios.get('getRecordTypes').then(response => {
+      fetchService.performGet('getRecordTypes').then(response => {
         context.commit('GET_RECORD_TYPES', (response.data));
       }).catch(ex => console.log(ex));
-      this.axios.get('getTopicNames').then(response => {
+      fetchService.performGet('getTopicNames').then(response => {
         context.commit('GET_TOPIC_NAMES', (response.data));
       }).catch(ex => console.log(ex));
-      this.axios.get('getSenderClientIds').then(response => {
+      fetchService.performGet('getSenderClientIds').then(response => {
         context.commit('GET_CLIENT_IDS', (response.data));
       }).catch(ex => console.log(ex));
-      this.axios.get('getReceiverClientIds').then(response => {
+      fetchService.performGet('getReceiverClientIds').then(response => {
         context.commit('GET_CLIENT_IDS', (response.data));
       }).catch(ex => console.log(ex));
-      this.axios.get('getRunTypes').then(response => {
+      fetchService.performGet('getRunTypes').then(response => {
         context.commit('GET_RUN_TYPES', (response.data));
       }).catch(ex => console.log(ex));
-      this.axios.get('getMsgTypes').then(response => {
+      fetchService.performGet('getMsgTypes').then(response => {
         context.commit('GET_MSG_TYPES', (response.data));
       }).catch(ex => console.log(ex));
       //context.commit('GET_MSG_TYPES', ["Info", "Warn", "Error", "Ack"]);
     },
     getRecord (context, payload) {
-      this.axios.get('getRecord/' + payload.id).then(response => {
+      fetchService.performGet('getRecord/' + payload.id).then(response => {
         context.commit('GET_RECORD', (response.data));
       }).catch(ex => console.log(ex));
     },
     getPageCount (context) {
-      this.axios.get('getPageCount').then(response => {
+      fetchService.performGet('getPageCount').then(response => {
         context.commit('GET_RECORDS_PAGE_COUNT', (response.data));
       }).catch(ex => console.log(ex));
     },
     getRecords (context, payload) {
       const page = payload ? payload.page : null;
       const url = page ? 'getAllRecords?size=' + Settings.PAGE_SIZE + "&page=" + page : 'getAllRecords';
-      this.axios.get(url).then(response => {
+      fetchService.performGet(url).then(response => {
         console.log('/getAllRecords returned count', response.data.length);
         context.commit('GET_RECORDS', (response.data));
       }).catch(ex => console.log(ex));
     },
     getAllTimelineRecords (context) {
-      this.axios.get('getAllTimelineRecords').then(response => {
+      fetchService.performGet('getAllTimelineRecords').then(response => {
         let list = response.data;
         if (environment.isLocalDevelopment()) {
           list = list.slice(0, Math.min(list.length - 1, 300)); // FIXME: limits number of timeline items to 300
@@ -202,7 +203,7 @@ export const store = new Vuex.Store({
       }).catch(ex => console.log(ex));
     },
     getActualTrial (context) {
-      this.axios.get('getActualTrial').then(response => {
+      fetchService.performGet('getActualTrial').then(response => {
         context.commit('GET_ACTUAL_TRIAL', (response.data));
       }).catch(ex => console.log(ex));
     }
