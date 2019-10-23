@@ -1,7 +1,13 @@
 <template>
   <v-flex>
     <v-card v-show="!hideTitle" class="detailsPanel">
-      <v-card-title class="justify-center primary--text">Details</v-card-title>
+      <v-card-title class="justify-space-between primary--text">
+        <v-btn icon @click.prevent="toggleWidth">
+          <v-icon>{{ this.isWide ? 'keyboard_arrow_right' : 'keyboard_arrow_left' }}</v-icon>
+        </v-btn>
+        Details
+        <div></div>
+      </v-card-title>
       <v-card-text v-if="!record.recordData" class="text-xs-center">Choose an entry from the list to show it's details.</v-card-text>
       <v-card-text v-else>
         <component :is="currentComponent" v-bind="currentProperties"></component>
@@ -33,9 +39,11 @@
     components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FeatureCollectionDetails, FallbackDetails, RolePlayerMessageDetails,
       ObserverToolAnswerDetails, SessionMgmtDetails, PhaseMessageDetails},
     name: 'DetailsPanel',
-    props: ['hideTitle'],
+    props: ['hideTitle', 'onWidthChange'],
     data: function () {
-      return {};
+      return {
+        isWide: false
+      };
     },
     computed: {
       record: function () {
@@ -69,6 +77,13 @@
       },
       currentProperties() {
         return { recordID: this.record.id, record: this.record };
+      }
+    },
+    methods: {
+      toggleWidth() {
+        const newWidth = this.isWide ? 400 : 800;
+        this.isWide = !this.isWide;
+        this.onWidthChange(newWidth);
       }
     },
     created: function () {

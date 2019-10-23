@@ -75,11 +75,11 @@
       <v-layout column justify-space-between fill-height>
         <div style="position:absolute;top:64px;bottom:300px;left:0px;right:0px;">
           <v-layout row wrap fill-height>
-            <div style="position:absolute;top:0px;bottom:0px;left:0px;right:400px;">
+            <div ref="mainFrame" style="position:absolute;top:0px;bottom:0px;left:0px;right:400px;">
               <records-table style="height: 100%; overflow: auto;"/>
             </div>
-            <div style="position:absolute;top:0px;bottom:0px;right:0px;width:400px;">
-              <details-panel style="height: 100%; overflow: auto;"/>
+            <div ref="detailsFrame" style="position:absolute;top:0px;bottom:0px;right:0px;width:400px;">
+              <details-panel style="height: 100%; overflow: auto;" :onWidthChange="setDetailsWidth"/>
             </div>
           </v-layout>
         </div>
@@ -160,6 +160,12 @@
           default:
             throw "Unsupported report type " + reportType;
         }
+      },
+      setDetailsWidth(width) {
+        const mainFrame = this.$refs.mainFrame;
+        const detailsFrame = this.$refs.detailsFrame;
+        mainFrame.style.right = width + "px";
+        detailsFrame.style.width = width + "px";
       }
     },
     created () {
