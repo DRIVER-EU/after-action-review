@@ -5,7 +5,7 @@
 
 	<groupId>driver.eu</groupId>
 	<artifactId>aar-tool</artifactId>
-	<version>1.2.33</version>
+	<version>1.2.34</version>
 	<packaging>pom</packaging>
 	
 	<name>DRIVER+ AARTool</name>

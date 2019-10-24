@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>driver.eu</groupId>
 		<artifactId>aar-tool</artifactId>
-		<version>1.2.33</version>
+		<version>1.2.34</version>
 	</parent>
 	
 	<name>DRIVER+ AAR Tool Frontend</name>
