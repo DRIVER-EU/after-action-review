@@ -23,7 +23,7 @@
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
-				<version>1.5</version>
+				<version>1.8.0</version>
 				<executions>
 					<!-- Install our node and npm version to run npm/node scripts-->
 					<execution>
@@ -32,8 +32,8 @@
 							<goal>install-node-and-npm</goal>
 						</goals>
 						<configuration>
-							<nodeVersion>v8.9.1</nodeVersion>
-							<npmVersion>5.5.1</npmVersion>
+							<nodeVersion>v12.13.0</nodeVersion>
+							<npmVersion>6.12.0</npmVersion>
 							<nodeDownloadRoot>https://nodejs.org/dist/</nodeDownloadRoot>
 							<npmDownloadRoot>http://registry.npmjs.org/npm/-/</npmDownloadRoot>
 						</configuration>
