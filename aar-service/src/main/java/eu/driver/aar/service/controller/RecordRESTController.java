@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileAttribute;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -1758,7 +1759,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	@Transactional
 	public ResponseEntity<String> uploadBackup(@RequestPart("file") MultipartFile file) {
 		log.info("-->uploadBackup");
-		String fileName = fileStorageService.storeFile("./", file);
+		String fileName = fileStorageService.storeFile("./record", file);
 		
 		if (fileName != null) {
 			try {
@@ -2187,6 +2188,13 @@ public class RecordRESTController implements IAdaptorCallback {
             while (entry != null) {
                 Path filePath = Paths.get(unzipLocation, entry.getName());
                 if (!entry.isDirectory()) {
+                	// create the DIR structure
+                	String strPath = filePath.toString();
+                	int idx = strPath.lastIndexOf("\\");
+                	Files.createDirectories(Paths.get(strPath.substring(0, idx)));
+                	File file = new File(strPath);
+                	file.createNewFile();
+                	//Files.createFile(filePath);
                     unzipFiles(zipInputStream, filePath);
                 } else {
                     Files.createDirectories(filePath);
@@ -2200,7 +2208,7 @@ public class RecordRESTController implements IAdaptorCallback {
 
 	private void unzipFiles(final ZipInputStream zipInputStream, final Path unzipFilePath) throws IOException {
 
-        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(unzipFilePath.toAbsolutePath().toString()))) {
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(unzipFilePath.toAbsolutePath().toString(), false))) {
             byte[] bytesIn = new byte[1024];
             int read = 0;
             while ((read = zipInputStream.read(bytesIn)) != -1) {

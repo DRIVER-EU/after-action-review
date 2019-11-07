@@ -936,19 +936,19 @@ public class StatisticRESTController {
 				    OutputStream out = new FileOutputStream("./charts/graph.png");
 				    ChartUtils.writeChartAsPNG(out,
 				    		xylineChart,
-				    		470,
-				    		250);
+				    		350,
+				    		350);
 				    out.close();
 				} catch (IOException ex) {
 				    log.error(ex);
 				}
 			
 				PDImageXObject pdImage = PDImageXObject.createFromFile("./charts/graph.png",document);
-				contentStream.drawImage(pdImage, 20, endY-260, 470, 250);
+				contentStream.drawImage(pdImage, 40, endY-360,350, 350);
 			} catch (Exception e) {
 				log.error("Error creating the graph!", e);
 			}
-			endY-=260;
+			endY-=360;
 			
 			// Detailed result
 			endY = MultiLine.drawMultiLineText(paragrahNumber + ".4) The Result in Details:",
