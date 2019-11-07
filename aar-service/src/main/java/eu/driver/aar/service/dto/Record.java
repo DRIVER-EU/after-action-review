@@ -216,6 +216,18 @@ public class Record {
 	public void addAttachment(Attachment file) {
 		this.attachments.add(file);
 	}
+	
+	public boolean existsAttachment(String name) {
+		boolean exist = false;
+		
+		for(Attachment attachment : this.attachments) {
+			if(attachment.getName().equalsIgnoreCase(name)) {
+				exist = true;
+			}
+		}
+		
+		return exist;
+	}
 
 	public String createBackupString(String backupType) {
     	StringBuffer backupBuffer = new StringBuffer();

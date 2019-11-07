@@ -8,14 +8,8 @@ import io.swagger.annotations.ApiResponses;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
+import java.awt.Font;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,12 +20,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -52,11 +49,8 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYItemRendererState;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.title.LegendTitle;
 import org.jfree.chart.ui.RectangleEdge;
-import org.jfree.chart.util.ShapeList;
-import org.jfree.chart.util.ShapeUtils;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.general.PieDataset;
@@ -77,7 +71,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import be.quodlibet.boxable.Paragraph;
 import be.quodlibet.boxable.utils.PDStreamUtils;
 import eu.driver.aar.service.constants.AARConstants;
 import eu.driver.aar.service.constants.CategoryMapper;
@@ -97,6 +90,8 @@ public class StatisticRESTController {
 	
 	private static final String DEFAULT_FORMAT = "0.###";
     private static final NumberFormat FORMATTER = new DecimalFormat(DEFAULT_FORMAT);
+    
+    private SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
 	
 	private Logger log = Logger.getLogger(this.getClass());
 	
@@ -303,6 +298,10 @@ public class StatisticRESTController {
 			try {
 				JSONObject recordJson = new JSONObject(record.getRecordJson());
 				
+				Long sendWhen = recordJson.getLong("timeWhen");
+				Date sendDateWhen = new Date(sendWhen);
+				String key = format.format(sendDateWhen);
+				
 				JSONArray questions = recordJson.getJSONArray("questions");
 				int count = questions.length();
 				for (int i = 0; i < count; i++) {
@@ -342,7 +341,7 @@ public class StatisticRESTController {
 										}
 									}
 								} else {
-									catRating = category.getInnovationRating();
+									catRating = category.getInnovationRating(key);
 									if (axis.equalsIgnoreCase("E")) {
 										catRating.addEffortRating(rating);
 										if (category.getInnovationlineEffortQuestion() == null) {
@@ -476,7 +475,7 @@ public class StatisticRESTController {
 		ChartMapObjects returnObjects = this.createChartAndCommentsMaps(runType, pieType);
 		Map<Integer, Map<String, Integer>> answerMapMap = returnObjects.getAnswerMapMap();
 		Map<Integer, List<String>> commentsMap = returnObjects.getCommentsMap();
-		Map<Integer, String> questionMap = returnObjects.getQuestionMap();
+		//Map<Integer, String> questionMap = returnObjects.getQuestionMap();
 		
 		if (returnObjects != null) {
 			answerMapMap.forEach((answerId,answerCountMap)->{
@@ -682,7 +681,7 @@ public class StatisticRESTController {
 		PDPage page = new PDPage(new PDRectangle(PDRectangle.A4.getWidth(), PDRectangle.A4.getHeight()));
 		document.addPage(page);
 		float height = page.getMediaBox().getHeight();
-		float width = page.getMediaBox().getWidth();
+		//float width = page.getMediaBox().getWidth();
 		int totalCount = 0;
 		
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset( );
@@ -702,12 +701,14 @@ public class StatisticRESTController {
 		chart.removeLegend();
 		
 		try {
-		    OutputStream out = new FileOutputStream("./charts/obs_count_overview.png");
-		    ChartUtils.writeChartAsPNG(out,
-		    		chart,
-		    		600,
-		    		obsCountMap.size()*30);
-		    out.close();
+		    if (obsCountMap.size() >= 1) {
+				OutputStream out = new FileOutputStream("./charts/obs_count_overview.png");
+			    ChartUtils.writeChartAsPNG(out,
+			    		chart,
+			    		600,
+			    		obsCountMap.size()*30);
+			    out.close();
+		    }
 		} catch (IOException ex) {
 		    log.error(ex);
 		}
@@ -715,12 +716,14 @@ public class StatisticRESTController {
 		PDPageContentStream contents = null;
 		try {
 			contents = new PDPageContentStream(document, page);
-			float endY = MultiLine.drawMultiLineText(paragrahNumber + ".) Overview of recorded Observations",
+			float endY = MultiLine.drawMultiLineText(paragrahNumber + ") Overview of recorded Observations",
 					20, height-40, 500, page, contents, PDType1Font.TIMES_BOLD, 20, new Color(0, 72, 126));
 			endY = MultiLine.drawMultiLineText(obsCountMap.size() + " Observer reported " + totalCount + " answers.",
 					30, endY-5, 500, page, contents, PDType1Font.TIMES_ROMAN, 16, new Color(0, 0, 0));
-		    PDImageXObject pdImage = PDImageXObject.createFromFile("./charts/obs_count_overview.png",document);
-		    contents.drawImage(pdImage, 20, endY-655, 520, 650);
+			if (obsCountMap.size() >= 1) {
+				PDImageXObject pdImage = PDImageXObject.createFromFile("./charts/obs_count_overview.png",document);
+				contents.drawImage(pdImage, 20, endY-655, 520, 650);
+			}
 		    
 		    endY = MultiLine.drawMultiLineText("Observation answers overview",
 					250, endY-660, 500, page, contents, PDType1Font.TIMES_ITALIC, 8, new Color(0, 0, 0));
@@ -745,7 +748,7 @@ public class StatisticRESTController {
 		PDPage page = new PDPage(new PDRectangle(PDRectangle.A4.getWidth(), PDRectangle.A4.getHeight()));
 		document.addPage(page);
 		float height = page.getMediaBox().getHeight();
-		float width = page.getMediaBox().getWidth();
+		//float width = page.getMediaBox().getWidth();
 		
 		DefaultPieDataset dataset = new DefaultPieDataset();
 		answerMap.forEach((answwer, count)->{
@@ -771,7 +774,7 @@ public class StatisticRESTController {
 		PDPageContentStream contents = null;
 		try {
 			contents = new PDPageContentStream(document, page);
-			float endY = MultiLine.drawMultiLineText(paragrahNumber + ".) Question Nr. " + answerId + ": " + question,
+			float endY = MultiLine.drawMultiLineText(paragrahNumber + ") Question Nr. " + answerId + ": " + question,
 					20, height-40, 500, page, contents, PDType1Font.TIMES_BOLD, 20, new Color(0, 72, 126));
 			
 		    PDImageXObject pdImage = PDImageXObject.createFromFile("./charts/chart" + answerId + ".png",document);
@@ -816,33 +819,32 @@ public class StatisticRESTController {
 		
 		Double blEffAvr = category.getBaselineRating().getEffortAvr();
 		Double blResAvr = category.getBaselineRating().getResultAvr();
-		Double ilEffAvr = category.getInnovationRating().getEffortAvr();
-		Double ilResAvr = category.getInnovationRating().getResultAvr();
 		
 		try {
 			contentStream = new PDPageContentStream(document, page);
-			float endY = MultiLine.drawMultiLineText(paragrahNumber + ".) " + 
+			float endY = MultiLine.drawMultiLineText(paragrahNumber + ") " + 
 					CategoryMapper.getInstance().getHeadingforCategory(packageId, category.getCategoryId()),
 					20, height-40, 500, page, contentStream, PDType1Font.TIMES_BOLD, 16, new Color(0, 72, 126));
 			
 			endY = MultiLine.drawMultiLineText(paragrahNumber + ".1) Following question identifying Effort & Result for Baseline has be asked:",
 					30, endY-20, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
 			endY = MultiLine.drawMultiLineText(category.getBaselineEffortQuestion(),
-					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 12, new Color(0, 0, 0));
+					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
 			endY = MultiLine.drawMultiLineText(category.getBaselineResultQuestion(),
-					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 12, new Color(0, 0, 0));
+					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
 			
 			endY = MultiLine.drawMultiLineText(paragrahNumber + ".2) Following question identifying Effort & Result for Innovationline has be asked:",
 					30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
 			endY = MultiLine.drawMultiLineText(category.getInnovationlineEffortQuestion(),
-					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 12, new Color(0, 0, 0));
+					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
 			endY = MultiLine.drawMultiLineText(category.getInnovationlineResultQuestion(),
-					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 12, new Color(0, 0, 0));
+					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
 			
 			// the chart
 			endY = MultiLine.drawMultiLineText(paragrahNumber + ".3) Graph:",
 					30, endY-15, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
 			
+			Map<String, Rating> treeMap = new TreeMap<>(category.getInnovationRatings());
 			
 			try {
 				JFreeChart xylineChart = ChartFactory.createXYLineChart(
@@ -863,56 +865,73 @@ public class StatisticRESTController {
 			    numberaxis1.setLowerBound(0.0);                 
 			    numberaxis1.setUpperBound(10.0);
 		      
-			    XYVectorizedRenderer renderer = new XYVectorizedRenderer( );
-				renderer.setSeriesShape(1, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
-				renderer.setSeriesPaint(1, new Color(255, 178, 102) );
-				renderer.setSeriesStroke(1, new BasicStroke( 4.0f ) );
-
-				renderer.setSeriesShape(2, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
-				renderer.setSeriesShape(0, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
-				renderer.setSeriesShapesVisible(0, false);
-				renderer.setSeriesStroke( 2 , new BasicStroke( 4.0f ) );
-				renderer.setSeriesStroke( 0 , new BasicStroke( 3.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND ) );
+			    XYVectorizedRenderer renderer = new XYVectorizedRenderer(false, true );
+			    // series 0 baseline point
+				renderer.setSeriesShape(0, new Ellipse2D.Double(-7D, -7D, 14D, 14D));
+				renderer.setSeriesPaint(0, new Color(255, 178, 102) );
+				renderer.setSeriesStroke(0, new BasicStroke( 4.0f ) );
+				//renderer.setSeriesLinesVisible(0, false);
 				
+				// series i = innovation point
+				// series i+1 = change from baseline to innovationline
+				int seriesCount = 1;				
 				// check the change
 				
-				if (blEffAvr >= ilEffAvr && blResAvr <= ilResAvr) {
-					renderer.setSeriesPaint( 2 , new Color(0, 102, 0) );
-					renderer.setSeriesPaint( 0 , new Color(0, 102, 0) );
-				} else if (blEffAvr < ilEffAvr && blResAvr < ilResAvr) {
-					/* check for 45°
-					 * < 45° red, = 45° grey & > 45° green
-					*/
-					if ((ilEffAvr - blEffAvr) == (ilResAvr-blResAvr)) { //45°
-						renderer.setSeriesPaint( 2 , new Color(160, 160, 160) );
-						renderer.setSeriesPaint( 0 , new Color(160, 160, 160) );
-					} else if ((ilEffAvr - blEffAvr) > (ilResAvr-blResAvr)) { // < 45°
-						renderer.setSeriesPaint( 2 , new Color(204, 0, 0) );
-						renderer.setSeriesPaint( 0 , new Color(204, 0, 0) );
+				for (String key : treeMap.keySet()) {
+					Rating rating = treeMap.get(key);
+					Color color = null;
+					if (blEffAvr.compareTo(rating.getEffortAvr()) >= 0 && blResAvr.compareTo(rating.getResultAvr()) <= 0) {
+						color = new Color(0, 102, 0);
+					} else if (blEffAvr.compareTo(rating.getEffortAvr()) < 0 && blResAvr.compareTo(rating.getResultAvr()) < 0) {
+						/* check for 45°
+						 * < 45° red, = 45° grey & > 45° green
+						*/
+						if ((rating.getEffortAvr().doubleValue() - blEffAvr.doubleValue()) == (rating.getResultAvr().doubleValue()-blResAvr.doubleValue())) { //45°
+							color = new Color(160, 160, 160);
+						} else if ((rating.getEffortAvr().doubleValue() - blEffAvr.doubleValue()) > (rating.getResultAvr().doubleValue()-blResAvr.doubleValue())) { // < 45°
+							color = new Color(204, 0, 0);
+						} else {
+							color = new Color(0, 102, 0) ;
+						}
+					} else if (blEffAvr.compareTo(rating.getEffortAvr()) > 0 && blResAvr.compareTo(rating.getResultAvr()) > 0) {
+						/* check for -45°
+						 * > -45° red, = -45° grey & < -45° green
+						*/
+						
+						if ((blEffAvr.doubleValue() - rating.getEffortAvr().doubleValue()) == (blResAvr.doubleValue()-rating.getResultAvr().doubleValue())) { //45°
+							color = new Color(160, 160, 160);
+						} else if ((blEffAvr.doubleValue() - rating.getEffortAvr().doubleValue()) < (blResAvr.doubleValue()-rating.getResultAvr().doubleValue())) { // < -45°
+							color = new Color(204, 0, 0);
+						} else {
+							color = new Color(0, 102, 0);
+						}
 					} else {
-						renderer.setSeriesPaint( 2 , new Color(0, 102, 0) );
-						renderer.setSeriesPaint( 0 , new Color(0, 102, 0) );
+						color = new Color(204, 0, 0);
 					}
-				} else if (blEffAvr > ilEffAvr && blResAvr > ilResAvr) {
-					/* check for -45°
-					 * > -45° red, = -45° grey & < -45° green
-					*/
-					if ((blEffAvr - ilEffAvr) == (blResAvr-ilResAvr)) { //45°
-						renderer.setSeriesPaint( 2 , new Color(160, 160, 160) );
-						renderer.setSeriesPaint( 0 , new Color(160, 160, 160) );
-					} else if ((blEffAvr - ilEffAvr) < (blResAvr-ilResAvr)) { // < -45°
-						renderer.setSeriesPaint( 2 , new Color(204, 0, 0) );
-						renderer.setSeriesPaint( 0 , new Color(204, 0, 0) );
+					if (seriesCount == 1) {
+						renderer.setSeriesShape(seriesCount, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
+						renderer.setSeriesShape(seriesCount+1, new Ellipse2D.Double(-5D, -5D, 10D, 10D));
 					} else {
-						renderer.setSeriesPaint( 2 , new Color(0, 102, 0) );
-						renderer.setSeriesPaint( 0 , new Color(0, 102, 0) );	
+						renderer.setSeriesShape(seriesCount, new Rectangle2D.Double(-5D, -5D, 10D, 10D));
+						renderer.setSeriesShape(seriesCount+1, new Rectangle2D.Double(-5D, -5D, 10D, 10D));
 					}
-				} else {
-					renderer.setSeriesPaint( 2 , new Color(204, 0, 0) );
-					renderer.setSeriesPaint( 0 , new Color(204, 0, 0) );
+					renderer.setSeriesLinesVisible(seriesCount+1, true);
+					renderer.setSeriesShapesVisible(seriesCount+1, false);
+					//renderer.setSeriesStroke( seriesCount , new BasicStroke( 2.0f ) );
+					renderer.setSeriesStroke( seriesCount+1 , new BasicStroke( 2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND ) );
+					
+					renderer.setSeriesPaint( seriesCount , color );
+					renderer.setSeriesPaint( seriesCount+1 , color );
+					seriesCount+=2;
 				}
 				
 				plot.setRenderer( renderer );
+				LegendTitle legend = new LegendTitle(plot.getRenderer());
+				Font font = new Font("Arial",0,10);
+				legend.setItemFont(font);
+				legend.setPosition(RectangleEdge.BOTTOM);
+				xylineChart.addLegend(legend);
+				
 				try {
 				    OutputStream out = new FileOutputStream("./charts/graph.png");
 				    ChartUtils.writeChartAsPNG(out,
@@ -933,69 +952,104 @@ public class StatisticRESTController {
 			
 			// Detailed result
 			endY = MultiLine.drawMultiLineText(paragrahNumber + ".4) The Result in Details:",
-					30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
+					30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 10, new Color(0, 72, 126));
 			
 			endY = MultiLine.drawMultiLineText("Baseline:",
-					40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 10, new Color(0, 0, 0));
+					40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 8, new Color(0, 0, 0));
 			endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Effort: " + 
 					category.getBaselineRating().getEffortRating().size() + 
 					" which results in a average of: " + category.getBaselineRating().getEffortAvr() + 
 					" (variance: " + FORMATTER.format(category.getBaselineRating().getEffortVariance()) + ")",
-					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
+					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
 			endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Result: " + 
 					category.getBaselineRating().getResultRating().size() + 
 					" which results in a average of: " + category.getBaselineRating().getResultAvr() + 
 					" (variance: " + FORMATTER.format(category.getBaselineRating().getResultVariance()) + ")",
-					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
+					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
 			
-			endY = MultiLine.drawMultiLineText("Innovationline:",
-					40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 10, new Color(0, 0, 0));
-			endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Effort: " + 
-					category.getInnovationRating().getEffortRating().size() + 
-					" which results in a average of: " + category.getInnovationRating().getEffortAvr() + 
-					" (variance: " + FORMATTER.format(category.getInnovationRating().getEffortVariance()) + ")",
-					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
-			if (blEffAvr.compareTo(ilEffAvr) == 0) {
-				endY = MultiLine.drawMultiLineText("-> same average of Effort: " + blEffAvr,
-						50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(160, 160, 160));
-			} else if (blEffAvr.compareTo(ilEffAvr) >= 0) {
-				endY = MultiLine.drawMultiLineText("-> average decrease of Effort by: " + (blEffAvr-ilEffAvr),
-						50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 102, 0));
+			for (String key : treeMap.keySet()) {
+				try {
+					Rating rating = treeMap.get(key);
+					endY = MultiLine.drawMultiLineText("Innovationline: " + key,
+							40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 10, new Color(0, 0, 0));
+					endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Effort: " + 
+							rating.getEffortRating().size() + 
+							" which results in a average of: " + rating.getEffortAvr() + 
+							" (variance: " + FORMATTER.format(rating.getEffortVariance()) + ")",
+							50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
+					if (blEffAvr.compareTo(rating.getEffortAvr()) == 0) {
+						endY = MultiLine.drawMultiLineText("-> same average of Effort: " + blEffAvr,
+								50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(160, 160, 160));
+					} else if (blEffAvr.compareTo(rating.getEffortAvr()) >= 0) {
+						endY = MultiLine.drawMultiLineText("-> average decrease of Effort by: " + (blEffAvr-rating.getEffortAvr()),
+								50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 102, 0));
+					} else {
+						endY = MultiLine.drawMultiLineText("-> average increase of Effort by: " + (rating.getEffortAvr()-blEffAvr),
+								50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(204, 0, 0));
+					}
+					endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Result: " + 
+							rating.getResultRating().size() + 
+							" which results in a average of: " + rating.getResultAvr() + 
+							" (variance: " + FORMATTER.format(rating.getResultVariance()) + ")",
+							50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
+					if (rating.getResultAvr().compareTo(blResAvr) == 0) {
+						endY = MultiLine.drawMultiLineText("-> same average of Result: " + rating.getResultAvr(),
+								50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(160, 160, 160));
+					} else if (rating.getResultAvr().compareTo(blResAvr) > 0) {
+						endY = MultiLine.drawMultiLineText("-> average increase of Result by: " + (rating.getResultAvr()-blResAvr),
+								50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 102, 0));
+					} else {
+						endY = MultiLine.drawMultiLineText("-> average decrease of Result by: " + (blResAvr-rating.getResultAvr()),
+								50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(204, 0, 0));
+					}
+				} catch (IOException e) {
+					
+				}
+			}
+			
+			// check if comments are available
+			boolean showComments = false;
+			if (category.getBaselineRating().getComments() != null && category.getBaselineRating().getComments().size() > 0) {
+				showComments = true;
 			} else {
-				endY = MultiLine.drawMultiLineText("-> average increase of Effort by: " + (ilEffAvr-blEffAvr),
-						50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(204, 0, 0));
-			}
-			endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Result: " + 
-					category.getInnovationRating().getResultRating().size() + 
-					" which results in a average of: " + category.getInnovationRating().getResultAvr() + 
-					" (variance: " + FORMATTER.format(category.getInnovationRating().getResultVariance()) + ")",
-					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
-			if (ilResAvr.compareTo(blResAvr) == 0) {
-				endY = MultiLine.drawMultiLineText("-> same average of Result: " + ilResAvr,
-						50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(160, 160, 160));
-			} else if (ilResAvr.compareTo(blResAvr) > 0) {
-				endY = MultiLine.drawMultiLineText("-> average increase of Result by: " + (ilResAvr-blResAvr),
-						50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 102, 0));
-			} else {
-				endY = MultiLine.drawMultiLineText("-> average decrease of Result by: " + (blResAvr-ilResAvr),
-						50, endY-1, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(204, 0, 0));
+				for (String key : treeMap.keySet()) {
+					Rating rating = treeMap.get(key);
+					if (rating.getComments() != null && rating.getComments().size() > 0) {
+						showComments = true;
+					}
+				}
 			}
 			
-			// comments
-			endY = MultiLine.drawMultiLineText(paragrahNumber + ".5) Following comments have been reported for Baseline:",
-					30, endY-20, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 0, 0));
-			for (String comment : category.getBaselineRating().getComments()) {
-				endY = MultiLine.drawMultiLineText("* " +comment,
-						40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 10, new Color(0, 0, 0));
-				page = this.getPage(document, page, 60, endY);
-			}
-			
-			endY = MultiLine.drawMultiLineText(paragrahNumber + ".6) Following comments have been reported for Innovationline:",
-					30, endY-20, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 0, 0));
-			for (String comment : category.getInnovationRating().getComments()) {
-				endY = MultiLine.drawMultiLineText("* " +comment,
-						40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 10, new Color(0, 0, 0));
-				page = this.getPage(document, page, 60, endY);
+			if (showComments) {
+				if (contentStream != null) {
+					try {
+						contentStream.close();
+					} catch (Exception e) {
+						log.error("Error closing the write stream");
+					}
+				}
+				page = new PDPage(new PDRectangle(PDRectangle.A4.getWidth(), PDRectangle.A4.getHeight()));
+				document.addPage(page);
+				height = page.getMediaBox().getHeight();
+				contentStream = new PDPageContentStream(document, page);
+				
+				// comments
+				endY = MultiLine.drawMultiLineText(paragrahNumber + ".5) Following comments have been reported for Baseline:",
+						30, height-40, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 10, new Color(0, 0, 0));
+				for (String comment : category.getBaselineRating().getComments()) {
+					endY = MultiLine.drawMultiLineText("* " +comment,
+							40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 8, new Color(0, 0, 0));
+				}
+				
+				endY = MultiLine.drawMultiLineText(paragrahNumber + ".6) Following comments have been reported for Innovationline:",
+						30, endY-20, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 10, new Color(0, 0, 0));
+				for (String key : treeMap.keySet()) {
+					Rating rating = treeMap.get(key);
+					for (String comment : rating.getComments()) {
+						endY = MultiLine.drawMultiLineText("* " +comment,
+								40, endY-5, 480, page, contentStream, PDType1Font.TIMES_ITALIC, 8, new Color(0, 0, 0));
+					}	
+				};
 			}
 		} catch (Exception e) {
 			log.error("Error creating the addFIEGraphPage!", e);
@@ -1035,28 +1089,27 @@ public class StatisticRESTController {
 		return revers;
 	}
 	
-	private PDPage getPage(PDDocument document, PDPage currentPage, float minHeight, float currentY) {
-		if (currentY <= minHeight) {
-			return new PDPage(new PDRectangle(PDRectangle.A4.getWidth(), PDRectangle.A4.getHeight()));
-		} 
-		return currentPage;
-	}
-	
 	private XYDataset createCategoryDataset(Category category ) {
-      final XYSeries base = new XYSeries( "Baseline", false );
-      base.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );          
-      
-      final XYSeries innovation = new XYSeries( "Innovationline", false );          
-      innovation.add( category.getInnovationRating().getEffortAvr() , category.getInnovationRating().getResultAvr());
-      
-      final XYSeries change = new XYSeries( "Change", false ); 
-      change.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );    
-      change.add( category.getInnovationRating().getEffortAvr() , category.getInnovationRating().getResultAvr());
-      
-      final XYSeriesCollection dataset = new XYSeriesCollection( );          
-      dataset.addSeries( change );
-      dataset.addSeries( base );          
-      dataset.addSeries( innovation );  
+		final XYSeriesCollection dataset = new XYSeriesCollection( ); 
+		Map<String, Rating> treeMap = new TreeMap<>(category.getInnovationRatings());
+		
+	    XYSeries base = new XYSeries( "Baseline", false );
+	    base.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );
+	    dataset.addSeries( base ); 
+	    
+	    for (String key : treeMap.keySet()) {
+	    	Rating rating = treeMap.get(key);
+	    	XYSeries innovation = new XYSeries( key, false );          
+	        innovation.add( rating.getEffortAvr() , rating.getResultAvr());
+	          
+	        XYSeries change = new XYSeries( "Change " + key, false ); 
+	        change.add( category.getBaselineRating().getEffortAvr() , category.getBaselineRating().getResultAvr() );    
+	        change.add( rating.getEffortAvr() , rating.getResultAvr());
+	        
+	        dataset.addSeries( innovation );
+	        dataset.addSeries( change );
+	    };
+        
       return dataset;
    }
 }

@@ -23,8 +23,14 @@ import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.xy.XYDataset;
 
 public class XYVectorizedRenderer extends XYLineAndShapeRenderer {
+	
 	public XYVectorizedRenderer() {
 		super();
+		setSeriesShape(0, new Ellipse2D.Double(-3, -3, 6, 6));
+	}
+	
+	public XYVectorizedRenderer(boolean lines, boolean shapes) {
+		super(lines, shapes);
 		setSeriesShape(0, new Ellipse2D.Double(-3, -3, 6, 6));
 	}
 	

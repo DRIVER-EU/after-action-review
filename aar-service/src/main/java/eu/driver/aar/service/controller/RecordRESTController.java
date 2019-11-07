@@ -1594,8 +1594,14 @@ public class RecordRESTController implements IAdaptorCallback {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.png");	
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.jpg");
+										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.pdf");
 										}
-										record.addAttachment(attachment);
+										
+										// check i attachment allready exists
+										if (!record.existsAttachment(attachment.getName())) {
+											record.addAttachment(attachment);
+										}
 									}
 								}
 							} else {
@@ -1610,8 +1616,14 @@ public class RecordRESTController implements IAdaptorCallback {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.png");	
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.jpg");
+										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.pdf");
 										}
-										record.addAttachment(attachment);
+										
+										// check i attachment allready exists
+										if (!record.existsAttachment(attachment.getName())) {
+											record.addAttachment(attachment);
+										}
 									}
 								} catch (Exception e) {
 									
@@ -1635,8 +1647,14 @@ public class RecordRESTController implements IAdaptorCallback {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.png");	
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.jpg");
+										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.pdf");
 										}
-										record.addAttachment(attachment);
+										
+										// check i attachment allready exists
+										if (!record.existsAttachment(attachment.getName())) {
+											record.addAttachment(attachment);
+										}
 									}
 								}
 							} else {
@@ -1651,8 +1669,14 @@ public class RecordRESTController implements IAdaptorCallback {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.png");	
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.jpg");
+										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.pdf");
 										}
-										record.addAttachment(attachment);
+										
+										// check i attachment allready exists
+										if (!record.existsAttachment(attachment.getName())) {
+											record.addAttachment(attachment);
+										}
 									}
 								} catch (Exception e) {
 									
