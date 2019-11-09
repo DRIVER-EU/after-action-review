@@ -16,10 +16,12 @@
   import Point from 'ol/geom/Point';
   import Polygon from 'ol/geom/Polygon';
   import Style from 'ol/style/Style';
+  import Icon from 'ol/style/Icon';
   import Stroke from 'ol/style/Stroke';
   import Fill from 'ol/style/Fill';
   import {transformExtent} from 'ol/proj.js';
   import {mapStyling} from '../service/MapStylingService';
+  import Urls from '../constants/Urls';
 
   export default {
     name: 'MapPanel',
@@ -59,8 +61,9 @@
           for (const info of this.infoArray) {
             if (info.area) {
               const items = Array.isArray(info.area) ? info.area : [info.area];
+              const resourceType = this.getResourceType(info.parameter);
               for (const area of items) {
-                const feature = this.createFeatureFromInfoArea(area);
+                const feature = this.createFeatureFromInfoArea(area, resourceType);
                 if (feature) {
                   features.push(feature);
                 }
@@ -71,6 +74,14 @@
             features.forEach(f => f.getGeometry().transform('EPSG:4326', 'EPSG:3857'));
             this.vectorSource.addFeatures(features);
           }
+        }
+      },
+      getResourceType(parameter) {
+        if (parameter) {
+          const items = Array.isArray(parameter) ? parameter : [parameter];
+          return items.filter(i => i.valueName === "ResourceType").map(i => i.value).find(i => true) || null;
+        } else {
+          return null;
         }
       },
       createGeometryFromInfoArea(area) {
@@ -95,26 +106,30 @@
         const lon = parseFloat(latAndLon[1]);
         return [lon, lat];
       },
-      createFeatureFromInfoArea(area) {
-        // style: var camelCased = myString.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase(); });
-        // new OpenLayers.Style({strokeColor: "blue",          strokeWidth: 2,          strokeOpacity: 0.8      });
-        // feature.setStyle()
+      createFeatureFromInfoArea(area, resourceType) {
         const geometry = this.createGeometryFromInfoArea(area);
         if (geometry) {
           const feature = new Feature(geometry);
-          const style = this.createStyleFromInfoArea(area);
+          const style = this.createStyleFromInfoArea(area, resourceType);
           feature.setStyle(style);
           return feature;
         } else {
           return null;
         }
       },
-      createStyleFromInfoArea(area) {
-        const styleValue = (area.geocode || []).filter(g => g.valueName === "style").map(g => g.value).find(a => true);
-        if (styleValue) {
-          return mapStyling.createStyleFromCssString(styleValue);
+      createStyleFromInfoArea(area, resourceType) {
+        const isCircle = !!area.circle;
+        if (isCircle && resourceType) {
+          return new Style({
+            image: new Icon( ({ src: Urls.ICON_SERVICE + resourceType }))
+          });
         } else {
-          return null;
+          const styleValue = (area.geocode || []).filter(g => g.valueName === "style").map(g => g.value).find(a => true);
+          if (styleValue) {
+            return mapStyling.createStyleFromCssString(styleValue);
+          } else {
+            return null;
+          }
         }
       },
       scaleToFeatures() {
