@@ -5,7 +5,7 @@ dist: trusty
 
 env:
   matrix:
-  - VERSION=1.2.38
+  - VERSION=1.2.39
 
 install: mvn install
 

@@ -2191,6 +2191,9 @@ public class RecordRESTController implements IAdaptorCallback {
                 	// create the DIR structure
                 	String strPath = filePath.toString();
                 	int idx = strPath.lastIndexOf("\\");
+                	if (idx < 0) {
+                		idx = strPath.lastIndexOf("/");
+                	}
                 	Files.createDirectories(Paths.get(strPath.substring(0, idx)));
                 	File file = new File(strPath);
                 	file.createNewFile();
