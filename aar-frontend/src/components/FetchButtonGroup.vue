@@ -2,7 +2,7 @@
   <v-menu offset-y content-class="dropdown-menu" transition="slide-y-transition" :disabled="loading">
     <v-btn slot="activator">
       <div v-if="loading" style="display:inline;margin-right:16px;width:24px;height:24px;">
-        <v-progress-circular indeterminate="true" size="18" width="2"></v-progress-circular>
+        <v-progress-circular :indeterminate="true" size="18" width="2"></v-progress-circular>
       </div>
       <v-icon v-else left>{{icon}}</v-icon>
       <slot/>

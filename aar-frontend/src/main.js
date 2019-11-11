@@ -4,7 +4,6 @@ import router from './router';
 import Vuetify from 'vuetify';
 import {store} from './store';
 import 'vuetify/dist/vuetify.min.css';
-import VueNativeSock from 'vue-native-websocket';
 import axios from 'axios';
 import VueAxios from 'vue-axios';
 import RecordsTable from './components/RecordsTable';
@@ -23,6 +22,7 @@ import DiagramPage from './pages/DiagramPage';
 import MapPanel from './components/MapPanel';
 import RecordDetailsPopup from './components/RecordDetailsPopup';
 import AttachmentPopup from './components/AttachmentPopup';
+import {webSocketConnection} from './service/WebSocketConnection';
 
 export const eventBus = new Vue();
 store.eventBus = eventBus;
@@ -33,13 +33,7 @@ Vue.use(VueAxios, axios.create({
 }));
 store.axios = Vue.prototype.axios;
 
-Vue.use(VueNativeSock, Urls.WEBSOCKET, {
-  store: store,
-  format: 'json',
-  reconnection: true,
-  reconnectionDelay: 2000
-});
-store.$socket = Vue.prototype.$socket;
+webSocketConnection.connect();
 
 Vue.use(Vuetify, {
   theme: {

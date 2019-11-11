@@ -13,7 +13,7 @@ class FetchService {
   }
 
   performGet (url) {
-    return this.getAxios().get(url, {withCredentials: true}); // , {withCredentials: true}
+    return this.getAxios().get(url, {withCredentials: true});
   }
 
   performGetBase64 (url) {

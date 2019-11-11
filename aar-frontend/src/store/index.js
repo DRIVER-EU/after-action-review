@@ -69,20 +69,31 @@ export const store = new Vuex.Store({
   ,
   mutations: {
     SOCKET_ONOPEN (state) {
-      console.log('Connection opened');
+      console.log('Web socket connection opened.');
       state.socket.isConnected = true;
-      heartbeatController();
+      heartbeatController()
     },
     SOCKET_ONCLOSE (state) {
-      console.log('Connection closed');
+      console.log('Web socket connection closed.');
       state.socket.isConnected = false;
-      clearInterval(state.socket.pingTimer);
-      clearInterval(state.socket.pingTimeOutTimer);
+      if (state.socket.pingTimer) {
+        console.log("Stopped heartbeat timer", state.socket.pingTimer);
+        clearInterval(state.socket.pingTimer);
+        state.socket.pingTimer = null
+      }
+      if (state.socket.pingTimeOutTimer) {
+        console.log("Stopped heartbeat timeout timer", state.socket.pingTimeOutTimer);
+        clearInterval(state.socket.pingTimeOutTimer);
+        state.socket.pingTimeOutTimer = null
+      }
     },
-    SOCKET_RECONNECT () {
-      console.log('Reconnect');
+    SOCKET_RECONNECT (state) {
+      console.log('Web socket reconnected.');
+      state.socket.isConnected = true;
+      heartbeatController()
     },
-    SOCKET_ONERROR () {
+    SOCKET_ONMESSAGE(state, msg) {
+      console.log('Received unhandled message', msg)
     },
     HBRESPONSE (state) {
       // console.log("Received heartbeat response");

@@ -18,7 +18,7 @@ public class WebsocketConfig implements WebSocketConfigurer {
  
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(myMessageHandler(), "/AARServiceWSEndpoint").setAllowedOrigins("*");
+        registry.addHandler(myMessageHandler(), "/AARServiceWSEndpoint").setAllowedOrigins("*").withSockJS();
     }
  
 }
