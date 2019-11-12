@@ -118,6 +118,8 @@ public class RecordRESTController implements IAdaptorCallback {
 	private String ownClientID = ClientProperties.getInstance().getProperty("client.id");
 	
 	private Map<String, RecordFilter> sessionFilters = new HashMap<String, RecordFilter>();
+	
+	private Boolean connectTB = Boolean.parseBoolean(ClientProperties.getInstance().getProperty("connect.testbed", "true"));
 
 	@Autowired
 	RecordRepository recordRepo;
@@ -162,7 +164,11 @@ public class RecordRESTController implements IAdaptorCallback {
 			IndexedRecord receivedMessage, String topicName) {
 		Record record = new Record();
 		record.setCreateDate(new Date());
-		record.setTrialDate(CISAdapter.getInstance().getTrialTime());
+		if (connectTB) {
+			record.setTrialDate(CISAdapter.getInstance().getTrialTime());
+		} else {
+			record.setTrialDate(new Date());
+		}
 		record.setRecordType(receivedMessage.getSchema().getName());
 		record.setRunType(AARConstants.RECORD_RUN_TYPE_IN);
 		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData
@@ -170,8 +176,6 @@ public class RecordRESTController implements IAdaptorCallback {
 		
 		record.setClientId(msgKey.getSenderID().toString());
 		record.setTopic(topicName);
-
-		record.setTrialDate(CISAdapter.getInstance().getTrialTime());
 
 		if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
 			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData

@@ -12,6 +12,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,13 +31,21 @@ import eu.driver.aar.service.ws.object.WSRecordNotification;
 import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.model.core.Level;
 import eu.driver.model.core.Log;
+import eu.driver.model.core.SessionMgmt;
 import eu.driver.model.core.TopicInvite;
+import eu.driver.model.edxl.DistributionKind;
+import eu.driver.model.edxl.DistributionStatus;
+import eu.driver.model.edxl.EDXLDistribution;
+import eu.driver.model.tm.SessionState;
 
 @RestController
 public class WSNotificationController {
 	
 	private Logger log = Logger.getLogger(this.getClass());
 	private StringJSONMapper mapper = new StringJSONMapper();
+	
+	@Autowired
+	private RecordRESTController recRestController;
 	
 	@Bean
     public WebSocketHandler wsHandler() {
@@ -112,6 +121,46 @@ public class WSNotificationController {
 		log.info("sendTopicinviteRecordNotification -->");
 	    return new ResponseEntity<Boolean>(send, HttpStatus.OK);
 	}
+	
+	@ApiOperation(value = "sendSessionMgmtMessage", nickname = "sendSessionMgmtMessage")
+	@RequestMapping(value = "/AARService/sendSessionMgmtMessage", method = RequestMethod.POST )
+	@ApiImplicitParams({
+		@ApiImplicitParam(name = "trialId", value = "the id of the trial", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "scenarioId", value = "the id of the scenario", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "sessionId", value = "the id of the session", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "name", value = "the name of the session", required = true, dataType = "string", paramType = "query"),
+        @ApiImplicitParam(name = "sessionState", value = "the state of the session", required = true, dataType = "string", paramType = "query", allowableValues="START,STOP")
+      })
+	@ApiResponses(value = { 
+            @ApiResponse(code = 200, message = "Success", response = Boolean.class),
+            @ApiResponse(code = 400, message = "Bad Request", response = Boolean.class),
+            @ApiResponse(code = 500, message = "Failure", response = Boolean.class)})
+	@Produces({"application/json"})
+	public ResponseEntity<Boolean> sendSessionMgmtMessage(	@QueryParam("trialId") String trialId,
+															@QueryParam("scenarioId") String scenarioId,
+															@QueryParam("sessionId") String sessionId,
+															@QueryParam("name") String name,
+															@QueryParam("sessionState") String sessionState) {
+		log.info("--> sendSessionMgmtMessage");
+		
+		Boolean send = true;
+		SessionMgmt sessionMgmt = new SessionMgmt();
+		sessionMgmt.setTrialId(trialId);
+		sessionMgmt.setTrialName("TestTrial");
+		sessionMgmt.setScenarioId(scenarioId);
+		sessionMgmt.setScenarioName("TestScenario");
+		sessionMgmt.setSessionId(sessionId);
+		sessionMgmt.setSessionName(name);
+		sessionMgmt.setSessionState(SessionState.valueOf(sessionState));
+		
+		
+		eu.driver.model.edxl.EDXLDistribution msgKey = new EDXLDistribution("test_01", "Swagger", new Date().getTime(), (new Date().getTime())+3600000, DistributionStatus.Actual, DistributionKind.Report);
+		recRestController.messageReceived(msgKey, sessionMgmt, TopicConstants.SESSION_MGMT_TOPIC);
+		
+		log.info("sendSessionMgmtMessage -->");
+	    return new ResponseEntity<Boolean>(send, HttpStatus.OK);
+	}
+	
 	
 	private void sendMessage(Object object) {
 		WSController.getInstance().sendMessage(mapper.objectToJSONString(object));
