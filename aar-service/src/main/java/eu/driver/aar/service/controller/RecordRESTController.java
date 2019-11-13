@@ -265,7 +265,6 @@ public class RecordRESTController implements IAdaptorCallback {
 					} else {
 						record.setHeadline("New CAP was send from: " + record.getClientId());
 					}
-					
 				}
 			}
 		} else if (receivedMessage.getSchema().getName()
@@ -593,7 +592,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				record = recordRepo.saveAndFlush(record);
 				WSRecordNotification notification = new WSRecordNotification(
 						record.getId(), record.getClientId(),
-						record.getTopic(), /*record.getCreateDate()*/ new Date(),
+						record.getTopic(), record.getCreateDate(),
 						record.getRecordType(), record.getHeadline(), record.getMsgType(), record.getRunType(), null, null);
 				
 				WSController.getInstance().sendMessage(
