@@ -120,6 +120,10 @@ export const store = new Vuex.Store({
         handleReady();
       }
     },
+    UPDATE_MAP_LAYER(state, message) {
+      const update = JSON.parse(message.dataJson);
+      this.eventBus.$emit(EventName.UPDATE_MAP_LAYER, update);
+    },
     GET_RECORDS (state, records) {
       state.records = [];
       records.forEach(function (record) {
