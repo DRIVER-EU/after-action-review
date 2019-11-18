@@ -101,12 +101,28 @@ export const store = new Vuex.Store({
     },
     RECORD_NOTIFICATION (state, record) {
       console.log("Received record notification", record);
+      const me = this;
       let newRecord = createRecord(record);
-      state.timelineRecords.push(record);
-      this.eventBus.$emit(EventName.RECORD_NOTIFICATION, newRecord);
-      if (isErrorLog(newRecord)) {
-        this.eventBus.$emit(EventName.LOG_ERROR_RECEIVED);
+      const isSessionManagement = newRecord.recordType === "SessionMgmt";
+      const handleReady = () => {
+        state.timelineRecords.push(record);
+        me.eventBus.$emit(EventName.RECORD_NOTIFICATION, newRecord);
+        if (isErrorLog(newRecord)) {
+          me.eventBus.$emit(EventName.LOG_ERROR_RECEIVED);
+        }
+      };
+      if (isSessionManagement) {
+        fetchService.performGet('getActualTrial').then(response => {
+          me.commit('GET_ACTUAL_TRIAL', (response.data));
+          handleReady();
+        }).catch(ex => console.log(ex));
+      } else {
+        handleReady();
       }
+    },
+    UPDATE_MAP_LAYER(state, message) {
+      const update = JSON.parse(message.dataJson);
+      this.eventBus.$emit(EventName.UPDATE_MAP_LAYER, update);
     },
     GET_RECORDS (state, records) {
       state.records = [];

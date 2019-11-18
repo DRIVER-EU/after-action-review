@@ -10,6 +10,7 @@
   import TileLayer from 'ol/layer/Tile';
   import VectorLayer from 'ol/layer/Vector';
   import OSM from 'ol/source/OSM';
+  import TileWMS from 'ol/source/TileWMS';
   import VectorSource from 'ol/source/Vector';
   import GeoJSON from 'ol/format/GeoJSON';
   import Circle from 'ol/geom/Circle';
@@ -17,11 +18,12 @@
   import Polygon from 'ol/geom/Polygon';
   import Style from 'ol/style/Style';
   import Icon from 'ol/style/Icon';
-  import Stroke from 'ol/style/Stroke';
-  import Fill from 'ol/style/Fill';
+  import Control from 'ol/control/Control';
   import {transformExtent} from 'ol/proj.js';
   import {mapStyling} from '../service/MapStylingService';
   import Urls from '../constants/Urls';
+  import {eventBus} from '../main';
+  import EventName from '../constants/EventName';
 
   export default {
     name: 'MapPanel',
@@ -40,6 +42,7 @@
       },
       updateFeatures () {
         this.vectorSource.clear();
+        this.removeWmsLayer();
         this.updateFeaturesFromGeoJson();
         this.updateFeaturesFromInfoArray();
         this.scaleToFeatures();
@@ -141,9 +144,32 @@
           const euExtent = this.transform([-27.68862, 33.59717, 43.90757, 71.97626]);
           this.map.getView().fit(euExtent, this.map.getSize());
         }
+      },
+      addCenterButton(extent) {
+        const me = this;
+        const button = document.createElement('button');
+        button.innerHTML = '&middot;';
+        const handleRotateNorth = () => me.map.getView().fit(extent, me.map.getSize());
+        button.addEventListener('click', handleRotateNorth.bind(this), false);
+        const element = document.createElement('div');
+        element.className = 'rotate-north ol-unselectable ol-control';
+        element.style.top = "65px";
+        element.style.left = "0.5em";
+        element.appendChild(button);
+        me.centerButtonControl = new Control({ element: element });
+        this.map.addControl(me.centerButtonControl);
+      },
+      removeWmsLayer() {
+        if (this.wmsLayer) {
+          this.map.removeLayer(this.wmsLayer);
+        }
+        if (this.centerButtonControl) {
+          this.map.removeControl(this.centerButtonControl);
+        }
       }
     },
     mounted () {
+      const me = this;
       console.log('Mounted, starting map', this.$refs.container);
 
       this.vectorSource = new VectorSource({
@@ -160,11 +186,6 @@
         layers: [
           new TileLayer({
             source: new OSM()
-            /*
-            source: new XYZ({
-              url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            })
-            */
           }),
           vectorLayer
         ],
@@ -174,7 +195,21 @@
         })
       });
 
+      eventBus.$on(EventName.UPDATE_MAP_LAYER, function (update) {
+        if (update && update.layerType === "WMS") {
+          const ordinates = update.description.split(",");
+          const extent = me.transform([parseFloat(ordinates[1]), parseFloat(ordinates[0]), parseFloat(ordinates[3]), parseFloat(ordinates[2])]);
+          me.wmsLayer = new TileLayer({
+            extent: extent,
+            source: new TileWMS({ url: update.url, params: {'LAYERS': update.title, 'TILED': true}, transition: 0 })
+          });
+          me.map.addLayer(me.wmsLayer);
+          // me.map.getView().fit(extent, me.map.getSize());
+          me.addCenterButton(extent);
+        }
+      });
+
       this.updateFeatures();
-    }
+    },
   };
 </script>
