@@ -148,8 +148,8 @@ public class RecordRESTController implements IAdaptorCallback {
 	private final String ANSWER_OBS_IN = "_OBS_IN";
 	private final String ANSWER_OBS_BL = "_OBS_BL";
 	
-	private final String ANSWER_PRACT_FIE = "_PRACT_FIE";
-	private final String ANSWER_ALL_TRIAL = "_ALL_TRIAL";
+	private final String ANSWER_PRACT_FIE = "_FIE";
+	private final String ANSWER_ALL_TRIAL = "_PARTICIPANT";
 	
 	private final String ANSWER_PRACT_SOLUTION = "_PRACT_S";
 		
@@ -530,7 +530,7 @@ public class RecordRESTController implements IAdaptorCallback {
 			eu.driver.model.core.ObserverToolAnswer msg = (eu.driver.model.core.ObserverToolAnswer) SpecificData
 					.get().deepCopy(
 							eu.driver.model.core.ObserverToolAnswer.SCHEMA$, receivedMessage);
-			String observer = msg.getObservationTypeName().toString();
+			String observer = msg.getObservationTypeName().toString().toUpperCase();
 			record.setRecordJson(msg.toString());
 			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 			record.setHeadline("A new observation was reported by: " + observer);
