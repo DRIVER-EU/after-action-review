@@ -9,5 +9,4 @@ export default {
   CLEAR_SESSION_SCENARIO_FILTER: "clearSessionScenarioFilter",
   FILTER_CHANGED: "filterChanged",
   LOG_ERROR_RECEIVED: "logErrorReceived",
-  UPDATE_MAP_LAYER: "updateMapLayer",
 }

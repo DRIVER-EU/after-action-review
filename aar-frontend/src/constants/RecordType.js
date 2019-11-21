@@ -10,5 +10,6 @@ export default {
   SESSION_MGMT: "SessionMgmt",
   REQUEST_CHANGE_OF_TRIAL_STATE: "RequestChangeOfTrialStage",
   REQUEST_START_INJECT: "RequestStartInject",
-  POST_MESSAGE: "Post"
+  POST_MESSAGE: "Post",
+  MAP_LAYER_UPDATE: "MapLayerUpdate",
 }
