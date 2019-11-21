@@ -13,7 +13,7 @@ public interface AARConstants {
 	
 	public static final String RECORD_RUN_TYPE_BL = "Baseline";
 	public static final String RECORD_RUN_TYPE_IN = "Innovationline";
-	public static final String RECORD_RUN_TYPE_BOTH = "Both";
+	public static final String RECORD_RUN_TYPE_BOTH = "Base&Innovationline";
 	public static final String RECORD_RUN_TYPE_FIE = "FirstImpression";
 	public static final String RECORD_RUN_TYPE_TRIALD = "TrialDimention";
 	public static final String RECORD_RUN_TYPE_SOLUTIOND = "SolutionDimention";
