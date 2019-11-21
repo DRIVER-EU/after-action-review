@@ -13,7 +13,7 @@ public class WSRecordNotification {
 	private String msgType = null;
 	private String runType = null;
 	
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss.SSS", timezone = JsonFormat.DEFAULT_TIMEZONE)
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'")
 	private Date createDate = null;
 	
 	private String recordType = null;

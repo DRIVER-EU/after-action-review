@@ -11,5 +11,5 @@ export default {
   HTTP_BASE: 'http://' + getHost() + '/AARService',
   WEBSOCKET: 'ws://'+ getHost() + '/AARServiceWSEndpoint',
   SOCKJS: 'http://'+ getHost() + '/AARServiceWSEndpoint',
-  ICON_SERVICE: 'http://tb1.driver-testbed.eu:8910/TBIconService/getIcon?size=24x24&path='
+  ICON_SERVICE: 'http://tb1.driver-testbed.eu:8910/TBIconService/getIcon?size=18x18&path='
 }

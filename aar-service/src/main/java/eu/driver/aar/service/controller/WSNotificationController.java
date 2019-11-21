@@ -1,5 +1,9 @@
 package eu.driver.aar.service.controller;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 import io.swagger.annotations.ApiImplicitParam;
@@ -80,7 +84,10 @@ public class WSNotificationController {
 		logRecord.setLevel(Level.INFO);
 		logRecord.setLog("This is the test log entry!");		
 		
-		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.LOGGING_TOPIC, new Date(), "Log", logRecord.getLog().toString(), AARConstants.RECORD_MSG_TYPE_INFO, AARConstants.RECORD_RUN_TYPE_IN, logRecord.toString(), null);
+		LocalDateTime localDate = LocalDateTime.now();
+		Date sendDate = Date.from(localDate.atZone(ZoneId.systemDefault()).toInstant());
+		
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.LOGGING_TOPIC, sendDate, "Log", logRecord.getLog().toString(), AARConstants.RECORD_MSG_TYPE_INFO, AARConstants.RECORD_RUN_TYPE_IN, logRecord.toString(), null);
 		sendMessage(notification);
 		
 		log.info("sendLogRecordNotification -->");
@@ -115,7 +122,10 @@ public class WSNotificationController {
 		topicInvite.setPublishAllowed(publishAllowed);
 		topicInvite.setSubscribeAllowed(subscribeAllowed);
 		
-		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.TOPIC_INVITE_TOPIC, new Date(), "TopicInvite", "TopicInvite", AARConstants.RECORD_MSG_TYPE_INFO, AARConstants.RECORD_RUN_TYPE_IN, topicInvite.toString(), null);
+		LocalDateTime localDate = LocalDateTime.now();
+		Date sendDate = Date.from(localDate.atZone(ZoneId.systemDefault()).toInstant());
+		//instant ins = Instant.now();
+		WSRecordNotification notification = new WSRecordNotification(id, clientId, TopicConstants.TOPIC_INVITE_TOPIC, sendDate, "TopicInvite", "TopicInvite", AARConstants.RECORD_MSG_TYPE_INFO, AARConstants.RECORD_RUN_TYPE_IN, topicInvite.toString(), null);
 		sendMessage(notification);
 		
 		log.info("sendTopicinviteRecordNotification -->");

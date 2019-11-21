@@ -20,6 +20,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -145,13 +147,13 @@ public class RecordRESTController implements IAdaptorCallback {
 	@Autowired
     private FileStorageService fileStorageService;
 	
-	private final String ANSWER_OBS_IN = "_Observer_IL";
-	private final String ANSWER_OBS_BL = "_Observer_BL";
+	private final String ANSWER_OBS_IN = "_OBSERVER_IL";
+	private final String ANSWER_OBS_BL = "_OBSERVER_BL";
 	
 	private final String ANSWER_PRACT_FIE = "_FIE";
-	private final String ANSWER_ALL_TRIAL = "_Participant";
+	private final String ANSWER_ALL_TRIAL = "_PARTICIPANT";
 	
-	private final String ANSWER_PRACT_SOLUTION = "_Pract_S";
+	private final String ANSWER_PRACT_SOLUTION = "_PRACT_S";
 		
 	private final String POST_BL_EXT = " BL";
 
@@ -590,9 +592,11 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (record != null) {
 			try {
 				record = recordRepo.saveAndFlush(record);
+				LocalDateTime localDate = LocalDateTime.now();
+				Date sendDate = Date.from(localDate.atZone(ZoneId.systemDefault()).toInstant());
 				WSRecordNotification notification = new WSRecordNotification(
 						record.getId(), record.getClientId(),
-						record.getTopic(), record.getCreateDate(),
+						record.getTopic(), sendDate,
 						record.getRecordType(), record.getHeadline(), record.getMsgType(), record.getRunType(), null, null);
 				
 				WSController.getInstance().sendMessage(
