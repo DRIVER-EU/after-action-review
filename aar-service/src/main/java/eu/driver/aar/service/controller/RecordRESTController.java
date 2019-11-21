@@ -145,13 +145,13 @@ public class RecordRESTController implements IAdaptorCallback {
 	@Autowired
     private FileStorageService fileStorageService;
 	
-	private final String ANSWER_OBS_IN = "_OBS_IN";
-	private final String ANSWER_OBS_BL = "_OBS_BL";
+	private final String ANSWER_OBS_IN = "_Observer_IL";
+	private final String ANSWER_OBS_BL = "_Observer_BL";
 	
 	private final String ANSWER_PRACT_FIE = "_FIE";
-	private final String ANSWER_ALL_TRIAL = "_PARTICIPANT";
+	private final String ANSWER_ALL_TRIAL = "_Participant";
 	
-	private final String ANSWER_PRACT_SOLUTION = "_PRACT_S";
+	private final String ANSWER_PRACT_SOLUTION = "_Pract_S";
 		
 	private final String POST_BL_EXT = " BL";
 
