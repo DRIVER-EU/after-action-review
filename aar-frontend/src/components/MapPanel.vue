@@ -22,17 +22,18 @@
   import {transformExtent} from 'ol/proj.js';
   import {mapStyling} from '../service/MapStylingService';
   import Urls from '../constants/Urls';
-  import {eventBus} from '../main';
-  import EventName from '../constants/EventName';
 
   export default {
     name: 'MapPanel',
-    props: ['geojson', 'infoArray'],
+    props: ['geojson', 'infoArray', 'wmsData'],
     watch: {
       geojson: function () {
         this.updateFeatures();
       },
       infoArray: function () {
+        this.updateFeatures();
+      },
+      wmsData: function () {
         this.updateFeatures();
       }
     },
@@ -45,6 +46,7 @@
         this.removeWmsLayer();
         this.updateFeaturesFromGeoJson();
         this.updateFeaturesFromInfoArray();
+        this.updateWmsLayerFromWmsData();
         this.scaleToFeatures();
       },
       updateFeaturesFromGeoJson () {
@@ -76,6 +78,24 @@
           if (features.length > 0) {
             features.forEach(f => f.getGeometry().transform('EPSG:4326', 'EPSG:3857'));
             this.vectorSource.addFeatures(features);
+          }
+        }
+      },
+      updateWmsLayerFromWmsData() {
+        const me = this;
+        if (this.wmsData) {
+          const update = this.wmsData;
+          if (update && update.layerType === "WMS") {
+            console.log('Displaying WMS layer', update);
+            const ordinates = update.description.split(",");
+            const extent = me.transform([parseFloat(ordinates[1]), parseFloat(ordinates[0]), parseFloat(ordinates[3]), parseFloat(ordinates[2])]);
+            me.wmsLayer = new TileLayer({
+              extent: extent,
+              source: new TileWMS({ url: update.url, params: {'LAYERS': update.title, 'TILED': true}, transition: 0 })
+            });
+            me.map.addLayer(me.wmsLayer);
+            me.map.getView().fit(extent, me.map.getSize());
+            me.addCenterButton(extent);
           }
         }
       },
@@ -140,7 +160,7 @@
         if (features.length > 0) {
           const extent = this.vectorSource.getExtent();
           this.map.getView().fit(extent, {size: this.map.getSize(), maxZoom: 10});
-        } else {
+        } else if (!this.wmsData) {
           const euExtent = this.transform([-27.68862, 33.59717, 43.90757, 71.97626]);
           this.map.getView().fit(euExtent, this.map.getSize());
         }
@@ -193,20 +213,6 @@
           center: [0, 0],
           zoom: 2
         })
-      });
-
-      eventBus.$on(EventName.UPDATE_MAP_LAYER, function (update) {
-        if (update && update.layerType === "WMS") {
-          const ordinates = update.description.split(",");
-          const extent = me.transform([parseFloat(ordinates[1]), parseFloat(ordinates[0]), parseFloat(ordinates[3]), parseFloat(ordinates[2])]);
-          me.wmsLayer = new TileLayer({
-            extent: extent,
-            source: new TileWMS({ url: update.url, params: {'LAYERS': update.title, 'TILED': true}, transition: 0 })
-          });
-          me.map.addLayer(me.wmsLayer);
-          // me.map.getView().fit(extent, me.map.getSize());
-          me.addCenterButton(extent);
-        }
       });
 
       this.updateFeatures();

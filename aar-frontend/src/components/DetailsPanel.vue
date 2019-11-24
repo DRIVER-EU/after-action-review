@@ -34,10 +34,11 @@
   import ObserverToolAnswerDetails from './details/templates/ObserverToolAnswerDetails';
   import SessionMgmtDetails from './details/templates/SessionMgmtDetails';
   import PhaseMessageDetails from './details/templates/PhaseMessageDetails';
+  import MapLayerUpdateDetails from './details/templates/MapLayerUpdateDetails';
 
   export default {
     components: {LogDetails, InviteDetails, AlertDetails, LargeDataUpdateDetails, GeoJsonEnvelopeDetails, FeatureCollectionDetails, FallbackDetails, RolePlayerMessageDetails,
-      ObserverToolAnswerDetails, SessionMgmtDetails, PhaseMessageDetails},
+      ObserverToolAnswerDetails, SessionMgmtDetails, PhaseMessageDetails, MapLayerUpdateDetails},
     name: 'DetailsPanel',
     props: ['hideTitle', 'onWidthChange'],
     data: function () {
@@ -71,6 +72,8 @@
             return ObserverToolAnswerDetails.name;
           case RecordType.SESSION_MGMT:
             return SessionMgmtDetails.name;
+          case RecordType.MAP_LAYER_UPDATE:
+            return MapLayerUpdateDetails.name;
           default:
             return FallbackDetails.name;
         }
