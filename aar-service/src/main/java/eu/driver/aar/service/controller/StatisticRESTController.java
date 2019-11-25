@@ -82,6 +82,7 @@ import eu.driver.aar.service.objects.fie.Package;
 import eu.driver.aar.service.objects.fie.Rating;
 import eu.driver.aar.service.repository.RecordRepository;
 import eu.driver.aar.service.repository.TrialRepository;
+import eu.driver.aar.service.utils.QuestionInstance;
 import eu.driver.aar.service.utils.pdf.MultiLine;
 import eu.driver.aar.service.utils.pdf.XYVectorizedRenderer;
 
@@ -99,6 +100,8 @@ public class StatisticRESTController {
 			+ "European Union’s 7th Framework Programme for Research, Technological "
 			+ "Development and";
 	private final String reportFooter2 = "Demonstration under Grant Agreement (GA) N° #607798";
+	
+	private QuestionInstance questioninstance = QuestionInstance.getInstance();
 	
 	@Autowired
 	RecordRepository recordRepo;
@@ -314,6 +317,11 @@ public class StatisticRESTController {
 							String marker = questionString.substring(0, idx);
 							StringTokenizer tokens = new StringTokenizer(marker, "/");
 							if (tokens.countTokens() == 4) {
+								// get the question from QuestionInstance
+								String question = questioninstance.getQuestion(marker);
+								if (question == null) {
+									question = questionString;
+								}
 								String packgeId = tokens.nextToken();
 								String runType = tokens.nextToken();
 								String axis = tokens.nextToken();
@@ -337,12 +345,12 @@ public class StatisticRESTController {
 									if (axis.equalsIgnoreCase("E")) {
 										catRating.addEffortRating(rating);
 										if (category.getBaselineEffortQuestion().equalsIgnoreCase("")) {
-											category.setBaselineEffortQuestion(questionString);
+											category.setBaselineEffortQuestion(question);
 										}
 									} else {
 										catRating.addResultRating(this.reversRating(rating));
 										if (category.getBaselineResultQuestion().equalsIgnoreCase("")) {
-											category.setBaselineResultQuestion(questionString);
+											category.setBaselineResultQuestion(question);
 										}
 									}
 								} else {
@@ -350,12 +358,12 @@ public class StatisticRESTController {
 									if (axis.equalsIgnoreCase("E")) {
 										catRating.addEffortRating(rating);
 										if (category.getInnovationlineEffortQuestion().equalsIgnoreCase("")) {
-											category.setInnovationlineEffortQuestion(questionString);
+											category.setInnovationlineEffortQuestion(question);
 										}
 									} else {
 										catRating.addResultRating(this.reversRating(rating));
 										if (category.getInnovationlineResultQuestion().equalsIgnoreCase("")) {
-											category.setInnovationlineResultQuestion(questionString);
+											category.setInnovationlineResultQuestion(question);
 										}
 									}
 								}
@@ -829,7 +837,7 @@ public class StatisticRESTController {
 			contentStream = new PDPageContentStream(document, page);
 			float endY = MultiLine.drawMultiLineText(paragrahNumber + ") " + 
 					CategoryMapper.getInstance().getHeadingforCategory(packageId, category.getCategoryId()),
-					20, height-40, 500, page, contentStream, PDType1Font.TIMES_BOLD, 16, new Color(0, 72, 126));
+					20, height-40, 500, page, contentStream, PDType1Font.TIMES_BOLD, 14, new Color(0, 72, 126));
 			
 			endY = MultiLine.drawMultiLineText(paragrahNumber + ".1) Following question identifying Effort & Result for Baseline has be asked:",
 					30, endY-20, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
