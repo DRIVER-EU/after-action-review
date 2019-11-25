@@ -165,428 +165,438 @@ public class RecordRESTController implements IAdaptorCallback {
 	public synchronized void messageReceived(IndexedRecord key,
 			IndexedRecord receivedMessage, String topicName) {
 		Record record = new Record();
-		record.setCreateDate(new Date());
-		if (connectTB) {
-			record.setTrialDate(CISAdapter.getInstance().getTrialTime());
-		} else {
-			record.setTrialDate(new Date());
-		}
-		record.setRecordType(receivedMessage.getSchema().getName());
-		record.setRunType(AARConstants.RECORD_RUN_TYPE_IN);
-		eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData
-				.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
+		try {
+			record.setCreateDate(new Date());
+			if (connectTB) {
+				record.setTrialDate(CISAdapter.getInstance().getTrialTime());
+			} else {
+				record.setTrialDate(new Date());
+			}
+			record.setRecordType(receivedMessage.getSchema().getName());
+			record.setRunType(AARConstants.RECORD_RUN_TYPE_IN);
+			eu.driver.model.edxl.EDXLDistribution msgKey = (eu.driver.model.edxl.EDXLDistribution) SpecificData
+					.get().deepCopy(eu.driver.model.edxl.EDXLDistribution.SCHEMA$, key);
+			
+			record.setClientId(msgKey.getSenderID().toString());
+			record.setTopic(topicName);
+
 		
-		record.setClientId(msgKey.getSenderID().toString());
-		record.setTopic(topicName);
-
-		if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
-			eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData
-					.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
-			
-			record.setRecordJson(msg.toString());
-			String logMsg = msg.getLog().toString();
-			if (logMsg.length() > 100) {
-				record.setHeadline(logMsg.substring(0, 97) + "...");
-			} else {
-				record.setHeadline(msg.getLog().toString());
-			}
-			
-			if (topicName.equalsIgnoreCase(TopicConstants.LOGGING_TOPIC)) {
-				if (msg.getLevel().equals(Level.ERROR) || msg.getLevel().equals(Level.CRITICAL)) {
-					record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
-				} else if (msg.getLevel().equals(Level.WARN)) {
-					record.setMsgType(AARConstants.RECORD_MSG_TYPE_WARN);
+			if (receivedMessage.getSchema().getName().equalsIgnoreCase("Log")) {
+				eu.driver.model.core.Log msg = (eu.driver.model.core.Log) SpecificData
+						.get().deepCopy(eu.driver.model.core.Log.SCHEMA$, receivedMessage);
+				
+				record.setRecordJson(msg.toString());
+				String logMsg = msg.getLog().toString();
+				if (logMsg.length() > 100) {
+					record.setHeadline(logMsg.substring(0, 97) + "...");
 				} else {
-					record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					record.setHeadline(msg.getLog().toString());
 				}
-			} else {
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_EVAL);
-			}
-			
-			
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("TopicInvite")) {
-			eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData
-					.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-
-			// create the TopicReceiver entries
-			String clientId = msg.getId().toString();
-			String receiverTopicName = msg.getTopicName().toString();
-			Boolean subscribeAllowed = msg.getSubscribeAllowed();
-			
-			String headline = "TopicInvite: " + clientId + " for " + receiverTopicName;
-			if (msg.getSubscribeAllowed() && msg.getPublishAllowed()) {
-				headline += " to publish/subscribe";
-			} else if (msg.getSubscribeAllowed()) {
-				headline += " to subscribe";
-			} else if (msg.getPublishAllowed()) {
-				headline += " to publish";
-			}
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline(headline);
-			if (ownClientID.equalsIgnoreCase(clientId)) {
-				// add a callback if not done already
-				if (registeredCallbacks.get(receiverTopicName) == null) {
-					log.info("Adding a callback receiver for: " + receiverTopicName);
-					CISAdapter.getInstance().addCallback(this, receiverTopicName);
-					registeredCallbacks.put(receiverTopicName, true);
-				}
-			} else if (subscribeAllowed && !ownClientID.equalsIgnoreCase(clientId + "-Backup")) {
-				String trialId = "unknown";
-				TopicReceiver topicReceiver = topicReceiverRepo
-						.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
-				if (topicReceiver == null) {
-					topicReceiver = new TopicReceiver();
-					topicReceiver.setClientId(clientId);
-					topicReceiver.setTopicName(receiverTopicName);
-					topicReceiver.setTrialId(trialId);
-
-					topicReceiverRepo.saveAndFlush(topicReceiver);
-				}
-			}
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("Alert")) {
-			eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData
-					.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			if (msg.getMsgType().equals(MsgType.Ack )) {
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_ACK);
-				record.setHeadline(msg.getSender().toString() + " + " + msg.getReferences().toString());
-			} else if (msg.getMsgType().equals(MsgType.Error)) {
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
-				record.setHeadline(msg.getSender().toString() + " + " + msg.getNote().toString());
-			} else {
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-				if (msg.getInfo() instanceof Info) {
-					record.setHeadline(((Info)msg.getInfo()).getHeadline().toString());
-				} else {
-					List<Info> infos = (List<Info>)msg.getInfo();
-					if (infos.get(0).getHeadline() != null) {
-						record.setHeadline(infos.get(0).getHeadline().toString());	
+				
+				if (topicName.equalsIgnoreCase(TopicConstants.LOGGING_TOPIC)) {
+					if (msg.getLevel().equals(Level.ERROR) || msg.getLevel().equals(Level.CRITICAL)) {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+					} else if (msg.getLevel().equals(Level.WARN)) {
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_WARN);
 					} else {
-						record.setHeadline("New CAP was send from: " + record.getClientId());
+						record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					}
+				} else {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_EVAL);
+				}
+				
+				
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("TopicInvite")) {
+				eu.driver.model.core.TopicInvite msg = (eu.driver.model.core.TopicInvite) SpecificData
+						.get().deepCopy(eu.driver.model.core.TopicInvite.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+	
+				// create the TopicReceiver entries
+				String clientId = msg.getId().toString();
+				String receiverTopicName = msg.getTopicName().toString();
+				Boolean subscribeAllowed = msg.getSubscribeAllowed();
+				
+				String headline = "TopicInvite: " + clientId + " for " + receiverTopicName;
+				if (msg.getSubscribeAllowed() && msg.getPublishAllowed()) {
+					headline += " to publish/subscribe";
+				} else if (msg.getSubscribeAllowed()) {
+					headline += " to subscribe";
+				} else if (msg.getPublishAllowed()) {
+					headline += " to publish";
+				}
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline(headline);
+				if (ownClientID.equalsIgnoreCase(clientId)) {
+					// add a callback if not done already
+					if (registeredCallbacks.get(receiverTopicName) == null) {
+						log.info("Adding a callback receiver for: " + receiverTopicName);
+						CISAdapter.getInstance().addCallback(this, receiverTopicName);
+						registeredCallbacks.put(receiverTopicName, true);
+					}
+				} else if (subscribeAllowed && !ownClientID.equalsIgnoreCase(clientId + "-Backup")) {
+					String trialId = "unknown";
+					TopicReceiver topicReceiver = topicReceiverRepo
+							.findObjectByTrialClientTopic(trialId, clientId, receiverTopicName);
+					if (topicReceiver == null) {
+						topicReceiver = new TopicReceiver();
+						topicReceiver.setClientId(clientId);
+						topicReceiver.setTopicName(receiverTopicName);
+						topicReceiver.setTrialId(trialId);
+	
+						topicReceiverRepo.saveAndFlush(topicReceiver);
 					}
 				}
-			}
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("SlRep")) {
-			eu.driver.model.mlp.SlRep msg = (eu.driver.model.mlp.SlRep) SpecificData
-					.get().deepCopy(eu.driver.model.mlp.SlRep.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("FeatureCollection")) {
-			try {
-				eu.driver.model.geojson.FeatureCollection msg = (eu.driver.model.geojson.FeatureCollection) SpecificData
-						.get().deepCopy(
-								eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("Alert")) {
+				eu.driver.model.cap.Alert msg = (eu.driver.model.cap.Alert) SpecificData
+						.get().deepCopy(eu.driver.model.cap.Alert.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
-				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-				List<eu.driver.model.geojson.Feature> featureList = msg.getFeatures();
-				for (eu.driver.model.geojson.Feature feature : featureList) {
-					Object properties = feature.getProperties();
-					Utf8 imageRefUTF8 = new Utf8("image_ref");
-					Utf8 nameUTF8 = new Utf8("name");
-					try {
-						if (properties instanceof HashMap) {
-							HashMap<Utf8, Utf8> prop = (HashMap<Utf8, Utf8>)properties;
-							
-							Utf8 tmpUtf8 = prop.get(imageRefUTF8);
-							if (tmpUtf8 != null) {
-								String imageRef = tmpUtf8.toString();
-					    		if (imageRef != null) {
-									int lastIdx = imageRef.lastIndexOf("/");
-									String fileName = imageRef.substring(lastIdx+1);
-									
-									Attachment attachment = new Attachment();
-									attachment.setRecord(record);
-									attachment.setName("record/attachements/" + fileName);
-									attachment.setUrl(imageRef);
-									record.addAttachment(attachment);
-								}
+				if (msg.getMsgType().equals(MsgType.Ack )) {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_ACK);
+					record.setHeadline(msg.getSender().toString() + " + " + msg.getReferences().toString());
+				} else if (msg.getMsgType().equals(MsgType.Error)) {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_ERROR);
+					record.setHeadline(msg.getSender().toString() + " + " + msg.getNote().toString());
+				} else if (msg.getMsgType().equals(MsgType.Cancel)) {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					record.setHeadline("Cancel message received.");
+				} else {
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					if (msg.getInfo() instanceof Info) {
+						record.setHeadline(((Info)msg.getInfo()).getHeadline().toString());
+					} else {
+						List<Info> infos = (List<Info>)msg.getInfo();
+						if (infos != null) {
+							if (infos.get(0).getHeadline() != null) {
+								record.setHeadline(infos.get(0).getHeadline().toString());	
+							} else {
+								record.setHeadline("New CAP was send from: " + record.getClientId());
 							}
-							tmpUtf8 = prop.get(nameUTF8);
-							if (tmpUtf8 != null) {
-								String name = tmpUtf8.toString();
-								if (name != null) {
-									if (record.getHeadline() == null) {
-										record.setHeadline(name);
+						}
+					}
+				}
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("SlRep")) {
+				eu.driver.model.mlp.SlRep msg = (eu.driver.model.mlp.SlRep) SpecificData
+						.get().deepCopy(eu.driver.model.mlp.SlRep.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("FeatureCollection")) {
+				try {
+					eu.driver.model.geojson.FeatureCollection msg = (eu.driver.model.geojson.FeatureCollection) SpecificData
+							.get().deepCopy(
+									eu.driver.model.geojson.FeatureCollection.SCHEMA$, receivedMessage);
+					record.setRecordJson(msg.toString());
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					List<eu.driver.model.geojson.Feature> featureList = msg.getFeatures();
+					for (eu.driver.model.geojson.Feature feature : featureList) {
+						Object properties = feature.getProperties();
+						Utf8 imageRefUTF8 = new Utf8("image_ref");
+						Utf8 nameUTF8 = new Utf8("name");
+						try {
+							if (properties instanceof HashMap) {
+								HashMap<Utf8, Utf8> prop = (HashMap<Utf8, Utf8>)properties;
+								
+								Utf8 tmpUtf8 = prop.get(imageRefUTF8);
+								if (tmpUtf8 != null) {
+									String imageRef = tmpUtf8.toString();
+						    		if (imageRef != null) {
+										int lastIdx = imageRef.lastIndexOf("/");
+										String fileName = imageRef.substring(lastIdx+1);
+										
+										Attachment attachment = new Attachment();
+										attachment.setRecord(record);
+										attachment.setName("record/attachements/" + fileName);
+										attachment.setUrl(imageRef);
+										record.addAttachment(attachment);
+									}
+								}
+								tmpUtf8 = prop.get(nameUTF8);
+								if (tmpUtf8 != null) {
+									String name = tmpUtf8.toString();
+									if (name != null) {
+										if (record.getHeadline() == null) {
+											record.setHeadline(name);
+										}
 									}
 								}
 							}
+						} catch (Exception e) {
+							log.error("Error evaluating the imageRef");
 						}
-					} catch (Exception e) {
-						log.error("Error evaluating the imageRef");
+					}
+				} catch(Exception e) {
+					eu.driver.model.geojson.photo.FeatureCollection msg = (eu.driver.model.geojson.photo.FeatureCollection) SpecificData
+							.get().deepCopy(
+									eu.driver.model.geojson.photo.FeatureCollection.SCHEMA$, receivedMessage);
+					record.setRecordJson(msg.toString());
+					record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+					
+					List<Feature> featureList = msg.getFeatures();
+					for (Feature feature : featureList) {
+						properties properties = feature.getProperties();
+						if (record.getHeadline() == null) {
+							if (properties.getMissionName() != null) {
+								record.setHeadline(properties.getMissionName().toString());	
+							}
+						}
+						List<files> files = properties.getFiles();
+						for (files file : files) {
+							try {
+								String storeName = "";
+								String fileName = "";
+								if (file.getUrl() != null) {
+									String url = file.getUrl().toString();
+									if (url.length() > 0) {
+										int lastIdx = url.lastIndexOf("/");
+										fileName = url.substring(lastIdx+1);
+										url = url.substring(0,lastIdx);
+										lastIdx = url.lastIndexOf("/");
+										storeName += url.substring(lastIdx+1);
+										
+										Attachment attachment = new Attachment();
+										attachment.setRecord(record);
+										attachment.setName("record/attachements/" + storeName + "/" + fileName);
+										attachment.setUrl(file.getUrl().toString());
+										record.addAttachment(attachment);
+									}
+								}
+							} catch (Exception ex) {
+								log.error("Error loading and storing the message attachement: " + file.getUrl());
+							}
+						}
 					}
 				}
-			} catch(Exception e) {
-				eu.driver.model.geojson.photo.FeatureCollection msg = (eu.driver.model.geojson.photo.FeatureCollection) SpecificData
-						.get().deepCopy(
-								eu.driver.model.geojson.photo.FeatureCollection.SCHEMA$, receivedMessage);
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("TSO_2_0")) {
+				eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData
+						.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline(msg.getEVENT().getNAME().toString());
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("LargeDataUpdate")) {
+				eu.driver.model.core.LargeDataUpdate msg = (eu.driver.model.core.LargeDataUpdate) SpecificData
+						.get().deepCopy(
+								eu.driver.model.core.LargeDataUpdate.SCHEMA$, receivedMessage);
 				
-				List<Feature> featureList = msg.getFeatures();
-				for (Feature feature : featureList) {
-					properties properties = feature.getProperties();
-					if (record.getHeadline() == null) {
-						if (properties.getMissionName() != null) {
-							record.setHeadline(properties.getMissionName().toString());	
-						}
-					}
-					List<files> files = properties.getFiles();
-					for (files file : files) {
-						try {
-							String storeName = "";
-							String fileName = "";
-							if (file.getUrl() != null) {
-								String url = file.getUrl().toString();
-								if (url.length() > 0) {
-									int lastIdx = url.lastIndexOf("/");
-									fileName = url.substring(lastIdx+1);
-									url = url.substring(0,lastIdx);
-									lastIdx = url.lastIndexOf("/");
-									storeName += url.substring(lastIdx+1);
-									
-									Attachment attachment = new Attachment();
-									attachment.setRecord(record);
-									attachment.setName("record/attachements/" + storeName + "/" + fileName);
-									attachment.setUrl(file.getUrl().toString());
-									record.addAttachment(attachment);
-								}
-							}
-						} catch (Exception ex) {
-							log.error("Error loading and storing the message attachement: " + file.getUrl());
-						}
-					}
-				}
-			}
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("TSO_2_0")) {
-			eu.driver.model.emsi.TSO_2_0 msg = (eu.driver.model.emsi.TSO_2_0) SpecificData
-					.get().deepCopy(eu.driver.model.emsi.TSO_2_0.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline(msg.getEVENT().getNAME().toString());
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("LargeDataUpdate")) {
-			eu.driver.model.core.LargeDataUpdate msg = (eu.driver.model.core.LargeDataUpdate) SpecificData
-					.get().deepCopy(
-							eu.driver.model.core.LargeDataUpdate.SCHEMA$, receivedMessage);
-			
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline("New LargeFile available: " + msg.getTitle().toString());
-			try {
-				String storeName = "";
-				if (msg.getUrl() != null) {
-					String url = msg.getUrl().toString();
-					if (url.length() > 0) {
-						try {
-							int lastIdx = url.lastIndexOf("/");
-							storeName += url.substring(lastIdx+1);
-						} catch (Exception ex) {
-							log.error("Error loading the message attachement: " + msg.getUrl(), ex);
-						}
-						
-						try {
-							Attachment attachment = new Attachment();
-							attachment.setRecord(record);
-							attachment.setMimeType(msg.getDataType().toString());
-							attachment.setName("record/attachements/" + storeName);
-							attachment.setUrl(url);
-							record.addAttachment(attachment);
-						} catch (Exception ex) {
-							log.error("Error loading and storing the message attachement: " + msg.getUrl());
-						}
-					}
-				}
-			} catch (Exception ex) {
-				log.error("Error loading and storing the message attachement: " + msg.getUrl());
-			}
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("GeoJSONEnvelope")) {
-			eu.driver.model.geojson.GeoJSONEnvelope msg = (eu.driver.model.geojson.GeoJSONEnvelope) SpecificData
-					.get().deepCopy(
-							eu.driver.model.geojson.GeoJSONEnvelope.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-		}  else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("MapLayerUpdate")) {
-			eu.driver.model.core.MapLayerUpdate msg = (eu.driver.model.core.MapLayerUpdate) SpecificData
-					.get().deepCopy(
-							eu.driver.model.core.MapLayerUpdate.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline(msg.getTitle().toString() + ", " + msg.getUpdateType().toString());
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("SessionMgmt")) {
-			eu.driver.model.core.SessionMgmt msg = (eu.driver.model.core.SessionMgmt) SpecificData
-					.get().deepCopy(eu.driver.model.core.SessionMgmt.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline(msg.getSessionId().toString() + ", " + msg.getSessionState().toString());
-
-			// check the session
-			String trialId = msg.getTrialId().toString();
-			Trial trial = trialRepo.findObjectByTrialId(trialId);
-			if (trial == null) {
-				trial = new Trial();
-				trial.setActual(true);
-				trial.setTrialName(msg.getTrialName().toString());
-				trial.setTrialId(msg.getTrialId().toString());
-				trial.setStartDate(new Date());
-			}
-			if (msg.getSessionState()== SessionState.STOP) {
-				trial.setEndDate(new Date());
-			}
-
-			String szenarioId = msg.getScenarioId().toString();
-			Szenario szenario = null;
-			for (Szenario tmpSzenario : trial.getSzenarioList()) {
-				if (tmpSzenario.getSzenarioId().equals(szenarioId)) {
-					szenario = tmpSzenario;
-				}
-			}
-			if (szenario == null) {
-				szenario = new Szenario();
-				szenario.setTrial(trial);
-				szenario.setSzenarioId(msg.getScenarioId().toString());
-				szenario.setSzenarioName(msg.getScenarioName().toString());
-				szenario.setStartDate(new Date());
-				trial.addSzenario(szenario);
-				trial.setEndDate(null);
-			}
-			if (msg.getSessionState() == SessionState.STOP) {
-				szenario.setEndDate(new Date());
-			}
-
-			String sessionId = msg.getSessionId().toString();
-			Session session = null;
-			for (Session tmpSession : szenario.getSessionList()) {
-				if (tmpSession.getSessionId().equals(sessionId)) {
-					session = tmpSession;
-				}
-			}
-			if (session == null) {
-				session = new Session();
-				session.setSzenario(szenario);
-				session.setSessionId(msg.getSessionId().toString());
-				session.setSessionName(msg.getSessionName().toString());
-				session.setStartDate(new Date());
-				szenario.addSession(session);
-				trial.setEndDate(null);
-				szenario.setEndDate(null);
-			}
-			if (msg.getSessionState() == SessionState.STOP) {
-				session.setEndDate(new Date());
-			}
-			// check if there is a actual trial that is not that trial.
-			if (trial.getId() == null) {
-				Trial actTrial = trialRepo.findActualTrial();
-				if (actTrial != null) {
-					actTrial.setActual(false);
-					trialRepo.saveAndFlush(actTrial);
-				}
-			}
-			trialRepo.saveAndFlush(trial);
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("PhaseMessage")) {
-			eu.driver.model.core.PhaseMessage msg = (eu.driver.model.core.PhaseMessage) SpecificData
-					.get().deepCopy(eu.driver.model.core.PhaseMessage.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline(msg.getPhase().name() + ", state: " + msg.getIsStarting());
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("RolePlayerMessage")) {
-			eu.driver.model.core.RolePlayerMessage msg = (eu.driver.model.core.RolePlayerMessage) SpecificData
-					.get().deepCopy(eu.driver.model.core.RolePlayerMessage.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline(msg.getHeadline().toString());
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("Timing")) {
-			eu.driver.model.core.Timing msg = (eu.driver.model.core.Timing) SpecificData
-					.get().deepCopy(eu.driver.model.core.Timing.SCHEMA$, receivedMessage);
-			if (!msg.getState().equals(currentTimingState)
-					|| msg.getTrialTimeSpeed() != currentTrialTimeSpeed) {
-				this.currentTimingState = msg.getState();
-				this.currentTrialTimeSpeed = msg.getTrialTimeSpeed();
 				record.setRecordJson(msg.toString());
-				record.setHeadline("New State: " + this.currentTimingState + ", speed: " + this.currentTrialTimeSpeed);
-			} else {
-				// do nothing, no state update
-				record = null;
-			}
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("RequestChangeOfTrialStage")) {
-			eu.driver.model.core.RequestChangeOfTrialStage msg = (eu.driver.model.core.RequestChangeOfTrialStage) SpecificData
-					.get()
-					.deepCopy(
-							eu.driver.model.core.RequestChangeOfTrialStage.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline("New stage Report for session: "  + msg.getOstTrialSessionId().toString() + ", stage id: " + msg.getOstTrialStageId().toString());
-		} else if (receivedMessage.getSchema().getName()
-				.equalsIgnoreCase("ObserverToolAnswer")) {
-			eu.driver.model.core.ObserverToolAnswer msg = (eu.driver.model.core.ObserverToolAnswer) SpecificData
-					.get().deepCopy(
-							eu.driver.model.core.ObserverToolAnswer.SCHEMA$, receivedMessage);
-			String observer = msg.getObservationTypeName().toString().toUpperCase();
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline("A new observation was reported by: " + observer);
-			
-			// check for Baseline/Innovation line run
-			if (observer.indexOf(ANSWER_ALL_TRIAL) != -1) {
-				record.setRunType(AARConstants.RECORD_RUN_TYPE_TRIALD);
-			} else if (observer.indexOf(ANSWER_OBS_BL) != -1) {
-				record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
-			} else if (observer.indexOf(ANSWER_PRACT_FIE) != -1) {
-				record.setRunType(AARConstants.RECORD_RUN_TYPE_FIE);
-			} else if (observer.indexOf(ANSWER_PRACT_SOLUTION) != -1) {
-				record.setRunType(AARConstants.RECORD_RUN_TYPE_SOLUTIOND);
-			}
-		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("RequestStartInject")) {
-			eu.driver.model.sim.request.RequestStartInject msg = (eu.driver.model.sim.request.RequestStartInject) SpecificData
-					.get().deepCopy(eu.driver.model.sim.request.RequestStartInject.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline("A new observation was reported by: " + msg.getInject().toString());
-		} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Post")) {
-			eu.driver.model.sim.entity.Post msg = (eu.driver.model.sim.entity.Post) SpecificData
-					.get().deepCopy(eu.driver.model.sim.entity.Post.SCHEMA$, receivedMessage);
-			record.setRecordJson(msg.toString());
-			record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-			record.setHeadline("A new observation was reported by: " + msg.getHeader());
-			
-			// check for Baseline/Innovation line run
-     		boolean inRun = false;
-			boolean blRun = false;
-			if (msg.getSenderName().toString().indexOf(POST_BL_EXT) != -1) {
-				blRun = true;
-			}
-			
-			List<CharSequence> recipients = msg.getRecipients();
-			if (recipients != null && recipients.size() > 0) {
-				for (CharSequence recipient: recipients) {
-					if (recipient.toString().indexOf(POST_BL_EXT) != -1) {
-						blRun = true;
-					} else if (!recipient.toString().equalsIgnoreCase("RolePlayer")) {
-						inRun = true;
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline("New LargeFile available: " + msg.getTitle().toString());
+				try {
+					String storeName = "";
+					if (msg.getUrl() != null) {
+						String url = msg.getUrl().toString();
+						if (url.length() > 0) {
+							try {
+								int lastIdx = url.lastIndexOf("/");
+								storeName += url.substring(lastIdx+1);
+							} catch (Exception ex) {
+								log.error("Error loading the message attachement: " + msg.getUrl(), ex);
+							}
+							
+							try {
+								Attachment attachment = new Attachment();
+								attachment.setRecord(record);
+								attachment.setMimeType(msg.getDataType().toString());
+								attachment.setName("record/attachements/" + storeName);
+								attachment.setUrl(url);
+								record.addAttachment(attachment);
+							} catch (Exception ex) {
+								log.error("Error loading and storing the message attachement: " + msg.getUrl());
+							}
+						}
+					}
+				} catch (Exception ex) {
+					log.error("Error loading and storing the message attachement: " + msg.getUrl());
+				}
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("GeoJSONEnvelope")) {
+				eu.driver.model.geojson.GeoJSONEnvelope msg = (eu.driver.model.geojson.GeoJSONEnvelope) SpecificData
+						.get().deepCopy(
+								eu.driver.model.geojson.GeoJSONEnvelope.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+			}  else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("MapLayerUpdate")) {
+				eu.driver.model.core.MapLayerUpdate msg = (eu.driver.model.core.MapLayerUpdate) SpecificData
+						.get().deepCopy(
+								eu.driver.model.core.MapLayerUpdate.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline(msg.getTitle().toString() + ", " + msg.getUpdateType().toString());
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("SessionMgmt")) {
+				eu.driver.model.core.SessionMgmt msg = (eu.driver.model.core.SessionMgmt) SpecificData
+						.get().deepCopy(eu.driver.model.core.SessionMgmt.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline(msg.getSessionId().toString() + ", " + msg.getSessionState().toString());
+	
+				// check the session
+				String trialId = msg.getTrialId().toString();
+				Trial trial = trialRepo.findObjectByTrialId(trialId);
+				if (trial == null) {
+					trial = new Trial();
+					trial.setActual(true);
+					trial.setTrialName(msg.getTrialName().toString());
+					trial.setTrialId(msg.getTrialId().toString());
+					trial.setStartDate(new Date());
+				}
+				if (msg.getSessionState()== SessionState.STOP) {
+					trial.setEndDate(new Date());
+				}
+	
+				String szenarioId = msg.getScenarioId().toString();
+				Szenario szenario = null;
+				for (Szenario tmpSzenario : trial.getSzenarioList()) {
+					if (tmpSzenario.getSzenarioId().equals(szenarioId)) {
+						szenario = tmpSzenario;
 					}
 				}
+				if (szenario == null) {
+					szenario = new Szenario();
+					szenario.setTrial(trial);
+					szenario.setSzenarioId(msg.getScenarioId().toString());
+					szenario.setSzenarioName(msg.getScenarioName().toString());
+					szenario.setStartDate(new Date());
+					trial.addSzenario(szenario);
+					trial.setEndDate(null);
+				}
+				if (msg.getSessionState() == SessionState.STOP) {
+					szenario.setEndDate(new Date());
+				}
+	
+				String sessionId = msg.getSessionId().toString();
+				Session session = null;
+				for (Session tmpSession : szenario.getSessionList()) {
+					if (tmpSession.getSessionId().equals(sessionId)) {
+						session = tmpSession;
+					}
+				}
+				if (session == null) {
+					session = new Session();
+					session.setSzenario(szenario);
+					session.setSessionId(msg.getSessionId().toString());
+					session.setSessionName(msg.getSessionName().toString());
+					session.setStartDate(new Date());
+					szenario.addSession(session);
+					trial.setEndDate(null);
+					szenario.setEndDate(null);
+				}
+				if (msg.getSessionState() == SessionState.STOP) {
+					session.setEndDate(new Date());
+				}
+				// check if there is a actual trial that is not that trial.
+				if (trial.getId() == null) {
+					Trial actTrial = trialRepo.findActualTrial();
+					if (actTrial != null) {
+						actTrial.setActual(false);
+						trialRepo.saveAndFlush(actTrial);
+					}
+				}
+				trialRepo.saveAndFlush(trial);
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("PhaseMessage")) {
+				eu.driver.model.core.PhaseMessage msg = (eu.driver.model.core.PhaseMessage) SpecificData
+						.get().deepCopy(eu.driver.model.core.PhaseMessage.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline(msg.getPhase().name() + ", state: " + msg.getIsStarting());
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("RolePlayerMessage")) {
+				eu.driver.model.core.RolePlayerMessage msg = (eu.driver.model.core.RolePlayerMessage) SpecificData
+						.get().deepCopy(eu.driver.model.core.RolePlayerMessage.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline(msg.getHeadline().toString());
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("Timing")) {
+				eu.driver.model.core.Timing msg = (eu.driver.model.core.Timing) SpecificData
+						.get().deepCopy(eu.driver.model.core.Timing.SCHEMA$, receivedMessage);
+				if (!msg.getState().equals(currentTimingState)
+						|| msg.getTrialTimeSpeed() != currentTrialTimeSpeed) {
+					this.currentTimingState = msg.getState();
+					this.currentTrialTimeSpeed = msg.getTrialTimeSpeed();
+					record.setRecordJson(msg.toString());
+					record.setHeadline("New State: " + this.currentTimingState + ", speed: " + this.currentTrialTimeSpeed);
+				} else {
+					// do nothing, no state update
+					record = null;
+				}
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("RequestChangeOfTrialStage")) {
+				eu.driver.model.core.RequestChangeOfTrialStage msg = (eu.driver.model.core.RequestChangeOfTrialStage) SpecificData
+						.get()
+						.deepCopy(
+								eu.driver.model.core.RequestChangeOfTrialStage.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline("New stage Report for session: "  + msg.getOstTrialSessionId().toString() + ", stage id: " + msg.getOstTrialStageId().toString());
+			} else if (receivedMessage.getSchema().getName()
+					.equalsIgnoreCase("ObserverToolAnswer")) {
+				eu.driver.model.core.ObserverToolAnswer msg = (eu.driver.model.core.ObserverToolAnswer) SpecificData
+						.get().deepCopy(
+								eu.driver.model.core.ObserverToolAnswer.SCHEMA$, receivedMessage);
+				String observer = msg.getObservationTypeName().toString().toUpperCase();
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline("A new observation was reported by: " + observer);
+				
+				// check for Baseline/Innovation line run
+				if (observer.indexOf(ANSWER_ALL_TRIAL) != -1) {
+					record.setRunType(AARConstants.RECORD_RUN_TYPE_TRIALD);
+				} else if (observer.indexOf(ANSWER_OBS_BL) != -1) {
+					record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
+				} else if (observer.indexOf(ANSWER_PRACT_FIE) != -1) {
+					record.setRunType(AARConstants.RECORD_RUN_TYPE_FIE);
+				} else if (observer.indexOf(ANSWER_PRACT_SOLUTION) != -1) {
+					record.setRunType(AARConstants.RECORD_RUN_TYPE_SOLUTIOND);
+				}
+			} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("RequestStartInject")) {
+				eu.driver.model.sim.request.RequestStartInject msg = (eu.driver.model.sim.request.RequestStartInject) SpecificData
+						.get().deepCopy(eu.driver.model.sim.request.RequestStartInject.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline("A new observation was reported by: " + msg.getInject().toString());
+			} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Post")) {
+				eu.driver.model.sim.entity.Post msg = (eu.driver.model.sim.entity.Post) SpecificData
+						.get().deepCopy(eu.driver.model.sim.entity.Post.SCHEMA$, receivedMessage);
+				record.setRecordJson(msg.toString());
+				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
+				record.setHeadline("A new observation was reported by: " + msg.getHeader());
+				
+				// check for Baseline/Innovation line run
+	     		boolean inRun = false;
+				boolean blRun = false;
+				if (msg.getSenderName().toString().indexOf(POST_BL_EXT) != -1) {
+					blRun = true;
+				}
+				
+				List<CharSequence> recipients = msg.getRecipients();
+				if (recipients != null && recipients.size() > 0) {
+					for (CharSequence recipient: recipients) {
+						if (recipient.toString().indexOf(POST_BL_EXT) != -1) {
+							blRun = true;
+						} else if (!recipient.toString().equalsIgnoreCase("RolePlayer")) {
+							inRun = true;
+						}
+					}
+				}
+				if (inRun && blRun) {
+					record.setRunType(AARConstants.RECORD_RUN_TYPE_BOTH);
+				} else if (blRun) {
+					record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
+				}
+			} else {
+				// unknown data
+				record = null;
+				log.error("Unknown message received: " + topicName);
+				log.error(receivedMessage);
 			}
-			if (inRun && blRun) {
-				record.setRunType(AARConstants.RECORD_RUN_TYPE_BOTH);
-			} else if (blRun) {
-				record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
-			}
-		} else {
-			// unknown data
-			record = null;
-			log.error("Unknown message received: " + topicName);
-			log.error(receivedMessage);
+		} catch (Exception e) {
+			log.error("Error evaluation the message", e);
 		}
 
 		if (record != null) {
