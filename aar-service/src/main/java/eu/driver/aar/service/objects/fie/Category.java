@@ -9,10 +9,10 @@ public class Category {
 	private Rating baselineRating = new Rating();
 	private Map<String, Rating> innovationRatings = new HashMap<String, Rating>();
 	
-	private String baselineEffortQuestion = null;
-	private String baselineResultQuestion = null;
-	private String innovationlineEffortQuestion = null;
-	private String innovationlineResultQuestion = null;
+	private String baselineEffortQuestion = "";
+	private String baselineResultQuestion = "";
+	private String innovationlineEffortQuestion = "";
+	private String innovationlineResultQuestion = "";
 	
 	public Category(String categoryId) {
 		this.categoryId = categoryId;

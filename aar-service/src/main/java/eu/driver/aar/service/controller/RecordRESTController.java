@@ -561,6 +561,7 @@ public class RecordRESTController implements IAdaptorCallback {
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
 				record.setHeadline("A new observation was reported by: " + msg.getInject().toString());
 			} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Post")) {
+				receivedMessage.put(14, null);
 				eu.driver.model.sim.entity.Post msg = (eu.driver.model.sim.entity.Post) SpecificData
 						.get().deepCopy(eu.driver.model.sim.entity.Post.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());

@@ -319,7 +319,12 @@ public class StatisticRESTController {
 								String axis = tokens.nextToken();
 								String categoryId = tokens.nextToken();
 								
-								Integer rating = Integer.parseInt(answer.getString("answer"));
+								String answerStr = answer.getString("answer");
+								int minusIdx = answerStr.indexOf("-");
+								if (minusIdx != -1) {
+									answerStr = answerStr.substring(0, minusIdx);
+								}
+								Integer rating = Integer.parseInt(answerStr);
 								
 								Package pckg = packageMap.get(packgeId);
 								if (pckg == null) {
@@ -331,12 +336,12 @@ public class StatisticRESTController {
 									catRating = category.getBaselineRating();
 									if (axis.equalsIgnoreCase("E")) {
 										catRating.addEffortRating(rating);
-										if (category.getBaselineEffortQuestion() == null) {
+										if (category.getBaselineEffortQuestion().equalsIgnoreCase("")) {
 											category.setBaselineEffortQuestion(questionString);
 										}
 									} else {
 										catRating.addResultRating(this.reversRating(rating));
-										if (category.getBaselineResultQuestion() == null) {
+										if (category.getBaselineResultQuestion().equalsIgnoreCase("")) {
 											category.setBaselineResultQuestion(questionString);
 										}
 									}
@@ -344,12 +349,12 @@ public class StatisticRESTController {
 									catRating = category.getInnovationRating(key);
 									if (axis.equalsIgnoreCase("E")) {
 										catRating.addEffortRating(rating);
-										if (category.getInnovationlineEffortQuestion() == null) {
+										if (category.getInnovationlineEffortQuestion().equalsIgnoreCase("")) {
 											category.setInnovationlineEffortQuestion(questionString);
 										}
 									} else {
 										catRating.addResultRating(this.reversRating(rating));
-										if (category.getInnovationlineResultQuestion() == null) {
+										if (category.getInnovationlineResultQuestion().equalsIgnoreCase("")) {
 											category.setInnovationlineResultQuestion(questionString);
 										}
 									}
@@ -959,12 +964,12 @@ public class StatisticRESTController {
 			endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Effort: " + 
 					category.getBaselineRating().getEffortRating().size() + 
 					" which results in a average of: " + category.getBaselineRating().getEffortAvr() + 
-					" (variance: " + FORMATTER.format(category.getBaselineRating().getEffortVariance()) + ")",
+					" (stand. deviation: " + FORMATTER.format(category.getBaselineRating().getEffortStdDev()) + ")",
 					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
 			endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Result: " + 
 					category.getBaselineRating().getResultRating().size() + 
 					" which results in a average of: " + category.getBaselineRating().getResultAvr() + 
-					" (variance: " + FORMATTER.format(category.getBaselineRating().getResultVariance()) + ")",
+					" (stand. deviation: " + FORMATTER.format(category.getBaselineRating().getResultStdDev()) + ")",
 					50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
 			
 			for (String key : treeMap.keySet()) {
@@ -975,7 +980,7 @@ public class StatisticRESTController {
 					endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Effort: " + 
 							rating.getEffortRating().size() + 
 							" which results in a average of: " + rating.getEffortAvr() + 
-							" (stand. deviation: " + FORMATTER.format(rating.getResultStdDev()) + ")",
+							" (stand. deviation: " + FORMATTER.format(rating.getEffortStdDev()) + ")",
 							50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
 					if (blEffAvr.compareTo(rating.getEffortAvr()) == 0) {
 						endY = MultiLine.drawMultiLineText("-> same average of Effort: " + blEffAvr,
