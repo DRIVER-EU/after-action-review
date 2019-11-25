@@ -975,7 +975,7 @@ public class StatisticRESTController {
 					endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Effort: " + 
 							rating.getEffortRating().size() + 
 							" which results in a average of: " + rating.getEffortAvr() + 
-							" (variance: " + FORMATTER.format(rating.getEffortVariance()) + ")",
+							" (stand. deviation: " + FORMATTER.format(rating.getResultStdDev()) + ")",
 							50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
 					if (blEffAvr.compareTo(rating.getEffortAvr()) == 0) {
 						endY = MultiLine.drawMultiLineText("-> same average of Effort: " + blEffAvr,
@@ -990,7 +990,7 @@ public class StatisticRESTController {
 					endY = MultiLine.drawMultiLineText("Nr of received answers for rating the Result: " + 
 							rating.getResultRating().size() + 
 							" which results in a average of: " + rating.getResultAvr() + 
-							" (variance: " + FORMATTER.format(rating.getResultVariance()) + ")",
+							" (stand. deviation: " + FORMATTER.format(rating.getResultStdDev()) + ")",
 							50, endY-5, 480, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
 					if (rating.getResultAvr().compareTo(blResAvr) == 0) {
 						endY = MultiLine.drawMultiLineText("-> same average of Result: " + rating.getResultAvr(),
