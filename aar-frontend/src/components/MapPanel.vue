@@ -133,14 +133,14 @@
         const geometry = this.createGeometryFromInfoArea(area);
         if (geometry) {
           const feature = new Feature(geometry);
-          const style = this.createStyleFromInfoArea(area, resourceType);
+          const style = this.createStyleFromInfoArea(area, resourceType, geometry);
           feature.setStyle(style);
           return feature;
         } else {
           return null;
         }
       },
-      createStyleFromInfoArea(area, resourceType) {
+      createStyleFromInfoArea(area, resourceType, geometry) {
         const isCircle = !!area.circle;
         if (isCircle && resourceType) {
           return new Style({
@@ -148,8 +148,9 @@
           });
         } else {
           const styleValue = (area.geocode || []).filter(g => g.valueName === "style").map(g => g.value).find(a => true);
+          const isPoint = geometry.getType() && geometry.getType().toLowerCase() === "point";
           if (styleValue) {
-            return mapStyling.createStyleFromCssString(styleValue);
+            return mapStyling.createStyleFromCssString(styleValue, isPoint);
           } else {
             return null;
           }
