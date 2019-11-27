@@ -98,22 +98,38 @@ class MapStylingService {
    * Supported: stroke:#3366FF;stroke-width:3px;stroke-opacity:1.0;fill:#FF0000;fill-opacity:0.4
    *
    * @param cssString string to parse
+   * @param isPoint true if style for point is requested
    * @returns {Style} map style
    */
-  createStyleFromCssString (cssString) {
+  createStyleFromCssString (cssString, isPoint) {
     const styleMap = this.parseCssStringIntoMap(cssString);
     const strokeColor = this.createColor(styleMap['stroke'], styleMap['stroke-opacity']) || this.strokeColor;
     const strokeWidth = this.toInt(styleMap['stroke-width']) || this.strokeWidth;
     const areaFill = this.createColor(styleMap['fill'], styleMap['fill-opacity']);
-    return new Style({
-      stroke: new Stroke({
-        color: strokeColor,
-        width: strokeWidth
-      }),
-      fill: new Fill({
-        color: areaFill
+    if (isPoint) {
+      new Style({
+        image: new CircleStyle({
+          radius: this.circleRadius,
+          stroke: new Stroke({
+            color: strokeColor,
+            width: strokeWidth
+          }),
+          fill: new Fill({
+            color: areaFill
+          })
+        })
       })
-    });
+    } else {
+      return new Style({
+        stroke: new Stroke({
+          color: strokeColor,
+          width: strokeWidth
+        }),
+        fill: new Fill({
+          color: areaFill
+        })
+      });
+    }
   };
 
   createColor (colorBaseString, colorOpacity) {
