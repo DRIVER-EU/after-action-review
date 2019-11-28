@@ -74,6 +74,7 @@ import org.springframework.web.bind.annotation.RestController;
 import be.quodlibet.boxable.utils.PDStreamUtils;
 import eu.driver.aar.service.constants.AARConstants;
 import eu.driver.aar.service.constants.CategoryMapper;
+import eu.driver.aar.service.controller.page.FIEOverviewPage;
 import eu.driver.aar.service.dto.Record;
 import eu.driver.aar.service.dto.Trial;
 import eu.driver.aar.service.objects.ChartMapObjects;
@@ -454,6 +455,213 @@ public class StatisticRESTController {
 		headers.setContentDispositionFormData("attachment", "reportFIE.pdf"); 
 	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
 	    log.info("createFIEPDFReport-->");
+	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
+	}
+	
+	@ApiOperation(value = "createOverviewFIEPDFReport", nickname = "createOverviewFIEPDFReport")
+	@RequestMapping(value = "/AARService/createOverviewFIEPDFReport", method = RequestMethod.GET)
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Success", response = byte[].class),
+			@ApiResponse(code = 400, message = "Bad Request", response = byte[].class),
+			@ApiResponse(code = 500, message = "Failure", response = byte[].class) })
+	public ResponseEntity<byte[]> createOverviewFIEPDFReport() {
+		log.info("-->createOverviewFIEPDFReport");
+		String docName = "./overviewFIE.pdf";
+		byte[] fileContent = null;
+		if(Files.exists(Paths.get(docName))) {
+			try {
+				Files.delete(Paths.get(docName));
+			} catch (IOException e) {
+				log.error("Error delete the old overviewFIE.pdf file!", e);
+				fileContent = "Could not delete the old overviewFIE file, new report was not generated!".getBytes();
+				HttpHeaders headers = new HttpHeaders();
+				headers.setContentType(MediaType.TEXT_HTML);
+			    log.info("createOverviewFIEPDFReport-->");
+			    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
+		
+		try {
+			this.cleanUpChartDirectoy();
+		} catch (Exception e) {
+			fileContent = e.getMessage().getBytes();
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.TEXT_HTML);
+		    log.info("createOverviewFIEPDFReport-->");
+		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		Map<String, Package> packageMap = new HashMap<String, Package>();
+		
+		Trial trial = trialRepo.findActualTrial();
+		if (trial == null) {
+			fileContent = "Could not load the actual trial information!".getBytes();
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.TEXT_HTML);
+		    log.info("createOverviewFIEPDFReport-->");
+		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		List<Record> records = recordRepo.findObjectsByRecordTypeAndRunType("ObserverToolAnswer", AARConstants.RECORD_RUN_TYPE_FIE);
+		for (Record record : records) {
+			try {
+				JSONObject recordJson = new JSONObject(record.getRecordJson());
+				
+				Long sendWhen = recordJson.getLong("timeWhen");
+				Date sendDateWhen = new Date(sendWhen);
+				String key = format.format(sendDateWhen);
+				
+				JSONArray questions = recordJson.getJSONArray("questions");
+				int count = questions.length();
+				for (int i = 0; i < count; i++) {
+					JSONObject answer = questions.getJSONObject(i);
+					if (answer.getString("typeOfQuestion").equalsIgnoreCase("radiobutton")) {
+						String questionString = answer.getString("name");
+						
+						int idx = questionString.indexOf(":");
+						if (idx > 0) {
+							String marker = questionString.substring(0, idx);
+							StringTokenizer tokens = new StringTokenizer(marker, "/");
+							if (tokens.countTokens() == 4) {
+								// get the question from QuestionInstance
+								String question = questioninstance.getQuestion(marker);
+								if (question == null) {
+									question = questionString;
+								}
+								String packgeId = tokens.nextToken();
+								String runType = tokens.nextToken();
+								String axis = tokens.nextToken();
+								String categoryId = tokens.nextToken();
+								
+								String answerStr = answer.getString("answer");
+								int minusIdx = answerStr.indexOf("-");
+								if (minusIdx != -1) {
+									answerStr = answerStr.substring(0, minusIdx);
+								}
+								Integer rating = Integer.parseInt(answerStr);
+								
+								Package pckg = packageMap.get(packgeId);
+								if (pckg == null) {
+									pckg = new Package(packgeId);
+								}
+								Category category = pckg.getCategory(categoryId);
+								Rating catRating = null;
+								if (runType.equalsIgnoreCase("BL")) {
+									catRating = category.getBaselineRating();
+									if (axis.equalsIgnoreCase("E")) {
+										catRating.addEffortRating(rating);
+										if (category.getBaselineEffortQuestion().equalsIgnoreCase("")) {
+											category.setBaselineEffortQuestion(question);
+										}
+									} else {
+										catRating.addResultRating(this.reversRating(rating));
+										if (category.getBaselineResultQuestion().equalsIgnoreCase("")) {
+											category.setBaselineResultQuestion(question);
+										}
+									}
+								} else {
+									catRating = category.getInnovationRating(key);
+									if (axis.equalsIgnoreCase("E")) {
+										catRating.addEffortRating(rating);
+										if (category.getInnovationlineEffortQuestion().equalsIgnoreCase("")) {
+											category.setInnovationlineEffortQuestion(question);
+										}
+									} else {
+										catRating.addResultRating(this.reversRating(rating));
+										if (category.getInnovationlineResultQuestion().equalsIgnoreCase("")) {
+											category.setInnovationlineResultQuestion(question);
+										}
+									}
+								}
+								
+								if (!answer.isNull("comment") && answer.getString("comment").length() > 0) {
+									catRating.addComment(recordJson.getString("observationTypeName") + ": " + answer.getString("comment"));	
+								}
+								
+								packageMap.put(packgeId, pckg);
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				log.error("Error parsing the answer!", e);
+			}
+		}
+		
+		PDDocument document = new PDDocument();
+		this.addStartPage(document, trial.getTrialName(), "Generated First Impression Evaluation Overview Report");
+		FIEOverviewPage overviewFIEPageGen = new FIEOverviewPage();
+		Package pckg = packageMap.get("Q1");
+		int paragrahNumber = 1;
+		if (pckg != null) {
+			overviewFIEPageGen.addFIEOverviewGraphPage(document, pckg.getPackageId(), pckg, paragrahNumber);
+			/*
+			for (Map.Entry<String, Category> entry : pckg.getPackageCategoryMap().entrySet()) {
+				this.addFIEGraphPage(document, pckg.getPackageId(), entry.getValue(), paragrahNumber);
+				paragrahNumber++;
+			};*/
+		}
+		pckg = packageMap.get("Q2");
+		if (pckg != null) {
+			overviewFIEPageGen.addFIEOverviewGraphPage(document, pckg.getPackageId(), pckg, paragrahNumber);
+			/*for (Map.Entry<String, Category> entry : pckg.getPackageCategoryMap().entrySet()) {
+				this.addFIEGraphPage(document, pckg.getPackageId(), entry.getValue(), paragrahNumber);
+				paragrahNumber++;
+			};*/
+		}
+		pckg = packageMap.get("Q3");
+		if (pckg != null) {
+			overviewFIEPageGen.addFIEOverviewGraphPage(document, pckg.getPackageId(), pckg, paragrahNumber);
+			/*for (Map.Entry<String, Category> entry : pckg.getPackageCategoryMap().entrySet()) {
+				this.addFIEGraphPage(document, pckg.getPackageId(), entry.getValue(), paragrahNumber);
+				paragrahNumber++;
+			};*/
+		}
+		pckg = packageMap.get("Q4");
+		if (pckg != null) {
+			overviewFIEPageGen.addFIEOverviewGraphPage(document, pckg.getPackageId(), pckg, paragrahNumber);
+			/*for (Map.Entry<String, Category> entry : pckg.getPackageCategoryMap().entrySet()) {
+				this.addFIEGraphPage(document, pckg.getPackageId(), entry.getValue(), paragrahNumber);
+				paragrahNumber++;
+			};*/
+		}
+		
+		try {
+			this.addFooter(document);	
+		} catch (Exception e) {
+			log.error("Error creating the Footer on the!");
+		}
+		
+		try {
+			document.save(docName);
+	        document.close();	
+		} catch (IOException ie) {
+			log.error("Error creating the report.pdf", ie);
+			fileContent = "Could not write the report file!".getBytes();
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.TEXT_HTML);
+		    log.info("createOverviewFIEPDFReport-->");
+		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		File file = new File(docName);
+		try {
+			fileContent = Files.readAllBytes(file.toPath());
+		} catch (IOException e) {
+			log.error("Error loading the file!", e);
+			fileContent = "Report file could not be found!".getBytes();
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.TEXT_HTML);
+		    log.info("createOverviewFIEPDFReport-->");
+		    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_PDF);
+		headers.setContentDispositionFormData("attachment", "overviewFIE.pdf"); 
+	    headers.setCacheControl(CacheControl.noCache().getHeaderValue());
+	    log.info("createFIEcreateOverviewFIEPDFReportPDFReport-->");
 	    return new ResponseEntity<byte[]>(fileContent, headers, HttpStatus.OK);
 	}
 	
@@ -1082,14 +1290,15 @@ public class StatisticRESTController {
         int numberOfPages = document.getNumberOfPages();
         for (int i = 1; i < numberOfPages; i++) {
         	PDPage fpage = document.getPage(i);
+        	float widh = fpage.getMediaBox().getWidth();
             PDPageContentStream contentStream = new PDPageContentStream(document, fpage, AppendMode.APPEND, true);
             
             contentStream.setStrokingColor(0, 73, 126);
             contentStream.moveTo(0, 30);
-            contentStream.lineTo(470, 30);
+            contentStream.lineTo(widh - 110, 30);
             contentStream.stroke();
             
-            PDStreamUtils.write(contentStream, "Page " + (i+1) + " of " + (numberOfPages), PDType1Font.HELVETICA_BOLD, 8, 500, 34, new Color(0, 73, 126));
+            PDStreamUtils.write(contentStream, "Page " + (i+1) + " of " + (numberOfPages), PDType1Font.HELVETICA_BOLD, 8, widh-80, 34, new Color(0, 73, 126));
             contentStream.close();
         }
     }

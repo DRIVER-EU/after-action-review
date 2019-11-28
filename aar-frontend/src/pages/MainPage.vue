@@ -8,6 +8,10 @@
         </v-btn>
         <v-card>
           <v-list>
+            <v-list-tile @click="downloadReport('FIRST_IMPRESSION_OV')">
+              <v-icon left>inbox</v-icon>
+              FIE Overview
+            </v-list-tile>
             <v-list-tile @click="downloadReport('FIRST_IMPRESSION')">
               <v-icon left>inbox</v-icon>
               First Impression Evaluation
@@ -145,6 +149,8 @@
       },
       getReportPath(reportType) {
         switch (reportType) {
+          case "FIRST_IMPRESSION_OV":
+            return "createOverviewFIEPDFReport";
           case "FIRST_IMPRESSION":
             return "createFIEPDFReport";
           case "BASELINE":

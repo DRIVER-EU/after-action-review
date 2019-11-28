@@ -26,7 +26,7 @@ public class MultiLine {
 	 * @throws IOException
 	 */
 	public static float drawMultiLineText(String text, float x, float y, int allowedWidth, PDPage page, PDPageContentStream contentStream, PDFont font, int fontSize, Color fontColor) throws IOException {
-		text = text.replace('\u00A0',' ');
+		text = text.replace("\n", "").replace("\r", "");
 		List<String> lines = new ArrayList<String>();
 	    String myLine = "";
 	    String[] words = text.split(" ");

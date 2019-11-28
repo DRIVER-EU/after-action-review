@@ -559,14 +559,14 @@ public class RecordRESTController implements IAdaptorCallback {
 						.get().deepCopy(eu.driver.model.sim.request.RequestStartInject.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-				record.setHeadline("A new observation was reported by: " + msg.getInject().toString());
+				record.setHeadline("A new RequestStartInject was sent by: " + msg.getInject().toString());
 			} else if (receivedMessage.getSchema().getName().equalsIgnoreCase("Post")) {
 				receivedMessage.put(14, null);
 				eu.driver.model.sim.entity.Post msg = (eu.driver.model.sim.entity.Post) SpecificData
 						.get().deepCopy(eu.driver.model.sim.entity.Post.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-				record.setHeadline("A new observation was reported by: " + msg.getHeader());
+				record.setHeadline("A new email was sent by: " + msg.getSenderName().toString());
 				
 				// check for Baseline/Innovation line run
 	     		boolean inRun = false;
@@ -603,15 +603,17 @@ public class RecordRESTController implements IAdaptorCallback {
 		if (record != null) {
 			try {
 				record = recordRepo.saveAndFlush(record);
-				LocalDateTime localDate = LocalDateTime.now();
-				Date sendDate = Date.from(localDate.atZone(ZoneId.systemDefault()).toInstant());
-				WSRecordNotification notification = new WSRecordNotification(
-						record.getId(), record.getClientId(),
-						record.getTopic(), sendDate,
-						record.getRecordType(), record.getHeadline(), record.getMsgType(), record.getRunType(), null, null);
-				
-				WSController.getInstance().sendMessage(
-						mapper.objectToJSONString(notification));
+				if (record.getRecordType() != "Log" && record.getRecordType() != "ObserverToolAnswer") {
+					LocalDateTime localDate = LocalDateTime.now();
+					Date sendDate = Date.from(localDate.atZone(ZoneId.systemDefault()).toInstant());
+					WSRecordNotification notification = new WSRecordNotification(
+							record.getId(), record.getClientId(),
+							record.getTopic(), sendDate,
+							record.getRecordType(), record.getHeadline(), record.getMsgType(), record.getRunType(), null, null);
+					
+					WSController.getInstance().sendMessage(
+							mapper.objectToJSONString(notification));
+				}
 			} catch (Exception e) {
 				log.error("Error processing the message!", e);
 			}
@@ -1137,6 +1139,9 @@ public class RecordRESTController implements IAdaptorCallback {
 		records.add(AARConstants.RECORD_RUN_TYPE_BL);
 		records.add(AARConstants.RECORD_RUN_TYPE_IN);
 		records.add(AARConstants.RECORD_RUN_TYPE_BOTH);
+		records.add(AARConstants.RECORD_RUN_TYPE_FIE);
+		records.add(AARConstants.RECORD_RUN_TYPE_SOLUTIOND);
+		records.add(AARConstants.RECORD_RUN_TYPE_TRIALD);
 
 		log.info("getRunTypes-->");
 		return new ResponseEntity<List<String>>(records, HttpStatus.OK);
@@ -1611,6 +1616,8 @@ public class RecordRESTController implements IAdaptorCallback {
 										attachment.setMimeType(resource.getString("mimeType"));
 										if (attachment.getMimeType().equalsIgnoreCase("image/png")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.png");	
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpeg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.jpeg");
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + i + "/file.jpg");
 										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
@@ -1633,6 +1640,8 @@ public class RecordRESTController implements IAdaptorCallback {
 										attachment.setMimeType(resource.getString("mimeType"));
 										if (attachment.getMimeType().equalsIgnoreCase("image/png")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.png");	
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpeg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.jpeg");
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/" + a + "/" + 0 + "/file.jpg");
 										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
@@ -1666,6 +1675,8 @@ public class RecordRESTController implements IAdaptorCallback {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.png");	
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.jpg");
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpeg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0" + i + "/file.jpeg");
 										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/" + i + "/file.pdf");
 										}
@@ -1688,6 +1699,8 @@ public class RecordRESTController implements IAdaptorCallback {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.png");	
 										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpg")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.jpg");
+										} else if (attachment.getMimeType().equalsIgnoreCase("image/jpeg")) {
+											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.jpeg");
 										} else if (attachment.getMimeType().equalsIgnoreCase("application/pdf")) {
 											attachment.setName("record/attachments/" + jsonObj.getString("identifier") + "/0/0/file.pdf");
 										}

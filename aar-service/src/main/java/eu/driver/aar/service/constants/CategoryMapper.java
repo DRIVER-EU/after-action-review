@@ -15,6 +15,53 @@ public class CategoryMapper {
 		return CategoryMapper.aMe;
 	}
 	
+	public String getHeadingforQuestion(String packageId) {
+		String heading = null;
+		
+		if (packageId.equalsIgnoreCase("Q1")) {
+			heading = "Q1: ERCC briefing materials";
+		} else if (packageId.equalsIgnoreCase("Q2")) {
+			heading = "Q2: EUCPT Daily SitRep";
+		} else if (packageId.equalsIgnoreCase("Q3")) {
+			heading = "Q3: EUCPT briefing for in-coming modules";
+		} else if (packageId.equalsIgnoreCase("Q4")) {
+			heading = "Q4: Modules' status update";
+		}
+		return heading;
+	}
+	
+	public String getCategory(String id) {
+		String heading = null;
+		
+		if (id.equalsIgnoreCase("1")) {
+			// usability
+			heading = "USABILITY";
+		} else if (id.equalsIgnoreCase("2")) {
+			// editability
+			heading = "EDITABILITY";
+		} else if (id.equalsIgnoreCase("3")) {
+			// formatting
+			heading = "FORMATTING";
+		} else if (id.equalsIgnoreCase("4")) {
+			// searchability
+			heading = "SEARCHABLILITY";
+		} else if (id.equalsIgnoreCase("5")) {
+			// structure
+			heading = "STRUCTURE";
+		} else if (id.equalsIgnoreCase("6")) {
+			// visualization
+			heading = "VISUALIZATION";
+		}  else if (id.equalsIgnoreCase("7")) {
+			// relevance
+			heading = "RELEVANCE";
+		} else {
+			// unknown
+			heading = "UNKNOWN";
+		}
+		
+		return heading;
+	}
+	
 	public String getHeadingforCategory(String packageId, String id) {
 		String heading = null;
 		
