@@ -971,15 +971,21 @@ public class StatisticRESTController {
 		float height = page.getMediaBox().getHeight();
 		//float width = page.getMediaBox().getWidth();
 		
-		DefaultPieDataset dataset = new DefaultPieDataset();
-		answerMap.forEach((answwer, count)->{
-			dataset.setValue(answwer + " = " + count, new Double(count));
+		XYSeriesCollection dataset = new XYSeriesCollection();
+		XYSeries series1 = new XYSeries("Series1");
+		//DefaultPieDataset dataset = new DefaultPieDataset();
+		answerMap.forEach((answer, count)->{
+			series1.add(count, new Double(count));
 		});
+		dataset.addSeries(series1);
 		
-		JFreeChart chart = createPieChart3D(dataset);
-		chart.setTitle("Answer statistic for: " + answerId);
-		//chart.setTitle(question);
-		chart.removeLegend();
+		JFreeChart chart = ChartFactory.createPolarChart(
+				"Answer statistic for: " + answerId,
+	            dataset,
+	            false,
+	            false,
+	            false
+	            );
 		
 		try {
 		    OutputStream out = new FileOutputStream("./charts/chart" + answerId + ".png");
@@ -1047,14 +1053,14 @@ public class StatisticRESTController {
 					CategoryMapper.getInstance().getHeadingforCategory(packageId, category.getCategoryId()),
 					20, height-40, 500, page, contentStream, PDType1Font.TIMES_BOLD, 14, new Color(0, 72, 126));
 			
-			endY = MultiLine.drawMultiLineText(paragrahNumber + ".1) Following question identifying Effort & Result for Baseline has be asked:",
+			endY = MultiLine.drawMultiLineText(paragrahNumber + ".1) Following question identifying Effort & Result for Baseline has been asked:",
 					30, endY-20, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
 			endY = MultiLine.drawMultiLineText(category.getBaselineEffortQuestion(),
 					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
 			endY = MultiLine.drawMultiLineText(category.getBaselineResultQuestion(),
 					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));
 			
-			endY = MultiLine.drawMultiLineText(paragrahNumber + ".2) Following question identifying Effort & Result for Innovationline has be asked:",
+			endY = MultiLine.drawMultiLineText(paragrahNumber + ".2) Following question identifying Effort & Result for Innovationline has been asked:",
 					30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
 			endY = MultiLine.drawMultiLineText(category.getInnovationlineEffortQuestion(),
 					40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 10, new Color(0, 0, 0));

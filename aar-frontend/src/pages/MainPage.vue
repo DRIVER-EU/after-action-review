@@ -160,9 +160,9 @@
           case "OBSERVATIONS":
             return "createPDFStatisticReport";
           case "TRIAL_DIMENSION":
-            return "createPDFStatisticReport?runType=TrialDimension";
+            return "createPDFStatisticReport?runType=TrialDimention";
           case "SOLUTION_DIMENSION":
-            return "createPDFStatisticReport?runType=SolutionDimension";
+            return "createPDFStatisticReport?runType=SolutionDimention";
           default:
             throw "Unsupported report type " + reportType;
         }

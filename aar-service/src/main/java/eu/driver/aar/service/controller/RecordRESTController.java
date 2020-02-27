@@ -533,7 +533,7 @@ public class RecordRESTController implements IAdaptorCallback {
 								eu.driver.model.core.RequestChangeOfTrialStage.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-				record.setHeadline("New stage Report for session: "  + msg.getOstTrialSessionId().toString() + ", stage id: " + msg.getOstTrialStageId().toString());
+				record.setHeadline("New stage Report for session: "  + msg.getOstTrialSessionId() + ", stage id: " + msg.getOstTrialStageId());
 			} else if (receivedMessage.getSchema().getName()
 					.equalsIgnoreCase("ObserverToolAnswer")) {
 				eu.driver.model.core.ObserverToolAnswer msg = (eu.driver.model.core.ObserverToolAnswer) SpecificData
@@ -566,16 +566,16 @@ public class RecordRESTController implements IAdaptorCallback {
 						.get().deepCopy(eu.driver.model.sim.entity.Post.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-				record.setHeadline("A new email was sent by: " + msg.getSenderName().toString());
+				record.setHeadline("A new email was sent by: " + msg.getHeader().getFrom().toString());
 				
 				// check for Baseline/Innovation line run
 	     		boolean inRun = false;
 				boolean blRun = false;
-				if (msg.getSenderName().toString().indexOf(POST_BL_EXT) != -1) {
+				if (msg.getHeader().getFrom().toString().indexOf(POST_BL_EXT) != -1) {
 					blRun = true;
 				}
 				
-				List<CharSequence> recipients = msg.getRecipients();
+				List<CharSequence> recipients = msg.getHeader().getTo();
 				if (recipients != null && recipients.size() > 0) {
 					for (CharSequence recipient: recipients) {
 						if (recipient.toString().indexOf(POST_BL_EXT) != -1) {
@@ -591,10 +591,10 @@ public class RecordRESTController implements IAdaptorCallback {
 					record.setRunType(AARConstants.RECORD_RUN_TYPE_BL);
 				}
 			} else {
-				// unknown data
-				record = null;
-				log.error("Unknown message received: " + topicName);
-				log.error(receivedMessage);
+				String schemaName = receivedMessage.getSchema().getName().toString();
+				record.setRecordJson(receivedMessage.toString());
+				record.setMsgType(schemaName);
+				record.setHeadline("A new Record from Tpye: " + schemaName + " has been received!");
 			}
 		} catch (Exception e) {
 			log.error("Error evaluation the message", e);

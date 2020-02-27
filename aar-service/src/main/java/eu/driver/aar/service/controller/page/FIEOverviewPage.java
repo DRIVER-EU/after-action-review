@@ -53,17 +53,62 @@ public class FIEOverviewPage {
 	}
 	
 	public void addFIEOverviewGraphPage(PDDocument document, String packageId,  Package pckg, int paragrahNumber) {
-		PDPage page = new PDPage(new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()));
+		
+		PDPage page = new PDPage(new PDRectangle(PDRectangle.A4.getWidth(),PDRectangle.A4.getHeight()));
 		document.addPage(page);
 		float height = page.getMediaBox().getHeight();
+		float endY = height;
+		try {
+			contentStream = new PDPageContentStream(document, page);
+			endY = MultiLine.drawMultiLineText(paragrahNumber + ") " + CategoryMapper.getInstance().getHeadingforQuestion(packageId),
+					20, endY-40, 500, page, contentStream, PDType1Font.TIMES_BOLD, 14, new Color(0, 72, 126));
+			endY = MultiLine.drawMultiLineText(paragrahNumber + ".1) Following questions have been asked:",
+					30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 10, new Color(0, 72, 126));
+			// add the questions
+			for (int i = 1; i <= 7; i++)  {
+				Category category = pckg.getPackageCategoryMap().get(Integer.toString(i));
+				if (category != null) {
+					endY = checkPage(document, height, endY);
+					endY = MultiLine.drawMultiLineText(paragrahNumber + ".1." + i + ") " + CategoryMapper.getInstance().getCategory(Integer.toString(i)),
+							30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 10, new Color(0, 72, 126));
+					endY = MultiLine.drawMultiLineText(paragrahNumber + ".1." + i + ".1) Following question identifying Effort & Result for Baseline has been asked:",
+							30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 10, new Color(0, 72, 126));
+					endY = MultiLine.drawMultiLineText(category.getBaselineEffortQuestion(),
+							40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
+					endY = MultiLine.drawMultiLineText(category.getBaselineResultQuestion(),
+							40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
+					
+					endY = MultiLine.drawMultiLineText(paragrahNumber + ".1." + i + ".2) Following question identifying Effort & Result for Innovationline has been asked:",
+							30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 10, new Color(0, 72, 126));
+					endY = MultiLine.drawMultiLineText(category.getInnovationlineEffortQuestion(),
+							40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
+					endY = MultiLine.drawMultiLineText(category.getInnovationlineResultQuestion(),
+							40, endY-5, 490, page, contentStream, PDType1Font.TIMES_ROMAN, 8, new Color(0, 0, 0));
+				}
+			}
+		} catch (Exception e) {
+			log.error("Error creating the addFIEOverviewGraphPage!", e);
+		} finally {
+			if (contentStream != null) {
+				try {
+					contentStream.close();
+				} catch (Exception e) {
+					log.error("Error closing the write stream");
+				}
+			}
+		}
+		
+		
+		page = new PDPage(new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()));
+		document.addPage(page);
+		height = page.getMediaBox().getHeight();
 		
 		try {
 			contentStream = new PDPageContentStream(document, page);
-			float endY = MultiLine.drawMultiLineText(paragrahNumber + ") " + CategoryMapper.getInstance().getHeadingforQuestion(packageId),
-					20, height-40, 500, page, contentStream, PDType1Font.TIMES_BOLD, 14, new Color(0, 72, 126));
+			
 			
 			endY = MultiLine.drawMultiLineText(paragrahNumber + ".1) Graph:",
-					30, endY-10, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
+					30, height-40, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
 			
 			XYSeriesCollection dataset = new XYSeriesCollection( );
 			for (int i = 1; i <= 7; i++)  {
@@ -102,10 +147,10 @@ public class FIEOverviewPage {
 				XYPlot plot = xylineChart.getXYPlot( );
 				NumberAxis numberaxis = ( NumberAxis )plot.getDomainAxis( );                 
 			    numberaxis.setLowerBound(0.0);
-			    numberaxis.setUpperBound(10.0);
+			    numberaxis.setUpperBound(11.0);
 			    NumberAxis numberaxis1 = ( NumberAxis )plot.getRangeAxis( );                 
 			    numberaxis1.setLowerBound(0.0);                 
-			    numberaxis1.setUpperBound(10.0);
+			    numberaxis1.setUpperBound(11.0);
 				
 			    int seriesCount = 0;
 				XYVectorizedRenderer renderer = new XYVectorizedRenderer(false, true );
@@ -193,7 +238,7 @@ public class FIEOverviewPage {
 		
 		try {
 			contentStream = new PDPageContentStream(document, page);
-			float endY = MultiLine.drawMultiLineText(paragrahNumber + ".2) The Result in Details:",
+			endY = MultiLine.drawMultiLineText(paragrahNumber + ".2) The Result in Details:",
 					30, height-40, 490, page, contentStream, PDType1Font.TIMES_BOLD_ITALIC, 12, new Color(0, 72, 126));
 			
 			for (int i = 1; i <= 7; i++)  {
