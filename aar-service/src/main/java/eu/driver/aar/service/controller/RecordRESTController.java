@@ -95,12 +95,14 @@ import eu.driver.model.cap.MsgType;
 import eu.driver.model.core.Level;
 import eu.driver.model.core.ObserverToolAnswer;
 import eu.driver.model.core.Question;
-import eu.driver.model.core.State;
 import eu.driver.model.core.TypeOfQuestion;
 import eu.driver.model.geojson.photo.Feature;
 import eu.driver.model.geojson.photo.properties;
 import eu.driver.model.geojson.photo.files.files;
-import eu.driver.model.tm.SessionState;
+import eu.driver.model.sim.config.SessionManagement;
+import eu.driver.model.sim.config.SessionState;
+import eu.driver.model.sim.config.TimeManagement;
+import eu.driver.model.sim.config.TimeState;
 
 @RestController
 public class RecordRESTController implements IAdaptorCallback {
@@ -108,7 +110,7 @@ public class RecordRESTController implements IAdaptorCallback {
 	private Logger log = Logger.getLogger(this.getClass());
 	private StringJSONMapper mapper = new StringJSONMapper();
 
-	private State currentTimingState = State.Idle;
+	private TimeState currentTimingState = TimeState.Initialization;
 	private Float currentTrialTimeSpeed = 0F;
 
 	private SimpleDateFormat format = new SimpleDateFormat(
@@ -428,27 +430,27 @@ public class RecordRESTController implements IAdaptorCallback {
 				record.setHeadline(msg.getTitle().toString() + ", " + msg.getUpdateType().toString());
 			} else if (receivedMessage.getSchema().getName()
 					.equalsIgnoreCase("SessionMgmt")) {
-				eu.driver.model.core.SessionMgmt msg = (eu.driver.model.core.SessionMgmt) SpecificData
-						.get().deepCopy(eu.driver.model.core.SessionMgmt.SCHEMA$, receivedMessage);
+				SessionManagement msg = (SessionManagement) SpecificData
+						.get().deepCopy(SessionManagement.SCHEMA$, receivedMessage);
 				record.setRecordJson(msg.toString());
 				record.setMsgType(AARConstants.RECORD_MSG_TYPE_INFO);
-				record.setHeadline(msg.getSessionId().toString() + ", " + msg.getSessionState().toString());
+				record.setHeadline(msg.getId().toString() + ", " + msg.getState().toString());
 	
 				// check the session
-				String trialId = msg.getTrialId().toString();
+				String trialId = msg.getTags().get("trialId").toString();
 				Trial trial = trialRepo.findObjectByTrialId(trialId);
 				if (trial == null) {
 					trial = new Trial();
 					trial.setActual(true);
-					trial.setTrialName(msg.getTrialName().toString());
-					trial.setTrialId(msg.getTrialId().toString());
+					trial.setTrialName(msg.getTags().get("scenarioId").toString());
+					trial.setTrialId(msg.getTags().get("trialName").toString());
 					trial.setStartDate(new Date());
 				}
-				if (msg.getSessionState()== SessionState.STOP) {
+				if (msg.getState()== SessionState.Stopped) {
 					trial.setEndDate(new Date());
 				}
 	
-				String szenarioId = msg.getScenarioId().toString();
+				String szenarioId = msg.getTags().get("scenarioId").toString();
 				Szenario szenario = null;
 				for (Szenario tmpSzenario : trial.getSzenarioList()) {
 					if (tmpSzenario.getSzenarioId().equals(szenarioId)) {
@@ -458,17 +460,17 @@ public class RecordRESTController implements IAdaptorCallback {
 				if (szenario == null) {
 					szenario = new Szenario();
 					szenario.setTrial(trial);
-					szenario.setSzenarioId(msg.getScenarioId().toString());
-					szenario.setSzenarioName(msg.getScenarioName().toString());
+					szenario.setSzenarioId(msg.getTags().get("scenarioId").toString());
+					szenario.setSzenarioName(msg.getTags().get("scenarioName").toString());
 					szenario.setStartDate(new Date());
 					trial.addSzenario(szenario);
 					trial.setEndDate(null);
 				}
-				if (msg.getSessionState() == SessionState.STOP) {
+				if (msg.getState()== SessionState.Stopped) {
 					szenario.setEndDate(new Date());
 				}
 	
-				String sessionId = msg.getSessionId().toString();
+				String sessionId = msg.getId().toString();
 				Session session = null;
 				for (Session tmpSession : szenario.getSessionList()) {
 					if (tmpSession.getSessionId().equals(sessionId)) {
@@ -478,14 +480,14 @@ public class RecordRESTController implements IAdaptorCallback {
 				if (session == null) {
 					session = new Session();
 					session.setSzenario(szenario);
-					session.setSessionId(msg.getSessionId().toString());
-					session.setSessionName(msg.getSessionName().toString());
+					session.setSessionId(msg.getId().toString());
+					session.setSessionName(msg.getName().toString());
 					session.setStartDate(new Date());
 					szenario.addSession(session);
 					trial.setEndDate(null);
 					szenario.setEndDate(null);
 				}
-				if (msg.getSessionState() == SessionState.STOP) {
+				if (msg.getState()== SessionState.Stopped) {
 					session.setEndDate(new Date());
 				}
 				// check if there is a actual trial that is not that trial.
@@ -513,12 +515,12 @@ public class RecordRESTController implements IAdaptorCallback {
 				record.setHeadline(msg.getHeadline().toString());
 			} else if (receivedMessage.getSchema().getName()
 					.equalsIgnoreCase("Timing")) {
-				eu.driver.model.core.Timing msg = (eu.driver.model.core.Timing) SpecificData
-						.get().deepCopy(eu.driver.model.core.Timing.SCHEMA$, receivedMessage);
+				TimeManagement msg = (TimeManagement) SpecificData
+						.get().deepCopy(TimeManagement.SCHEMA$, receivedMessage);
 				if (!msg.getState().equals(currentTimingState)
-						|| msg.getTrialTimeSpeed() != currentTrialTimeSpeed) {
+						|| msg.getSimulationSpeed() != currentTrialTimeSpeed) {
 					this.currentTimingState = msg.getState();
-					this.currentTrialTimeSpeed = msg.getTrialTimeSpeed();
+					this.currentTrialTimeSpeed = msg.getSimulationSpeed();
 					record.setRecordJson(msg.toString());
 					record.setHeadline("New State: " + this.currentTimingState + ", speed: " + this.currentTrialTimeSpeed);
 				} else {

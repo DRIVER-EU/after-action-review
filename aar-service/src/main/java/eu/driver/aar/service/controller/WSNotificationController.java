@@ -35,12 +35,12 @@ import eu.driver.aar.service.ws.object.WSRecordNotification;
 import eu.driver.adapter.constants.TopicConstants;
 import eu.driver.model.core.Level;
 import eu.driver.model.core.Log;
-import eu.driver.model.core.SessionMgmt;
 import eu.driver.model.core.TopicInvite;
 import eu.driver.model.edxl.DistributionKind;
 import eu.driver.model.edxl.DistributionStatus;
 import eu.driver.model.edxl.EDXLDistribution;
-import eu.driver.model.tm.SessionState;
+import eu.driver.model.sim.config.SessionManagement;
+import eu.driver.model.sim.config.SessionState;
 
 @RestController
 public class WSNotificationController {
@@ -139,7 +139,7 @@ public class WSNotificationController {
         @ApiImplicitParam(name = "scenarioId", value = "the id of the scenario", required = true, dataType = "string", paramType = "query"),
         @ApiImplicitParam(name = "sessionId", value = "the id of the session", required = true, dataType = "string", paramType = "query"),
         @ApiImplicitParam(name = "name", value = "the name of the session", required = true, dataType = "string", paramType = "query"),
-        @ApiImplicitParam(name = "sessionState", value = "the state of the session", required = true, dataType = "string", paramType = "query", allowableValues="START,STOP")
+        @ApiImplicitParam(name = "sessionState", value = "the state of the session", required = true, dataType = "string", paramType = "query", allowableValues="Initializing,Started,Stopped,Closed")
       })
 	@ApiResponses(value = { 
             @ApiResponse(code = 200, message = "Success", response = Boolean.class),
@@ -154,14 +154,14 @@ public class WSNotificationController {
 		log.info("--> sendSessionMgmtMessage");
 		
 		Boolean send = true;
-		SessionMgmt sessionMgmt = new SessionMgmt();
-		sessionMgmt.setTrialId(trialId);
-		sessionMgmt.setTrialName("TestTrial");
-		sessionMgmt.setScenarioId(scenarioId);
-		sessionMgmt.setScenarioName("TestScenario");
-		sessionMgmt.setSessionId(sessionId);
-		sessionMgmt.setSessionName(name);
-		sessionMgmt.setSessionState(SessionState.valueOf(sessionState));
+		SessionManagement sessionMgmt = new SessionManagement();
+		sessionMgmt.setId(sessionId);
+		sessionMgmt.setName(name);
+		sessionMgmt.setState(SessionState.valueOf(sessionState));
+		sessionMgmt.getTags().put("trialid", trialId);
+		sessionMgmt.getTags().put("trialName","TestTrial");
+		sessionMgmt.getTags().put("scenarioId",scenarioId);
+		sessionMgmt.getTags().put("scenarioName","TestScenario");
 		
 		
 		eu.driver.model.edxl.EDXLDistribution msgKey = new EDXLDistribution("test_01", "Swagger", new Date().getTime(), (new Date().getTime())+3600000, DistributionStatus.Actual, DistributionKind.Report);
