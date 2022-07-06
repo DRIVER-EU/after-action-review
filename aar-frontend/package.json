@@ -16,7 +16,7 @@
     "json-tree-view": "^0.4.10",
     "lodash.uniqueid": "^4.0.1",
     "material-icons": "^0.1.0",
-    "moment": "^2.21.0",
+    "moment": "^2.29.4",
     "ol": "^5.3.3",
     "sockjs-client": "^1.4.0",
     "vis": "^4.21.0",
